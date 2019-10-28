@@ -1,0 +1,72 @@
+{
+	"files": [
+		"array.nut"
+	],
+	"libraries": [
+		"LIB1",
+		"MYLIB"
+	],
+	"openedFiles": {
+		"PROJECTS/array/array.nut": {
+			"scrollInfo": {
+				"left": 0,
+				"top": 0,
+				"height": 608,
+				"width": 880,
+				"clientHeight": 441,
+				"clientWidth": 774
+			},
+			"cursor": {
+				"line": 9,
+				"ch": 1,
+				"sticky": null
+			}
+		},
+		"LIBRARIES/MYLIB/MYLIB.nut": {
+			"scrollInfo": {
+				"left": 0,
+				"top": 0,
+				"height": 454,
+				"width": 787,
+				"clientHeight": 454,
+				"clientWidth": 787
+			},
+			"cursor": {
+				"line": 0,
+				"ch": 0,
+				"sticky": null
+			}
+		},
+		"LIBRARIES/LIB1/loops.nut": {
+			"scrollInfo": {
+				"left": 0,
+				"top": 0,
+				"height": 668,
+				"width": 1574,
+				"clientHeight": 454,
+				"clientWidth": 1574
+			},
+			"cursor": {
+				"line": 10,
+				"ch": 0,
+				"sticky": null
+			}
+		},
+		"/SQUIRREL/PROJECTS/array/array.nut": {
+			"scrollInfo": {
+				"left": 0,
+				"top": 167,
+				"height": 608,
+				"width": 880,
+				"clientHeight": 441,
+				"clientWidth": 774
+			},
+			"cursor": {
+				"line": 27,
+				"ch": 39,
+				"sticky": null
+			}
+		}
+	},
+	"currentFile": "/SQUIRREL/PROJECTS/array/array.nut"
+}

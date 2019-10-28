@@ -1,0 +1,42 @@
+{
+	"files": [
+		"ackermann.nut"
+	],
+	"libraries": [
+		"LIB1",
+		"MYLIB"
+	],
+	"openedFiles": {
+		"PROJECTS/ackermann/ackermann.nut": {
+			"scrollInfo": {
+				"left": 0,
+				"top": 0,
+				"height": 488,
+				"width": 880,
+				"clientHeight": 441,
+				"clientWidth": 774
+			},
+			"cursor": {
+				"line": 14,
+				"ch": 12,
+				"sticky": "after",
+				"xRel": 1.66668701171875
+			}
+		},
+		"LIBRARIES/LIB1/list.nut": {
+			"scrollInfo": {
+				"left": 0,
+				"top": 0,
+				"height": 488,
+				"width": 880,
+				"clientHeight": 441,
+				"clientWidth": 774
+			},
+			"cursor": {
+				"row": 0,
+				"ch": 0
+			}
+		}
+	},
+	"currentFile": "PROJECTS/ackermann/ackermann.nut"
+}

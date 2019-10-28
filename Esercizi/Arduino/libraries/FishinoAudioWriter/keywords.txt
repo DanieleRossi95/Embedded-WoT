@@ -1,0 +1,39 @@
+#######################################
+# Syntax Coloring Map AudioWriter
+#######################################
+
+#######################################
+# Datatypes (KEYWORD1)
+#######################################
+
+AudioWriter	KEYWORD1	AudioWriter
+FileAudioWriter	KEYWORD1	FileAudioWriter
+WavWriter	KEYWORD1	WavWriter
+Mp3Writer	KEYWORD1	Mp3Writer
+
+#######################################
+# Methods and Functions (KEYWORD2)
+#######################################
+isValid	KEYWORD2
+getBits	KEYWORD2
+getSampleRate	KEYWORD2
+isStereo	KEYWORD2
+setAudioParams	KEYWORD2
+getNumSamples	KEYWORD2
+nextSample	KEYWORD2
+getTotalSkippedSamples	KEYWORD2
+getMaxSkippedSamples	KEYWORD2
+debug	KEYWORD2
+noDebug	KEYWORD2
+open	KEYWORD2
+close	KEYWORD2
+
+#######################################
+# Constants (LITERAL1)
+#######################################
+CHANMODE_MONO	LITERAL1
+CHANMODE_MONO_BOTH	LITERAL1
+CHANMODE_MONO_LEFT	LITERAL1
+CHANMODE_MONO_RIGHT	LITERAL1
+CHANMODE_STEREO	LITERAL1
+AUDIOWRITER_BUFSIZE	LITERAL1

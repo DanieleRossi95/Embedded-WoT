@@ -1,0 +1,25 @@
+{
+	"files": [
+		"WeakPtr.nut"
+	],
+	"libraries": [],
+	"openedFiles": {
+		"/SQUIRREL/PROJECTS/WeakPtr/WeakPtr.nut": {
+			"scrollInfo": {
+				"left": 0,
+				"top": 0,
+				"height": 454,
+				"width": 787,
+				"clientHeight": 454,
+				"clientWidth": 787
+			},
+			"cursor": {
+				"line": 9,
+				"ch": 0,
+				"sticky": "after",
+				"xRel": 297.6666717529297
+			}
+		}
+	},
+	"currentFile": "/SQUIRREL/PROJECTS/WeakPtr/WeakPtr.nut"
+}

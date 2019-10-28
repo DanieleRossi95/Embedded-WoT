@@ -1,0 +1,40 @@
+{
+	"files": [
+		"matrix.nut"
+	],
+	"libraries": [],
+	"openedFiles": {
+		"PROJECTS/matrix/matrix.nut": {
+			"scrollInfo": {
+				"left": 0,
+				"top": 454,
+				"height": 908,
+				"width": 880,
+				"clientHeight": 441,
+				"clientWidth": 774
+			},
+			"cursor": {
+				"line": 33,
+				"ch": 15,
+				"sticky": "before",
+				"xRel": -2.33331298828125
+			}
+		},
+		"/SQUIRREL/PROJECTS/matrix/matrix.nut": {
+			"scrollInfo": {
+				"left": 0,
+				"top": 0,
+				"height": 908,
+				"width": 880,
+				"clientHeight": 441,
+				"clientWidth": 774
+			},
+			"cursor": {
+				"line": 10,
+				"ch": 0,
+				"sticky": null
+			}
+		}
+	},
+	"currentFile": "/SQUIRREL/PROJECTS/matrix/matrix.nut"
+}

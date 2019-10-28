@@ -1,0 +1,25 @@
+#######################################
+# Syntax Coloring Map FishPlayer
+#######################################
+
+#######################################
+# Datatypes (KEYWORD1)
+#######################################
+
+FishinoPlayer	KEYWORD1	FishinoPlayer
+
+#######################################
+# Methods and Functions (KEYWORD2)
+#######################################
+play	KEYWORD2
+pause	KEYWORD2
+resume	KEYWORD2
+stop	KEYWORD2
+isPlaying	KEYWORD2
+volume	KEYWORD2
+debug	KEYWORD2
+noDebug	KEYWORD2
+
+#######################################
+# Constants (LITERAL1)
+#######################################

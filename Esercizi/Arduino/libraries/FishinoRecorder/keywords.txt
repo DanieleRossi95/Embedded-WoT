@@ -1,0 +1,34 @@
+#######################################
+# Syntax Coloring Map FishinoRecorder
+#######################################
+
+#######################################
+# Datatypes (KEYWORD1)
+#######################################
+
+FishinoRecorder	KEYWORD1	FishinoRecorder
+
+#######################################
+# Methods and Functions (KEYWORD2)
+#######################################
+setAudioFormat	KEYWORD2
+setCompression	KEYWORD2
+open	KEYWORD2
+close	KEYWORD2
+record	KEYWORD2
+pause	KEYWORD2
+stop	KEYWORD2
+isRecording	KEYWORD2
+setMicGain	KEYWORD2
+setInputVolume	KEYWORD2
+getNumSamples	KEYWORD2
+getMaxSkippedSamples	KEYWORD2
+getTotalSkippedSamples	KEYWORD2
+debug	KEYWORD2
+noDebug	KEYWORD2
+
+#######################################
+# Constants (LITERAL1)
+#######################################
+FILE_READ	LITERAL1
+FILE_WRITE	LITERAL1

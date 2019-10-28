@@ -1,0 +1,157 @@
+/////////////////////////////
+MESSAGE
+////////////////////////////
+ok:true
+result:<ARRAY>
+  :<LIST>
+    update_id:323513223
+    message:<LIST>
+      message_id:1162
+      from:<LIST>
+        id:328328564
+        first_name:"Massimo"
+        last_name:"Del Fedele"
+        :<LIST END>
+      chat:<LIST>
+        id:328328564
+        first_name:"Massimo"
+        last_name:"Del Fedele"
+        type:"private"
+        :<LIST END>
+      date:1494343099
+      text:"Ops"
+      :<LIST END>
+    :<LIST END>
+  :<ARRAY END>
+
+/////////////////////////////
+PICTURE
+////////////////////////////
+ok:true
+result:<ARRAY>
+  :<LIST>
+    update_id:323513224
+    message:<LIST>
+      message_id:1164
+      from:<LIST>
+        id:328328564
+        first_name:"Massimo"
+        last_name:"Del Fedele"
+        :<LIST END>
+      chat:<LIST>
+        id:328328564
+        first_name:"Massimo"
+        last_name:"Del Fedele"
+        type:"private"
+        :<LIST END>
+      date:1494343276
+      photo:<ARRAY>
+        :<LIST>
+          file_id:"AgADBAADOKkxG1FikFALMHOINZs_th8fqRkABCSeb-z9KYvV-U4BAAEC"
+          file_size:1457
+          width:51
+          height:90
+          :<LIST END>
+        :<LIST>
+          file_id:"AgADBAADOKkxG1FikFALMHOINZs_th8fqRkABCnm8_UrmclE-k4BAAEC"
+          file_size:20309
+          width:180
+          height:320
+          :<LIST END>
+        :<LIST>
+          file_id:"AgADBAADOKkxG1FikFALMHOINZs_th8fqRkABLFIAum3eG-X_E4BAAEC"
+          file_size:91483
+          width:450
+          height:800
+          :<LIST END>
+        :<LIST>
+          file_id:"AgADBAADOKkxG1FikFALMHOINZs_th8fqRkABHV37QcFKp9z-04BAAEC"
+          file_size:162304
+          width:720
+          height:1280
+          :<LIST END>
+        :<ARRAY END>
+      :<LIST END>
+    :<LIST END>
+  :<ARRAY END>
+/////////////////////////////
+PICTURE + CAPTION
+////////////////////////////
+ok:true
+result:<ARRAY>
+  :<LIST>
+    update_id:323513225
+    message:<LIST>
+      message_id:1167
+      from:<LIST>
+        id:328328564
+        first_name:"Massimo"
+        last_name:"Del Fedele"
+        :<LIST END>
+      chat:<LIST>
+        id:328328564
+        first_name:"Massimo"
+        last_name:"Del Fedele"
+        type:"private"
+        :<LIST END>
+      date:1494343818
+      photo:<ARRAY>
+        :<LIST>
+          file_id:"AgADBAADP6kxG1FikFBfmViEbAHN5sgdnRkABO_XV0ZI1RVomwoEAAEC"
+          file_size:1418
+          width:90
+          height:51
+          :<LIST END>
+        :<LIST>
+          file_id:"AgADBAADP6kxG1FikFBfmViEbAHN5sgdnRkABIA9Uzec8cTznAoEAAEC"
+          file_size:16413
+          width:320
+          height:180
+          :<LIST END>
+        :<LIST>
+          file_id:"AgADBAADP6kxG1FikFBfmViEbAHN5sgdnRkABApbChoipieznQoEAAEC"
+          file_size:65798
+          width:800
+          height:450
+          :<LIST END>
+        :<LIST>
+          file_id:"AgADBAADP6kxG1FikFBfmViEbAHN5sgdnRkABGR2U2fz6PIEmgoEAAEC"
+          file_size:116802
+          width:1280
+          height:720
+          :<LIST END>
+        :<ARRAY END>
+      caption:"Coccode"
+      :<LIST END>
+    :<LIST END>
+  :<ARRAY END>
+/////////////////////////////
+AUDIO
+////////////////////////////
+ok:true
+result:<ARRAY>
+  :<LIST>
+    update_id:323513226
+    message:<LIST>
+      message_id:1169
+      from:<LIST>
+        id:328328564
+        first_name:"Massimo"
+        last_name:"Del Fedele"
+        :<LIST END>
+      chat:<LIST>
+        id:328328564
+        first_name:"Massimo"
+        last_name:"Del Fedele"
+        type:"private"
+        :<LIST END>
+      date:1494343894
+      voice:<LIST>
+        duration:1
+        mime_type:"audio/ogg"
+        file_id:"AwADBAADrQADUWKQUL_sqmdqMMtQAg"
+        file_size:4289
+        :<LIST END>
+      :<LIST END>
+    :<LIST END>
+  :<ARRAY END>

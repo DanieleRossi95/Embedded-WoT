@@ -1,0 +1,25 @@
+{
+	"files": [
+		"threadblink2.nut"
+	],
+	"libraries": [],
+	"openedFiles": {
+		"/SQUIRREL/PROJECTS/threadblink2/threadblink2.nut": {
+			"scrollInfo": {
+				"left": 0,
+				"top": 0,
+				"height": 470,
+				"width": 787,
+				"clientHeight": 470,
+				"clientWidth": 787
+			},
+			"cursor": {
+				"line": 13,
+				"ch": 36,
+				"sticky": "before",
+				"xRel": 245.66668701171875
+			}
+		}
+	},
+	"currentFile": "/SQUIRREL/PROJECTS/threadblink2/threadblink2.nut"
+}

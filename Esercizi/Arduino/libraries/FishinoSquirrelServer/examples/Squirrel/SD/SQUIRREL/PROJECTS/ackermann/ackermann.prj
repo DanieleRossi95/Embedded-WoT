@@ -1,0 +1,58 @@
+{
+	"files": [
+		"ackermann.nut",
+		"gigi.html",
+		"cucu.nut"
+	],
+	"libraries": [
+		"LIB1"
+	],
+	"openedFiles": {
+		"LIBRARIES/LIB1/gigi.html": {
+			"scrollInfo": {
+				"left": 0,
+				"top": 0,
+				"height": 259,
+				"width": 787,
+				"clientHeight": 259,
+				"clientWidth": 787
+			},
+			"cursor": {
+				"line": 0,
+				"ch": 0,
+				"sticky": null
+			}
+		},
+		"PROJECTS/ackermann/ackermann.nut": {
+			"scrollInfo": {
+				"left": 0,
+				"top": 0,
+				"height": 488,
+				"width": 880,
+				"clientHeight": 337,
+				"clientWidth": 774
+			},
+			"cursor": {
+				"line": 0,
+				"ch": 0,
+				"sticky": null
+			}
+		},
+		"/SQUIRREL/PROJECTS/ackermann/ackermann.nut": {
+			"scrollInfo": {
+				"left": 0,
+				"top": 47,
+				"height": 488,
+				"width": 880,
+				"clientHeight": 441,
+				"clientWidth": 774
+			},
+			"cursor": {
+				"line": 21,
+				"ch": 41,
+				"sticky": null
+			}
+		}
+	},
+	"currentFile": "/SQUIRREL/PROJECTS/ackermann/ackermann.nut"
+}

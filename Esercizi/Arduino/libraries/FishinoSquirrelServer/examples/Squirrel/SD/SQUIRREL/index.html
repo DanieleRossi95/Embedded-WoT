@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<title>Fish&amp;Squirrel</title>
+		<meta charset="utf-8"/>
+		<link rel="icon" href="img/sq.png" type="image/png" />
+		<script src="js/jquery.js"></script>
+
+		<script src="js/jquery-ui/jquery-ui.min.js"></script>
+		<link rel="stylesheet" href="js/jquery-ui/jquery-ui.min.css" type="text/css" />
+
+
+		<!-- CONTEXT MENU -->
+		<script src="js/jQuery-contextMenu/dist/jquery.contextMenu.min.js"></script>
+		<script src="js/jQuery-contextMenu/dist/jquery.ui.position.min.js"></script>
+		<link href="js/jQuery-contextMenu/dist/jquery.contextMenu.css" rel="stylesheet" type="text/css" />
+
+		<!-- CODEMIRROR EDITOR -->
+		<script src="js/codemirror/lib/codemirror.js"></script>
+		<link rel=stylesheet href="js/codemirror/lib/codemirror.css">
+		<script src="js/codemirror/mode/xml/xml.js"></script>
+		<script src="js/codemirror/mode/javascript/javascript.js"></script>
+		<script src="js/codemirror/mode/htmlmixed/htmlmixed.js"></script>
+
+		<script src="js/codemirror/addon/mode/multiplex.js"></script>
+		<script src="js/codemirror/mode/htmlembedded/htmlembedded.js"></script>
+
+		<script src="js/codemirror/addon/edit/matchbrackets.js"></script>
+
+
+		<style>
+			.CodeMirror pre { padding-left: 7px; line-height: 1.25; }
+		</style>
+		
+		<!-- TERMINAL -->
+		<script src="js/terminal/js/jquery.mousewheel-min.js"></script>
+		<script src="js/terminal/js/jquery.terminal-1.11.2.min.js"></script>
+		<link href="js/terminal/css/jquery.terminal-1.11.2.min.css" rel="stylesheet"/>
+		
+
+		<!-- FISHINOSQUIRREL CODE -->
+		<link rel=stylesheet href="css/fishinosquirrel.css">
+
+<!--
+		<script src="js/fishinosquirrel.js"></script>
+-->
+		<script src="js/fsq_glob.js"></script>
+		<script src="js/fsq_util.js"></script>
+		<script src="js/fsq_gui.js"></script>
+		<script src="js/fsq_lib.js"></script>
+		<script src="js/fsq_fil.js"></script>
+		<script src="js/fsq_prj.js"></script>
+		<script src="js/fsq_cb.js"></script>
+		<script src="js/fsq_dlg.js"></script>
+		<script src="js/fsq_ses.js"></script>
+		<script src="js/fsq_main.js"></script>
+
+		<script>
+			jQuery(document).ready(function($) {
+				$('#terminal').terminal(function(command, term) {
+					sq_sendTerm(command, function(status) {
+						if(!status)
+							term.echo("error sending command");
+					})
+				},
+				{
+					outputLimit:-1,
+					
+					scrollOnEcho:true,
+					greetings: "Welcome to Fish&Squirrel!"
+				});
+				sq_getStatus();
+			});
+		</script>
+		
+	</head>
+
+	<body>
+		<!-- context menu container -->
+		<div style="display: none;" class="dialog" id="contextMenuContainer">
+		</div>
+
+		<!-- yes/no dialog container -->
+		<div style="display: none;" class="dialog" id="yesNoDialog">
+			<div id="yesNoText"></div>
+		</div>
+
+		<!-- project new dialog -->
+		<div style="display: none;" class="dialog" id="folderDialog">
+			<div class="dialogContainer">
+				<div id="dialogListHeader" class="dialogListHeader">
+				</div>
+				<ul id="folderDialogList" class="dialogList">
+				</ul>
+				<div id="folderDialogNameBlock" class="dialogInputBlock">
+					<label for="folderName" id="folderNameLabel" class="dialogInputLabel"></label>
+					<input id="folderName" class="dialogInput">
+				</div>
+			</div>
+		</div>
+
+		<!-- file new dialog -->
+		<div style="display: none;" class="dialog" id="fileDialog">
+			<div class="dialogContainer">
+				<div id="dialogListHeader" class="dialogListHeader">
+				</div>
+				<ul id="fileDialogList" class="dialogList">
+				</ul>
+				<div id="fileDialogNameBlock" class="dialogInputBlock">
+					<label for="fileName" id="fileNameLabel" class="dialogInputLabel"></label>
+					<input id="fileName" class="dialogInput">
+				</div>
+			</div>
+		</div>
+		
+		<!-- library dependencies dialog -->
+		<div style="display: none;" class="dialog" id="libraryDepsDialog">
+			<div id="libraryDepsHeader" class="dialogHeader">
+			</div>
+			<div id="libraryDepsList" class="libraryDepsList">
+			</div>
+		</div>
+
+		<div id="header">
+			<div id="logo" class="logo">
+				<img src="img/logo.png">
+			</div>
+			<div id="menuArea" class="menuArea">
+				<div id="title" class="title">
+					<h2>Fishino &amp; Squirrel</h2>
+				</div>
+				<div id="menuBlock" class="menuBlock">
+					<div id="textMenu" class="textMenu">
+						<ul>
+							<li><a class="textMenuRef">Progetto</a></li>
+							<li><a class="textMenuRef">Modifica</a></li>
+							<li><a class="textMenuRef">Sketch</a></li>
+							<li><a class="textMenuRef">Strumenti</a></li>
+							<li><a class="textMenuRef">Aiuto</a></li>
+						</ul>
+					</div>
+					<div id="iconMenu" class="iconMenu">
+						<ul>
+							<li><a class="iconMenuRef"><img src="img/New.png" class="iconMenuImg" onclick="sq_newProjectCb();"></a></li>
+							<li><a class="iconMenuRef"><img src="img/Open.png" class="iconMenuImg" onclick="sq_selectProjectCb();"></a></li>
+							<li><a class="iconMenuRef"><img src="img/Save.png" class="iconMenuImg" onclick="sq_saveProjectCb();"></a></li>
+							<li><a class="iconMenuRef"><img src="img/Undo.png" class="iconMenuImg" onclick="sq_undoCb();"></a></li>
+							<li><a class="iconMenuRef"><img src="img/Redo.png" class="iconMenuImg" onclick="sq_redoCb();"></a></li>
+							<li><a class="iconMenuRef"><img src="img/Build.png" class="iconMenuImg" onclick="sq_buildCb();"></a></li>
+							<li><a class="iconMenuRef"><img src="img/Up.png" class="iconMenuImg" onclick="sq_uploadCb();"></a></li>
+						</ul>
+					</div>
+				</div>
+			</div>
+			<div id="logo2" class="logo">
+				<img src="img/squirrel.png">
+			</div>
+		</div>
+		
+		<div id="pageBody">
+			
+			<div id="projectsBlock">
+				<div class="horizontalTabBar">
+					<ul id = "projectsTab" class = "projectsTab">
+					</ul>
+				</div>
+
+				<div class="projectArea" id="projectArea">
+					<div class="left">
+						<div id="libraries">
+							<span class="listHeader">Libraries</span>
+							<ul class="vertList" id="librariesList">
+							</ul>
+						</div>
+						<div id="files">
+							<span class="listHeader">Files</span>
+							<ul class="vertList" id="filesList">
+							</ul>
+						</div>
+					</div>
+					<div class="right">
+						<div class = "horizontalTabBar">
+							<ul id = "filesTab" class = "filesTab">
+							</ul>
+						</div>
+						
+						<div class = "codeArea" id="codeArea">
+							<textarea id=textArea>
+							</textarea>
+						</div>
+
+					</div>
+				</div>
+				
+				<script>
+					var myCodeMirror = CodeMirror.fromTextArea(textArea, {
+						lineNumbers:true,
+						tabSize:4,
+						indentWithTabs:true,
+						smartIndent:true,
+						indentUnit:4,
+						lineWrapping:false,
+						mode:"javascript"
+					});
+				</script>
+			</div>
+			<div id="messageArea">
+				<div class="messageTabArea">
+					<div class="horizontalTabBar">
+						<ul id = "messageTab" class = "messageTab">
+							<li>
+								<a href="" class="tab">Messages</a>
+								<a href="" class="close">x</a>
+							</li>
+							<li class="current">
+								<a href="" class="tab">Terminal</a>
+								<a href="" class="close">x</a>
+							</li>
+						</ul>
+					</div>
+					<div class="ramIndicatorArea" id="ramIndicatorArea">
+						<div class="ramLabel">Free ram:</div>
+						<div class="ramValue" id="ramValue">... Kb</div>
+					</div>
+				</div>
+				<div id="messageContainer">
+					<div id="terminal"></div>
+				</div>
+			</div>
+		</div>
+	</body>
+</html>

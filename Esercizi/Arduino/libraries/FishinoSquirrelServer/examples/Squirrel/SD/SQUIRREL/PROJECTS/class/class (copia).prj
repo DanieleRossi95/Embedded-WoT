@@ -1,0 +1,28 @@
+{
+	"files": [
+		"class.nut",
+		"classattributes.nut"
+	],
+	"libraries": [
+		"LIB1"
+	],
+	"openedFiles": {
+		"PROJECTS/class/class.nut": {
+			"scrollInfo": {
+				"left": 0,
+				"top": 0,
+				"height": 1008,
+				"width": 860,
+				"clientHeight": 441,
+				"clientWidth": 774
+			},
+			"cursor": {
+				"line": 18,
+				"ch": 34,
+				"sticky": "before",
+				"xRel": 9.66668701171875
+			}
+		}
+	},
+	"currentFile": "PROJECTS/class/class.nut"
+}

@@ -1,0 +1,6 @@
+#######################################
+# Syntax Coloring Map For Fishetta
+#######################################
+Datatypes	KEYWORD1
+Fishetta	KEYWORD1
+sendPushNotification	KEYWORD2

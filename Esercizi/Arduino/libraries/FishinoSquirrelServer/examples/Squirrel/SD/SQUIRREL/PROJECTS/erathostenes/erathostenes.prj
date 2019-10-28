@@ -1,0 +1,24 @@
+{
+	"files": [
+		"erathostenes.nut"
+	],
+	"libraries": [],
+	"openedFiles": {
+		"/SQUIRREL/PROJECTS/erathostenes/erathostenes.nut": {
+			"scrollInfo": {
+				"left": 0,
+				"top": 217,
+				"height": 688,
+				"width": 774,
+				"clientHeight": 470,
+				"clientWidth": 774
+			},
+			"cursor": {
+				"line": 14,
+				"ch": 48,
+				"sticky": null
+			}
+		}
+	},
+	"currentFile": "/SQUIRREL/PROJECTS/erathostenes/erathostenes.nut"
+}

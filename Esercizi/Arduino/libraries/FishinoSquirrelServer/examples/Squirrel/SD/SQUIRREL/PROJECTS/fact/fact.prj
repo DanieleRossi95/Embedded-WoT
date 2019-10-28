@@ -1,0 +1,39 @@
+{
+	"files": [
+		"fact.nut"
+	],
+	"libraries": [],
+	"openedFiles": {
+		"PROJECTS/fact/fact.nut": {
+			"scrollInfo": {
+				"left": 0,
+				"top": 0,
+				"height": 454,
+				"width": 787,
+				"clientHeight": 454,
+				"clientWidth": 787
+			},
+			"cursor": {
+				"line": 9,
+				"ch": 0,
+				"sticky": null
+			}
+		},
+		"/SQUIRREL/PROJECTS/fact/fact.nut": {
+			"scrollInfo": {
+				"left": 0,
+				"top": 0,
+				"height": 470,
+				"width": 787,
+				"clientHeight": 470,
+				"clientWidth": 787
+			},
+			"cursor": {
+				"line": 14,
+				"ch": 48,
+				"sticky": null
+			}
+		}
+	},
+	"currentFile": "/SQUIRREL/PROJECTS/fact/fact.nut"
+}

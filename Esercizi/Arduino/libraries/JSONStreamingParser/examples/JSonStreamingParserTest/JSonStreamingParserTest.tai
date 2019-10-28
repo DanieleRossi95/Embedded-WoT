@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes" ?>
+<!DOCTYPE TheArduIDE>
+<TheArduIDE>
+	<ProjectType value="0"/>
+	<Files>
+		<item>JSonStreamingParserTest.ino</item>
+	</Files>
+	<Libraries>
+		<item>JSONStreamingParser</item>
+	</Libraries>
+	<OpenedFiles>
+		<key>/home/massimo/sketchbook/FISHINO_SAMPLES/JSonStreamingParserTest/JSonStreamingParserTest.ino</key>
+		<value value="1031"/>
+	</OpenedFiles>
+	<CurrentFile>/home/massimo/sketchbook/FISHINO_SAMPLES/JSonStreamingParserTest/JSonStreamingParserTest.ino</CurrentFile>
+</TheArduIDE>

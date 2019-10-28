@@ -1,0 +1,39 @@
+{
+	"files": [
+		"asciitable.nut"
+	],
+	"libraries": [],
+	"openedFiles": {
+		"PROJECTS/asciitable/asciitable.nut": {
+			"scrollInfo": {
+				"left": 0,
+				"top": 0,
+				"height": 454,
+				"width": 787,
+				"clientHeight": 454,
+				"clientWidth": 787
+			},
+			"cursor": {
+				"line": 9,
+				"ch": 1,
+				"sticky": null
+			}
+		},
+		"/SQUIRREL/PROJECTS/asciitable/asciitable.nut": {
+			"scrollInfo": {
+				"left": 0,
+				"top": 0,
+				"height": 454,
+				"width": 787,
+				"clientHeight": 454,
+				"clientWidth": 787
+			},
+			"cursor": {
+				"line": 9,
+				"ch": 1,
+				"sticky": null
+			}
+		}
+	},
+	"currentFile": "/SQUIRREL/PROJECTS/asciitable/asciitable.nut"
+}

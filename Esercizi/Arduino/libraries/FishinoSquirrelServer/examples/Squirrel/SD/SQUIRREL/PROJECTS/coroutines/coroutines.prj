@@ -1,0 +1,39 @@
+{
+	"files": [
+		"coroutines.nut"
+	],
+	"libraries": [],
+	"openedFiles": {
+		"PROJECTS/coroutines/coroutines.nut": {
+			"scrollInfo": {
+				"left": 0,
+				"top": 0,
+				"height": 528,
+				"width": 774,
+				"clientHeight": 454,
+				"clientWidth": 774
+			},
+			"cursor": {
+				"line": 9,
+				"ch": 1,
+				"sticky": null
+			}
+		},
+		"/SQUIRREL/PROJECTS/coroutines/coroutines.nut": {
+			"scrollInfo": {
+				"left": 0,
+				"top": 57,
+				"height": 528,
+				"width": 774,
+				"clientHeight": 470,
+				"clientWidth": 774
+			},
+			"cursor": {
+				"line": 19,
+				"ch": 0,
+				"sticky": null
+			}
+		}
+	},
+	"currentFile": "/SQUIRREL/PROJECTS/coroutines/coroutines.nut"
+}

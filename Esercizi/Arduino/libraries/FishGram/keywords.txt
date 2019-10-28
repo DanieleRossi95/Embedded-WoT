@@ -1,0 +1,11 @@
+Fishgram	KEYWORD1
+start	KEYWORD2
+getOldestMessage	KEYWORD2
+
+oldestMessage	KEYWORD2
+sendMessage	KEYWORD2
+closeConnection	KEYWORD2
+text	KEYWORD2
+isEmpty	KEYWORD2
+chat_id	KEYWORD2
+sender_id	KEYWORD2

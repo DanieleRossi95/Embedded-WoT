@@ -1,0 +1,10 @@
+{
+	"requires": [
+		"MYLIB"
+	],
+	"files": [
+		"LIB1.nut",
+		"list.nut",
+		"loops.nut"
+	]
+}

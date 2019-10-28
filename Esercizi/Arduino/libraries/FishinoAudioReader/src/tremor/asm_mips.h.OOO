@@ -1,0 +1,243 @@
+/********************************************************************
+ *                                                                  *
+ * THIS FILE IS PART OF THE OggVorbis 'TREMOR' CODEC SOURCE CODE.   *
+ *                                                                  *
+ * USE, DISTRIBUTION AND REPRODUCTION OF THIS LIBRARY SOURCE IS     *
+ * GOVERNED BY A BSD-STYLE SOURCE LICENSE INCLUDED WITH THIS SOURCE *
+ * IN 'COPYING'. PLEASE READ THESE TERMS BEFORE DISTRIBUTING.       *
+ *                                                                  *
+ * THE OggVorbis 'TREMOR' SOURCE CODE IS (C) COPYRIGHT 1994-2002    *
+ * BY THE Xiph.Org FOUNDATION http://www.xiph.org/                  *
+ *                                                                  *
+ ********************************************************************
+
+ function: MIPS II and later wide math functions (MS specific assembler)
+
+ This file including is enabled by defining
+ _MIPS_ASSEM_
+ 
+ Using of VR4121/22/31/33/81a extensions is enabled by defining
+ _MIPS_VR4121_ASSEM_
+
+ Assembler clipping is disabled by defining
+ NO_MIPS_CLIP_MATH
+
+ Using of assembler lsp_loop_asm and lsp_norm_asm is disabled by defining
+ NO_MIPS_LSP_MATH
+
+ ********************************************************************/
+
+#if (defined (_MSC_VER)) && (defined (_MIPS_ASSEM_))
+
+#if !defined(_V_WIDE_MATH) && !defined(_LOW_ACCURACY_)
+#define _V_WIDE_MATH
+
+STIN ogg_int32_t MULT32(ogg_int32_t x, ogg_int32_t y) {
+  ogg_int32_t ret;
+
+  __asm ("mult %0, %1;" // a0 = x, a1 = y
+         "mfhi t0;"
+         "sw t0, 0(%2)",
+         x, y, &ret);
+  return ret;
+}
+
+STIN ogg_int32_t MULT31(ogg_int32_t x, ogg_int32_t y) {
+  ogg_int32_t ret;
+  __asm ("mult %0, %1;" // a0 = x, a1 = y
+         "mfhi t0;"
+         "sll t0, 1;"
+         "sw t0, 0(%2)",
+         x, y, &ret);
+  return ret;
+}
+
+STIN ogg_int32_t MULT31_SHIFT15(ogg_int32_t x, ogg_int32_t y) {
+  ogg_int32_t ret;
+
+  __asm ("mult %0, %1;"
+         "mfhi t0;"
+         "mflo t1;"
+         "sll t0, t0, 17;"
+         "srl t1, t1, 15;"
+         "or t2, t0, t1;"
+         "sw t2, 0(%2)",
+         x, y, &ret);
+
+  return ret;
+}
+
+#define MB() 
+
+#ifdef _MIPS_VR4121_ASSEM_
+
+/* NEC VR 4121/22/31/33/81a specific */
+
+/* Strange MS Embedded Visual C++ Tools :(
+ * It pushes 'madd16' in listing _always_
+ * even if writes 'macc' machine code
+ */
+
+STIN void XPROD32(ogg_int32_t  a, ogg_int32_t  b,
+                  ogg_int32_t  t, ogg_int32_t  v,
+                  ogg_int32_t *x, ogg_int32_t *y)
+{
+  __asm (
+         ".set noreorder;"
+	 "mult   %0, %2;"      // hilo = a * t
+	 "macchi t0, %1, %3;"  // hilo = a * t + b * v
+			       // t0 = hi (a *t + b * v)
+	 "sub    t1, zero, %0;"// t1 = -a
+	 "mult   %1, %2;"      // hilo = b * t
+	 "macchi t1, t1, %3;"  // t1 = hi (b * t - a * v)
+	 ".set reorder;"
+	 ,a, b, t, v
+	);
+  __asm (
+	 "sw     t0, (%0);"
+	 "sw     t1, (%1);"
+	 ,x, y
+	);
+}
+
+STIN void XPROD31(ogg_int32_t  a, ogg_int32_t  b,
+                  ogg_int32_t  t, ogg_int32_t  v,
+                  ogg_int32_t *x, ogg_int32_t *y)
+{
+  __asm (
+         ".set noreorder;"
+	 "mult   %0, %2;"      // hilo = a * t
+	 "macchi t0, %1, %3;"  // hilo = a * t + b * v
+			       // t0 = hi (a *t + b * v)
+	 "sub    t1, zero, %0;"// t1 = -a
+	 "mult   %1, %2;"      // hilo = b * t
+	 "macchi t1, t1, %3;"  // t1 = hi (b * t - a * v)
+	 ".set reorder;"
+	 "sll    t0, 1;"
+	 "sll    t1, 1;"
+	 ,a, b, t, v
+	);
+  __asm (
+	 "sw     t0, (%0);"
+	 "sw     t1, (%1);"
+	 ,x, y
+	);
+}
+
+STIN void XNPROD31(ogg_int32_t  a, ogg_int32_t  b,
+                   ogg_int32_t  t, ogg_int32_t  v,
+                   ogg_int32_t *x, ogg_int32_t *y)
+{
+  __asm (
+         ".set noreorder;"
+	 "mult   %0, %3;"       // hilo = a * v
+	 "macchi t1, %1, %2;"   // hilo = a * v + b * t
+			        // t1 = hi (a *t + b * v)
+	 "sub    t0, zero, %1;" // t0 = -b
+	 "mult   %0, %2;"       // hilo = a * t
+	 "macchi t0, t0, %3;"   // t1 = hi (a * t - b * v)
+	 ".set reorder;"
+	 "sll    t0, 1;"
+	 "sll    t1, 1;"
+	 ,a, b, t, v
+	);
+  __asm (
+	 "sw     t0, (%0);"
+	 "sw     t1, (%1);"
+	 ,x, y
+	);
+
+}
+
+#else // not NEC VR 4121/22/31/33/81a
+
+STIN void XPROD32(ogg_int32_t  a, ogg_int32_t  b,
+                  ogg_int32_t  t, ogg_int32_t  v,
+                  ogg_int32_t *x, ogg_int32_t *y)
+{
+  *x = MULT32(a, t) + MULT32(b, v);
+  *y = MULT32(b, t) - MULT32(a, v);
+}
+
+STIN void XPROD31(ogg_int32_t  a, ogg_int32_t  b,
+                  ogg_int32_t  t, ogg_int32_t  v,
+                  ogg_int32_t *x, ogg_int32_t *y)
+{
+  *x = MULT31(a, t) + MULT31(b, v);
+  *y = MULT31(b, t) - MULT31(a, v);
+}
+
+STIN void XNPROD31(ogg_int32_t  a, ogg_int32_t  b,
+                   ogg_int32_t  t, ogg_int32_t  v,
+                   ogg_int32_t *x, ogg_int32_t *y)
+{
+  *x = MULT31(a, t) - MULT31(b, v);
+  *y = MULT31(b, t) + MULT31(a, v);
+}
+#endif /* NEC VR 4121/22/31/33/81a */
+
+#endif /* !defined(_V_WIDE_MATH) && !defined(_LOW_ACCURACY_) */
+
+
+#if !defined(_V_CLIP_MATH) && !defined (NO_MIPS_CLIP_MATH)
+#define _V_CLIP_MATH
+
+STIN ogg_int32_t CLIP_TO_15(ogg_int32_t x) {
+  ogg_int32_t ret;
+    __asm ("addiu t0, %0, 32767;" // t0 = x + 32767
+           "sra   t1, t0, 31;"    // t1 = {if (x => 0) then 0 else f..f}
+           "or    t0, t1;"        // t0 = {if (x<-32767) then 0 else x + 32768}
+
+           "subu  t0, 65534;"     // t0 = {if (x<-32768) the -65536 else (x-32767)}
+           "sra   t1, t0, 31;"    // t1 = {if (x<65536) then f..f else 0}
+           "and   t0, t1;"
+           
+           "addiu t0, 32767;"
+           "sw    t0, 0(%1);",
+           x, &ret);
+    return ret;
+}
+
+#endif /* _V_CLIP_MATH */
+
+#if !defined(_V_LSP_MATH_ASM) && !defined(NO_MIPS_LSP_MATH)
+#define _V_LSP_MATH_ASM
+
+extern void lsp_loop_asm(ogg_uint32_t *qip, ogg_uint32_t *pip,
+                       ogg_int32_t *qexpp, ogg_int32_t *ilsp,
+                       ogg_int32_t wi, ogg_int32_t m);
+
+STIN void lsp_norm_asm(ogg_uint32_t *qip,ogg_int32_t *qexpp)
+{
+  __asm (
+	 "lw   t0, (a0);"
+ 	 "lw   t1, (a1);"
+	 
+     "sltiu t2, t0, 0x100;"
+	 "sll   t2, 3;"
+	 "sllv  t0, t0, t2;"
+	 "subu  t1, t2;"
+
+	 "sltiu t2, t0, 0x1000;"
+	 "sll   t2, 2;"
+	 "sllv  t0, t0, t2;"
+	 "subu  t1, t2;"
+
+	 "sltiu t2, t0, 0x4000;"
+	 "sll   t2, 1;"
+	 "sllv  t0, t0, t2;"
+	 "subu  t1, t2;"
+
+	 "ori   t2, zero, 0x8000;"
+	 "sltu  t2, t0, t2;"
+	 "sllv  t0, t0, t2;"
+	 "subu  t1, t2;"
+
+	 "sw    t0, (a0);"
+	 "sw    t1, (a1);"
+	 , qip, qexpp);
+}
+
+#endif /* _V_LSP_MATH_ASM */
+
+#endif /* _MIPS_ASSEM_ */

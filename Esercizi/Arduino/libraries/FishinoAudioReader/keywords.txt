@@ -1,0 +1,35 @@
+#######################################
+# Syntax Coloring Map AudioReader
+#######################################
+
+#######################################
+# Datatypes (KEYWORD1)
+#######################################
+
+ChannelModes	KEYWORD1	ChannelModes
+AudioReader	KEYWORD1	AudioReader
+FileAudioReader	KEYWORD1	FileAudioReader
+WavReader	KEYWORD1	WavReader
+Mp3Reader	KEYWORD1	Mp3Reader
+
+#######################################
+# Methods and Functions (KEYWORD2)
+#######################################
+getBits	KEYWORD2
+getSampleRate	KEYWORD2
+isStereo	KEYWORD2
+available	KEYWORD2
+nextSample	KEYWORD2
+debug	KEYWORD2
+noDebug	KEYWORD2
+open
+close
+
+#######################################
+# Constants (LITERAL1)
+#######################################
+CHANMODE_MONO	LITERAL1
+CHANMODE_MONO_BOTH	LITERAL1
+CHANMODE_MONO_LEFT	LITERAL1
+CHANMODE_MONO_RIGHT	LITERAL1
+CHANMODE_STEREO	LITERAL1

@@ -1,0 +1,1287 @@
+"use strict";
+
+//////////////////////////////////////////////////////////////////////
+//                         GLOBAL VARIABLES                         //
+//////////////////////////////////////////////////////////////////////
+
+var sq_currentProject = "";
+var sq_currentProjectData = {};
+
+// current file displayed in editor
+var sq_currentFile = "";
+
+// libraries for current project
+var sq_projectLibs = {};
+
+// file pool -- files already loaded
+// files are stored as 'path':['content': content, 'dirty':boolean]
+var sq_filePool = {};
+
+// images root folder
+var sq_imgRoot = "img/";
+
+// libraries root folder
+var sq_libRoot = "LIBRARIES/";
+
+// projects root folder
+var sq_projectsRoot = "PROJECTS/";
+
+
+//////////////////////////////////////////////////////////////////////
+//                              UTILITiES                           //
+//////////////////////////////////////////////////////////////////////
+
+function sq_stringify(obj) {
+	var seen = []; 
+
+	var replacer = function(key, value) {
+	  if (value != null && typeof value == "object") {
+		if (seen.indexOf(value) >= 0) {
+		  return;
+		}
+		seen.push(value);
+	  }
+	  return value;
+	};
+
+	return JSON.stringify(obj, replacer, '\t');
+}
+
+// find an icon depending on file extension
+function sq_icon(name) {
+	var n = name.toLowerCase();
+	
+	if(n.endsWith(".prj"))
+		return sq_imgRoot + "sq.png";
+	else if(n.endsWith(".prl"))
+		return sq_imgRoot + "sqlib.png";
+	else if(n.endsWith(".nut"))
+		return sq_imgRoot + "nut.png";
+	else if(n.endsWith(".htm") || n.endsWith(".html") || n.endsWith(".sqp"))
+		return sq_imgRoot + "htm.png";
+	else if(n.endsWith(".png") || n.endsWith(".jpg") || n.endsWith(".tif") || n.endsWith(".gif") || n.endsWith(".ico"))
+		return sq_imgRoot + "img.png";
+	else
+		return sq_imgRoot + "doc.png";
+}
+
+// some path utilities
+function sq_getFileName(path) {
+	return path.split('\\').pop().split('/').pop();
+}
+
+function sq_getFilePath(path) {
+	path = path.split('\\');
+	if(path.length > 1)
+		path.pop();
+	else {
+		path = path.pop().split('/');
+		path.pop();
+	}
+	return path.join('/') + '/';
+}
+
+function sq_getFileTitle(path) {
+	path = sq_getFileName(path).split('.');
+	if(path.length > 1)
+		path.pop();
+	return path.join('.');
+}
+
+function sq_getFileExt(path) {
+	return '.' + sq_getFileName(path).split('.').pop();
+}
+
+//////////////////////////////////////////////////////////////////////
+//                   FILE AND PATH REMOTE FUNCTIONS                 //
+//////////////////////////////////////////////////////////////////////
+
+// load a file -- loads from remote storage
+function sq_loadFile(path, doneFunc) {
+	
+	// first try to get it from cached data
+	var data = sq_filePool[path];
+	if(data)
+		doneFunc(true, path, data.content);
+	else {
+		$.ajax({
+			type: 'POST',
+			dataType: 'text',
+			url: 'sqfish.php',
+			data: {'PATH': path, 'COMMAND':'LOAD'},
+			success: function(data, status, xhr) {
+				var lines = data.split('\n');
+				var stat = JSON.parse(lines[0]);
+				data = lines.slice(1).join('\n');
+				if(stat.status == 'ok') {
+					// store file to local cache
+					sq_filePool[path] = {'content':data, 'dirty':false};
+
+					// call handler
+					doneFunc(true, path, data)
+				}
+				else
+					doneFunc(false, path);
+			},
+			error: function(xhr, status, err) {
+				doneFunc(false, path);
+			}		  
+		});
+	}
+}
+
+// saves a file -- saves a file to storage
+function sq_saveFile(path, data, doneFunc) {
+	
+	if(!doneFunc)
+		doneFunc = function() {};
+	
+	// check if file is in cache
+	var cached = sq_filePool[path];
+	
+	// if file is unchanged, just do nothing
+	if(cached && cached.content == data) {
+		doneFunc(true, path);
+		return;
+	}
+	
+	// insert (or replace) file in local cache
+	sq_filePool[path] = {'content':data, 'dirty':false};
+	
+	// save the file
+	// we could try to defer saving, maybe
+	$.ajax({
+		type: 'POST',
+		dataType: 'text',
+		url: 'sqfish.php',
+		data: {'PATH': path, 'COMMAND':'STORE', 'CONTENT':data},
+		success: function(data, status, xhr) {
+			var lines = data.split('\n');
+			var stat = JSON.parse(lines[0]);
+			if(stat.status == 'ok')
+				doneFunc(true, path)
+			else
+				doneFunc(false, path);
+		},
+		error: function(xhr, status, err) {
+			doneFunc(false, path);
+		}		  
+	});
+}
+
+function sq_listFolder(path, folders, doneFunc) {
+	$.ajax({
+		type: 'POST',
+		dataType: 'text',
+		url: 'sqfish.php',
+		data: {'PATH': path, 'COMMAND':'LIST', 'FOLDERS':folders},
+		success: function(data, status, xhr) {
+			var lines = data.split('\n');
+			var stat = JSON.parse(lines[0]);
+			if(stat.status == 'ok')
+				doneFunc(true, path, JSON.parse(lines[1]).elements);
+			else
+				doneFunc(false, path);
+		},
+		error: function(xhr, status, err) {
+			doneFunc(false, path);
+		}		  
+	});
+}
+
+function sq_deleteFolderDeep(path, doneFunc) {
+	
+	if(!doneFunc)
+		doneFunc = function() {};
+		
+	// wipe any file in folder from cache
+	var paths = Object.keys(sq_filePool);
+	paths.forEach(function(item) {
+		if(item.startsWith(path)) {
+			delete sq_filePool[item];
+		}
+	});
+
+	// wipe remote folder
+	$.ajax({
+		type: 'POST',
+		dataType: 'text',
+		url: 'sqfish.php',
+		data: {'PATH': path, 'COMMAND':'RMFOLDER'},
+		success: function(data, status, xhr) {
+			var lines = data.split('\n');
+			var stat = JSON.parse(lines[0]);
+			if(stat.status == 'ok')
+				doneFunc(true, path);
+			else
+				doneFunc(false, path);
+		},
+		error: function(xhr, status, err) {
+			doneFunc(false, path);
+		}		  
+	});
+}
+
+//////////////////////////////////////////////////////////////////////
+//                         SESSION MANAGEMENT                       //
+//////////////////////////////////////////////////////////////////////
+
+// save current session
+// @@ later we shall put it in a timed function
+// to avoid too many uploads
+function sq_saveSession() {
+	
+	var projects = [];
+	$("#projectsTab").children("li").each(function(i) {
+		var path = $(this).attr('data-path');
+		projects.push(path);
+	});
+	var current = $("#projectsTab .current");
+	if(current)
+		current = current.attr('data-path');
+	else
+		current = "";
+	var session = { 'projects':projects, 'activeProject':current }
+	sq_saveFile('last.session', sq_stringify(session));
+}
+
+// save current file in editor
+// @@ later we shall put it in a timed function
+// to avoid too many uploads
+function sq_saveCurrentFile() {
+
+	// if no data, don't save
+	if(sq_currentFile == "")
+		return;
+		
+	// save current file position
+	var cursor = myCodeMirror.getCursor();
+	var scrollInfo = myCodeMirror.getScrollInfo();
+
+	sq_currentProjectData.openedFiles[sq_currentFile] = {'scrollInfo':scrollInfo, 'cursor':cursor};
+
+	// chack if editor is dirty
+	if(myCodeMirror.isClean())
+		return;
+		
+	var data = myCodeMirror.getValue();
+	sq_saveFile(sq_currentFile, data, function() {
+		myCodeMirror.markClean();
+	});
+}
+
+// save current project
+// @@ later we shall put it in a timed function
+// to avoid too many uploads
+function sq_saveCurrentProject() {
+	// if no data, don't save
+	if(sq_currentProject == "")
+		return;
+		
+	// save project file
+	sq_saveFile(sq_projectsRoot + sq_currentProject + '/' + sq_currentProject + '.prj', sq_stringify(sq_currentProjectData));
+}
+
+//////////////////////////////////////////////////////////////////////
+//                      TABS HANDLING FUNCTIONS                     //
+//////////////////////////////////////////////////////////////////////
+
+// fills a tabbar with array of path items
+function sq_fillTabBar(tabId, pathItems, closeCross = true) {
+	var tabItems = [];
+	$.each(pathItems, function(i, pathItem) {
+		var item = sq_getFileName(pathItem);
+		var tabItem =
+			'<li data-path="' + pathItem + '">' +
+			'<a class="tab" onclick="sq_tabClickCb(\'' + tabId + '\', \'' + pathItem + '\');false;">' + item + '</a>';
+		if(closeCross)
+				tabItem += '<a class="close" onclick="sq_tabCloseCb(\'' + tabId + '\', \'' + pathItem + '\');false;">x</a>';
+		tabItem += '</li>';
+		tabItems.push(tabItem);
+	});  // close each()
+	$("#" + tabId + " li").remove();
+	$("#" + tabId).append(tabItems);
+}
+
+// check if a tab is present
+function sq_findTab(tabId, pathItem) {
+	var found = false;
+	$("#" + tabId).children("li").each(function(i) {
+		if($(this).attr('data-path') == pathItem) {
+			found = true;
+			return false;
+		}
+	});
+	return found;
+}
+
+// get selected tab
+function sq_getSelectedTab(tabId) {
+	var res = "";
+	$("#" + tabId).children("li").each(function(i) {
+		if($(this).hasClass('current')) {
+			res = $(this).attr('data-path');
+			return false;
+		}
+	});
+	return res;
+}
+
+// append a tab to a tabbar
+function sq_appendTab(tabId, pathItem, closeCross = true) {
+	if(sq_findTab(tabId, pathItem))
+		return;
+	var item = sq_getFileName(pathItem);
+	var tabItem =
+		'<li data-path="' + pathItem + '">' +
+		'<a class="tab" onclick="sq_tabClickCb(\'' + tabId + '\', \'' + pathItem + '\');false;">' + item + '</a>';
+	if(closeCross)
+			tabItem += '<a class="close" onclick="sq_tabCloseCb(\'' + tabId + '\', \'' + pathItem + '\');false;">x</a>';
+	tabItem += '</li>';
+	$("#" + tabId).append(tabItem);
+}
+
+// remove a tab from tabbar - return nearest tab
+// useful to select another when closing
+function sq_removeTab(tabId, pathItem) {
+	var nextPath = "";
+	$("#" + tabId).children("li").each(function(i) {
+		var curPath = $(this).attr('data-path');
+		if(curPath == pathItem) {
+			$(this).remove();
+			return false;
+		}
+		else
+			nextPath = curPath;
+	});
+	
+	// if we removed first tab, next path is empty
+	// so we shall get first available tab
+	if(nextPath == "") {
+		var children = $("#" + tabId).children("li");
+		if(children.length) {
+			nextPath = children.first().attr('data-path');
+		}
+	}
+	
+	return nextPath;
+}
+
+// list all paths in tabs
+function sq_listTabs(tabId) {
+	var res = [];
+	$("#" + tabId).children("li").each(function(i) {
+		var curPath = $(this).attr('data-path');
+		res.push(curPath);
+	});
+	return res;
+}
+
+// select a tab
+function sq_selectTab(tabId, pathItem) {
+	$("#" + tabId).children("li").each(function(i) {
+		if($(this).attr('data-path') == pathItem)
+			$(this).addClass("current");
+		else
+			$(this).removeClass("current");
+	});
+}
+
+// deselect any tab
+function sq_deselectTab(tabId) {
+	$("#" + tabId).children("li").each(function(i) {
+		$(this).removeClass("current");
+	});
+}
+
+// fill projects tabbar
+function sq_fillProjectTabs(items) {
+	sq_fillTabBar("projectsTab", items);
+}
+
+// fill files tabbar
+function sq_fillFilesTabs(items) {
+	sq_fillTabBar("filesTab", items);
+}
+
+// fill messages tabbar
+function sq_fillMessageTabs() {
+	sq_fillTabBar("messageTab", ['Messages', 'Terminal'], false);
+}
+
+//////////////////////////////////////////////////////////////////////
+//                      LISTS HANDLING FUNCTIONS                    //
+//////////////////////////////////////////////////////////////////////
+
+// fills a list, setting names, icons and paths
+// elements must be an array of objects {name:name, icon:icon, path:path}
+// all of them can be missing
+function sq_fillList(listId, elements, clickFunction) {
+	var list = $("#" + listId);
+	list.children().remove();
+	$.each(elements, function(i, element) {
+		var name = element.name;
+		var icon = element.icon;
+		var path = element.path;
+		if(!name && path)
+			name = sq_getFileName(path);
+		var listItem = '<li';
+		if(path)
+			listItem += ' data-path="' + path + '"';
+		listItem += '>';
+		listItem += '<a><div>';
+		if(icon) {
+			listItem += '<div><img src="' + icon + '"></div>';
+		}
+		listItem += "<div>" + name + "</div>";
+		listItem += '</div></a></li>';
+		list.append(listItem);
+		var last = list.children("li").last().children("a");
+		last.click(function() { clickFunction(name, path); false; });
+	});  // close each()
+}
+
+// check if a tab is present
+function sq_findListItem(listId, pathItem) {
+	var found = false;
+	$("#" + listId).children("li").each(function(i) {
+		if($(this).attr('data-path') == pathItem)
+			found = true;
+	});
+	return found;
+}
+
+// get selected listId
+function sq_getSelectedListItem(listId) {
+	var res = "";
+	$("#" + listId).children("li").each(function(i) {
+		if($(this).hasClass('current')) {
+			res = $(this).attr('data-path');
+			return false;
+		}
+	});
+	return res;
+}
+
+// append an item to a list
+function sq_appendListItem(listId, pathItem) {
+	if(sq_findListItem(listId, pathItem))
+		return;
+	var item = sq_getFileName(pathItem);
+	var listItem =
+		'<li data-path="' + pathItem + '">' +
+		'<a class="tab" onclick="sq_listClickCb(\'' + tabId + '\', \'' + pathItem + '\');false;">' + item + '</a>';
+	listItem += '</li>';
+	$("#" + listId).append(listItem);
+}
+
+// remove an item from list
+function sq_removeListItem(listId, pathItem) {
+	$("#" + listId).children("li").each(function(i) {
+		if($(this).attr('data-path') == pathItem)
+			$("#" + listId).remove(this);
+	});
+}
+
+// select a list item
+function sq_selectListItem(listId, pathItem) {
+	$("#" + listId).children("li").each(function(i) {
+		if($(this).attr('data-path') == pathItem)
+			$(this).addClass("current");
+		else
+			$(this).removeClass("current");
+	});
+}
+
+//////////////////////////////////////////////////////////////////////
+//                          GUI CALLBACKS                           //
+//////////////////////////////////////////////////////////////////////
+
+function sq_tabClickCb(tab, item) {
+
+	// if tab is a project tab, activate project
+	if(tab == "projectsTab") {
+		sq_activateProject(item);
+		sq_saveSession();
+	}
+	else if(tab == "filesTab")
+		sq_activateFile(item);
+}
+
+function sq_tabCloseCb(tab, item) {
+	var nextItem = sq_removeTab(tab, item);
+	if(tab == "projectsTab") {
+		sq_activateProject(nextItem);
+		sq_saveSession();
+	}
+	else {
+		sq_activateFile(nextItem);
+		delete sq_currentProjectData.openedFiles[item];
+		sq_saveCurrentProject();
+	}
+
+}
+
+function sq_listClickCb(list, item) {
+
+	// if tab is a project tab, activate project
+	if(list == "librariesList") {
+		sq_activateLibrary(item);
+		sq_saveSession();
+	}
+	else if(list == "filesList") {
+		sq_appendTab("filesTab", item);
+		sq_activateFile(item);
+	}
+}
+
+
+//////////////////////////////////////////////////////////////////////
+//                    LIBRARIES HANDLING FUNCTIONS                  //
+//////////////////////////////////////////////////////////////////////
+
+// close all opened library files
+function sq_closeLibraryFiles(libName) {
+
+	var paths = sq_listTabs("filesTab");
+	var nextTab = "";
+	paths.forEach(function(item) {
+		if(item.startsWith(sq_libRoot + libName)) {
+			nextTab = sq_removeTab("filesTab", item);
+			delete sq_currentProjectData.openedFiles[item];
+		}
+	});
+	
+	// if a closed file was active activate another one
+	if(sq_currentFile.startsWith(sq_libRoot + libName))
+		sq_activateFile(nextTab);
+}
+
+// activate a library when clicking on libraries list
+function sq_activateLibrary(item) {
+
+	// select corresponding list item
+	sq_selectListItem("librariesList", item);
+
+	// synchronize IDE state
+	sq_syncIDE(false);
+}
+
+// load library descriptor
+function sq_loadLibrary(name, doneFunc) {
+	sq_loadFile(sq_libRoot + name + "/" + name + '.prl', function(status, path, data) {
+		if(status) {
+			data = JSON.parse(data);
+			if(data) {
+				doneFunc(true, name, data);
+			}
+			else {
+				doneFunc(false, name);
+			}
+		}
+	})
+}
+
+// load a group of libray descriptor and put their info into
+// global sq_libraries data
+// @@ still missing handling of "requires" inside libs!!!
+function sq_loadLibraries(names, doneFunc) {
+
+	sq_projectLibs = {};
+	
+	// if project has no libraries, just terminate
+	if(!names.length)
+		doneFunc(true);
+	else {
+		var missing = names.length;
+		var err = false;
+		for(var i = 0; i < names.length; i++) {
+			if(err)
+				break;
+			sq_loadLibrary(names[i], function(status, n, data) {
+				if(!status) {
+					doneFunc(false);
+					err = true;
+				}
+				sq_projectLibs[n] = data;
+				missing--;
+				if(!missing)
+					doneFunc(true);
+			});
+		}
+	}
+}
+
+//////////////////////////////////////////////////////////////////////
+//                 PROJECT FILS HANDLING FUNCTIONS                  //
+//////////////////////////////////////////////////////////////////////
+
+// activate a file (called by click handler, for example)
+function sq_activateFile(path) {
+
+	// save current file
+	sq_saveCurrentFile();
+	
+	// change current file record in current project
+	sq_currentProjectData.currentFile = path;
+	
+	sq_loadFile(path, function(status, path, data) {
+		if(status) {
+
+			// store new file
+			sq_currentFile = path;
+			
+			// append a new file tab, if needed, and select it
+			sq_appendTab("filesTab", path);
+			sq_selectTab("filesTab", path);
+			
+			myCodeMirror.setValue(data);
+			myCodeMirror.markClean();
+			
+			// reset cursor position
+			var info = sq_currentProjectData.openedFiles[path];
+			if(typeof(info) != 'undefined') {
+				myCodeMirror.scrollTo(info.scrollInfo);
+				myCodeMirror.setCursor(info.cursor);
+			}
+			myCodeMirror.focus();
+		}
+		else {
+			sq_currentFile = "";
+		}
+
+		// synchronize IDE state
+		sq_syncIDE(true);
+	})
+}
+
+// activate a project (called by click handler, for example)
+function sq_activateProject(name) {
+
+	// save current project before switching
+	sq_saveCurrentFile();
+	sq_saveCurrentProject();
+
+	sq_currentFile = "";
+	sq_currentProject = "";
+	sq_currentProjectData = {};
+	
+	// de-select project tab to force resync later
+	sq_deselectTab("projectsTab");
+	
+	// load project file
+	sq_loadFile(sq_projectsRoot + name + "/" + name + '.prj', function(status, path, data) {
+		if(status) {
+			data = JSON.parse(data);
+			if(data) {
+				// store to current project descriptor
+				sq_currentProject = name;
+				sq_currentProjectData = data;
+				
+				// if there are opened files show the files pane
+				// and fill its data, otherwise hide it
+				var openedFiles = Object.keys(data.openedFiles);
+				sq_fillFilesTabs(openedFiles);
+				
+				// load project libraries
+				sq_loadLibraries(data.libraries, function(status) {
+					// activate current file when done
+					sq_activateFile(data.currentFile);
+				});
+			}
+		}
+	});
+}
+
+// opens a project
+function sq_openProject(name) {
+	
+	// append new project tab, if missing
+	sq_appendTab("projectsTab", name);
+	
+	// activate the project
+	sq_activateProject(name);
+}
+
+function sq_newProject(name, path) {
+	var prjPath = path + '/' + name + '.prj';
+	var nut = '// ' + name + '.nut\n\n';
+	var nutPath = path + '/' + name + '.nut';
+	var prj =
+	'{' +
+	'	"files":["' + name + '.nut"],' +
+	'	"libraries":[],' +
+	'	"openedFiles":{},' +
+	'	"currentFile":"' + nutPath + '"' +
+	'}';
+	
+	
+	sq_saveFile(prjPath, prj, function() {
+		sq_saveFile(nutPath, nut, function() {
+			sq_openProject(name);
+			sq_activateFile(nutPath);
+		})
+	})
+}
+
+function sq_newLibrary(name, path) {
+	var libPath = path + '/' + name + '.prl';
+	var nut = '// ' + name + '.nut\n\n';
+	var nutPath = path + '/' + name + '.nut';
+	var prl =
+	'{' +
+	'	"files":["' + name + '.nut"],' +
+	'	"requires":[]' +
+	'}';
+	
+	
+	sq_saveFile(libPath, prl, function() {
+		sq_saveFile(nutPath, nut, function() {
+			sq_activateFile(nutPath);
+		})
+	})
+}
+
+$.fn.textWidth = function(text, font) {
+    if (!$.fn.textWidth.fakeEl) $.fn.textWidth.fakeEl = $('<span>').hide().appendTo(document.body);
+    $.fn.textWidth.fakeEl.text(text || this.val() || this.text()).css('font', font || this.css('font'));
+    return $.fn.textWidth.fakeEl.width();
+};
+
+// get width of an array of list elements
+function getListWidth(items, font) {
+	var maxWidth = 0;
+	items.forEach(function(item) {
+		var itemWidth = $.fn.textWidth(item, font);
+		if(itemWidth > maxWidth)
+			maxWidth = itemWidth;
+	});
+	return maxWidth;
+}
+
+function sq_folderDialog(kind, title, rootFolder, iconImage, doneFunction) {
+	
+	// depending on dialog kind, put a titl on list
+	var listFunc;
+	switch(kind) {
+		case 'newProject':
+			$('#dialogListHeader').html("Available projects:");
+			$('#folderDialogNameBlock').show();
+			$('#folderNameLabel').html("Enter a project name:");
+			listFunc = function(name, path) {};
+			break;
+			
+		case 'openProject':
+			$('#dialogListHeader').html("Select project:");
+			$('#folderDialogNameBlock').hide();
+			listFunc = function(name, path) {
+				$('#folderDialog').dialog('close');
+				doneFunction(name, rootFolder + name);
+			};
+
+			break;
+			
+		case 'newLib':
+			$('#dialogListHeader').html("Available libraries:");
+			$('#folderDialogNameBlock').show();
+			$('#folderNameLabel').html("Enter a library name:");
+			listFunc = function(name, path) {};
+			break;
+			
+		case 'openLib':
+			$('#dialogListHeader').html("Select a library:");
+			$('#folderDialogNameBlock').hide();
+			listFunc = function(name, path) {
+				$('#folderDialog').dialog('close');
+				doneFunction(name, rootFolder + name);
+			};
+			break;
+			
+		default:
+			alert("Unknown folder dialog type");
+			return;
+	}
+
+	// get a list of available folders unde root folder
+	sq_listFolder(rootFolder, true, function(status, path, elements) {
+		if(status) {
+			// fill dialog list with folder names
+			var items = [];
+			elements.forEach(function(element) {
+				items.push({'name':element, 'icon': sq_imgRoot + iconImage});
+			});
+			sq_fillList('folderDialogList', items, listFunc);
+			
+			// get list width (max item's width) adjusting with image and margin
+			var listWidth = getListWidth(elements, '16px Arial, Helvetica') + 42;
+			
+			// limit width to dialog size and force all list elements
+			// to be of that width, so theyre spaced evenly
+			var dialogWidth = window.innerWidth * 2 / 3 - 20;
+			if(listWidth > dialogWidth)
+				listWidth = dialogWidth;
+			var listItems = $('#folderDialogList').children();
+			listItems.css("maxWidth", listWidth + 'px');
+			listItems.css("flex-basis", listWidth + 'px');
+			
+			// create project dialog and run it
+			var buttons = [];
+			if(kind == 'newProject' || kind == 'newLib')
+				buttons.push({
+					text:'Ok',
+					icon: "ui-icon-ok",
+					click:function() {
+						var name = $("#folderName").val();
+						var valid = /^(?!\.)(?!com[0-9]$)(?!con$)(?!lpt[0-9]$)(?!nul$)(?!prn$)[^\|\*\?\\:<>/$"]*[^\.\|\*\?\\:<>/$"]+$/i.test(name);
+						if(!valid)
+							alert("Invalid project name!");
+						else if($.inArray(name, elements) >= 0)
+							alert("Project '" + name + "' already exists!");
+						else {
+							$(this).dialog('close');
+							doneFunction(name, rootFolder + name);
+						}
+					}
+				});
+			buttons.push({
+				text:'Cancel',
+				icon: "ui-icon-cancel",
+				click:function() {
+					$(this).dialog('close');
+				}
+			});
+			$('#folderDialog').dialog({
+				autoOpen:true,
+				width: window.innerWidth * 2 / 3,
+				height: window.innerHeight * 2 / 3,
+				buttons: buttons,
+				classes: {
+					"ui-dialog": "ui-corner-all ui-widget-shadow",
+				},
+				modal:true,
+				title:title,
+				resizable:false
+			});
+		}
+	});
+}
+
+// toolbar handlers
+function sq_newProjectHandler() {
+	sq_folderDialog("newProject", "New project", sq_projectsRoot, "sq.png", sq_newProject);
+}
+
+function sq_selectProjectHandler() {
+	sq_folderDialog("openProject", "Open project", sq_projectsRoot, "sq.png", sq_openProject);
+}
+
+function sq_saveProjectHandler() {
+	sq_saveCurrentFile();
+	sq_saveCurrentProject();
+}
+
+
+function sq_undoHandler() {
+	if(sq_currentFile != "")
+		myCodeMirror.undo();
+}
+
+
+function sq_redoHandler() {
+	if(sq_currentFile != "")
+		myCodeMirror.redo();
+}
+
+
+function sq_buildHandler() {
+	alert("Build");
+}
+
+
+function sq_uploadHandler() {
+	alert("Upload");
+}
+
+// lists handlers
+function sq_deleteProjectHandler() {
+	
+	// get current project
+	var project = sq_currentProject;
+	
+	// close project tab
+	sq_tabCloseCb("projectsTab", project);
+	
+	// remove the project
+	sq_deleteFolderDeep(sq_projectsRoot + project);
+}
+
+function sq_addLibraryHandler() {
+	sq_folderDialog("openLib", "Select library", sq_libRoot, "sqlib.png", function(name, path) {
+		if(sq_currentProjectData.libraries.indexOf(name) < 0) {
+			sq_currentProjectData.libraries.push(name);
+			
+			// re-activate project to force list reload
+			sq_activateProject(sq_currentProject);
+			sq_activateLibrary(name);
+		}
+	});
+}
+
+function sq_addNewLibraryHandler() {
+	sq_folderDialog("newLib", "New library", sq_libRoot, "sqlib.png", function(name, path) {
+
+		sq_newLibrary(name, path);
+
+		if(sq_currentProjectData.libraries.indexOf(name) < 0) {
+			sq_currentProjectData.libraries.push(name);
+			
+			// re-activate project to force list reload
+			sq_activateProject(sq_currentProject);
+			sq_activateLibrary(name);
+		}
+	});
+}
+
+function sq_removeLibraryHandler(libName) {
+	
+	// close any opened library file first
+	sq_closeLibraryFiles(libName);
+
+	var idx = sq_currentProjectData.libraries.indexOf(libName);
+	if(idx >= 0) {
+		sq_currentProjectData.libraries.splice(idx, 1);
+
+		// re-activate project to force list reload
+		sq_activateProject(sq_currentProject);
+	}
+}
+
+function sq_deleteLibraryHandler(libName) {
+	// close any opened library file first
+	sq_closeLibraryFiles(libName);
+
+	var idx = sq_currentProjectData.libraries.indexOf(libName);
+	if(idx >= 0) {
+		sq_currentProjectData.libraries.splice(idx, 1);
+
+		// re-activate project to force list reload
+		sq_activateProject(sq_currentProject);
+		sq_activateLibrary(name);
+		
+		// remove the library
+		sq_deleteFolderDeep(sq_libRoot + libName);
+	}
+}
+
+function sq_addNutFileHandler(libName) {
+	alert("sq_addNutFileHandler not implemented yet");
+}
+
+function sq_addNewNutFileHandler(libName) {
+	alert("sq_addNewNutFileHandler not implemented yet");
+}
+
+function sq_addHtmlFileHandler(libName) {
+	alert("sq_addHtmlFileHandler not implemented yet");
+}
+
+function sq_addNewHtmlFileHandler(libName) {
+	alert("sq_addNewHtmlFileHandler not implemented yet");
+}
+
+function sq_removeFileHandler(libName, filePath) {
+	alert("sq_removeFileHandler not implemented yet");
+}
+
+function sq_deleteFileHandler(libName, filePath) {
+	alert("sq_deleteFileHandler not implemented yet");
+}
+
+function sq_libraryDepsHandler(libName) {
+	alert("sq_libraryDepsHandler not implemented yet");
+}
+
+//////////////////////////////////////////////////////////////////////
+//                    IDE SYNC ON CURRENT FILE                      //
+//////////////////////////////////////////////////////////////////////
+function sq_syncIDE(syncFilesListItem) {
+
+	// if no project selected, hide the whole project area and return
+	if(sq_currentProject == "") {
+		$("#projectArea").css("display", "hidden");
+		return;
+	}
+	
+	// show project area
+	$("#projectArea").css("display", "visible");
+
+	// if there's a current file selected, show code area
+	// otherwise hide it
+	if(sq_currentFile != "") {
+		$("#codeArea").show();
+	}
+	else {
+		$("#codeArea").hide();
+	}
+	
+
+	// check if selected project tab is same as current project
+	// otherwise select it
+	var curProjectTab = sq_getSelectedTab("projectsTab");
+	if(curProjectTab != sq_currentProject) {
+		
+		// activate right project tab
+		sq_selectTab("projectsTab", sq_currentProject);
+		
+		// re-fill libraries list
+		sq_loadLibraries(sq_currentProjectData.libraries, function(status) {
+			var keys = Object.keys(sq_projectLibs);
+			var items = [{"name":"&lt;Project&gt;", "path":"<Project>", "icon":sq_imgRoot + "sq.png"}];
+			keys.forEach(function(lib) {
+				items.push({"path":lib, "icon":sq_imgRoot + "sqlib.png"});
+			});
+			sq_fillList("librariesList", items, function(item, path) {
+				sq_listClickCb("librariesList", path);
+			});
+			
+			// force sync of files list item as we changed project
+			syncFilesListItem = true;
+		});
+	}
+	
+	// if we want to sync library and files lists with current file
+	// just do it
+	if(syncFilesListItem) {
+	
+		// if there's a current file selected, find the right library
+		// and file list item for it
+		var files = [];
+		var root = "";
+		if(sq_currentFile != "") {
+			if(sq_currentFile.startsWith(sq_projectsRoot)) {
+				// it's a project file, select first lib item
+				sq_selectListItem("librariesList", "<Project>");
+				files = sq_currentProjectData.files;
+				root = sq_projectsRoot + sq_currentProject + "/";
+			}
+			else {
+				// get library for this file
+				var libName = sq_currentFile.substring(sq_libRoot.length);
+				libName = libName.split("/")[0];
+				files = sq_projectLibs[libName].files;
+				sq_selectListItem("librariesList", libName);
+				root = sq_libRoot + libName + "/";
+			}
+			
+			// fill files list
+			var filesItems = [];
+			files.forEach(function(file) {
+				filesItems.push({"path":root + file, "icon":sq_icon(file)});
+			});
+			sq_fillList("filesList", filesItems, function(item, path) {
+				sq_listClickCb("filesList", path);
+			})
+			
+			// activate current files list item
+			sq_selectListItem("filesList", sq_currentFile);
+		}
+		else {
+			// no current file -- just select project files in libraries list
+			// and fill files list
+			sq_selectListItem("librariesList", "<Project>");
+			files = sq_currentProjectData.files;
+			root = sq_projectsRoot + sq_currentProject + "/";
+			var filesItems = [];
+			files.forEach(function(file) {
+				filesItems.push({"path":root + file, "icon":sq_icon(file)});
+			});
+			sq_fillList("filesList", filesItems, function(item, path) {
+				sq_listClickCb("filesList", path);
+			})
+		}
+	}
+	
+	// otherwise just sync the files pane with current library selected
+	// into library pane
+	else {
+		var lib = sq_getSelectedListItem("librariesList");
+		if(lib != "") {
+			if(lib == "<Project>") {
+				files = sq_currentProjectData.files;
+				root = sq_projectsRoot + sq_currentProject + "/";
+			}
+			else {
+				files = sq_projectLibs[lib].files;
+				root = sq_libRoot + lib + "/";
+			}
+
+			var filesItems = [];
+			files.forEach(function(file) {
+				filesItems.push({"path":root + file, "icon":sq_icon(file)});
+			});
+			sq_fillList("filesList", filesItems, function(item, path) {
+				sq_listClickCb("filesList", path);
+			})
+
+			// activate current files list item if in list
+			if(sq_currentFile.startsWith(root))
+				sq_selectListItem("filesList", sq_currentFile);
+		}
+	}
+}
+
+//////////////////////////////////////////////////////////////////////
+//                     INITIALIZATION AND MAIN                      //
+//////////////////////////////////////////////////////////////////////
+
+// initialize ide subsystem
+function sq_init() {
+	
+	// restore last session
+	sq_loadFile('last.session', function(status, path, data) {
+		if(status) {
+			data = JSON.parse(data);
+			if(data) {
+				// get opened project and last active project
+				var projects = data.projects;
+				var activeProject = data.activeProject;
+				
+				// fill projects tabs
+				sq_fillProjectTabs(projects);
+				
+				// show project area
+				$("#projectArea").css("display", "visible");
+				
+				// open last active project
+				sq_openProject(activeProject);
+			}
+			else {
+				// hide project area
+				$("#projectArea").css("display", "hidden");
+			}
+		}
+	});
+
+	// fill messages tabs
+	sq_fillMessageTabs();
+	sq_selectTab('messageTab', 'Terminal');
+
+	// build libraries context menu
+	$(function(){
+		$.contextMenu({
+			selector: '#librariesList li',
+			build:function($trigger, e) {
+				var libName = $trigger.attr('data-path');
+				var items = {};
+				if(libName == '<Project>') {
+					items["delProject"]		= {
+						name: "Delete project",
+						callback: function() { sq_deleteProjectHandler(); }
+					};
+					items["sep1"]		= "---------";
+					items["addLib"]			= {
+						name: "Add library to project",
+						callback: function() { sq_addLibraryHandler(libName); }
+					};
+					items["addNewLib"]		= {
+						name: "Add new library to project",
+						callback: function() { sq_addNewLibraryHandler(); }
+					};
+				}
+				else {
+					items["remLib"]		= {
+						name: "Remove library from project",
+						callback: function() { sq_removeLibraryHandler(libName); }
+					};
+					items["delLib"]		= {
+						name: "Delete library",
+						callback: function() { sq_deleteLibraryHandler(libName); }
+					};
+					items["sep1"]		= "---------";
+					items["libDeps"]	= {
+						name: "Manage library dependencies",
+						callback: function() { sq_libraryDepsHandler(libName); }
+					};
+				}
+				return {
+					zIndex:10,
+					items: items
+				};
+			}
+		});
+	});
+	
+	// build files context menu
+	$(function(){
+		$.contextMenu({
+			selector: '#files li',
+			build:function($trigger, e) {
+				var filePath = $trigger.attr('data-path');
+				var fileName = sq_getFileName(filePath);
+				var libName = sq_getSelectedListItem("librariesList");
+				var items = {};
+				if(libName == '<Project>') {
+					items["addNut"]			= {
+						name: "Add .nut file to project",
+						callback: function() { sq_addNutFileHandler(libName); }
+					};
+					items["addNewNut"]			= {
+						name: "Add new .nut file to project",
+						callback: function() { sq_addNewNutFileHandler(libName); }
+					};
+					items["sep1"]		= "---------";
+					items["addHtml"]			= {
+						name: "Add .html file to project",
+						callback: function() { sq_addHtmlFileHandler(libName); }
+					};
+					items["addNewHtml"]			= {
+						name: "Add new .html file to project",
+						callback: function() { sq_addNewHtmlFileHandler(libName); }
+					};
+					if(sq_getFileTitle(fileName) != sq_currentProject || sq_getFileExt(fileName) != '.nut') {
+						items["sep2"]		= "---------";
+						items["remFile"]	= {
+							name: "Remove '" + fileName + "' from project",
+							callback: function() { sq_removeFileHandler(libName, filePath); }
+						};
+						items["delFile"]	= {
+							name: "Remove '" + fileName + "' from project and delete it",
+							callback: function() { sq_deleteFileHandler(libName, filePath); }
+						};
+					}
+				}
+				else {
+					items["addNut"]			= {
+						name: "Add .nut file to '" + libName + "'",
+						callback: function() { sq_addNutFileHandler(libName); }
+					};
+					items["addNewNut"]			= {
+						name: "Add new .nut file to '" + libName + "'",
+						callback: function() { sq_addNewNutFileHandler(libName); }
+					};
+					items["sep1"]		= "---------";
+					items["remFile"]	= {
+						name: "Remove '" + fileName + "' from '" + libName + "'",
+						callback: function() { sq_removeFileHandler(libName, filePath); }
+					};
+					items["delFile"]	= {
+						name: "Remove '" + fileName + "' from '" + libName + "' and delete it",
+						callback: function() { sq_deleteFileHandler(libName, filePath); }
+					};
+				}
+				return {
+					zIndex:10,
+					items: items
+				};
+			}
+		});
+	});
+}
+
+// A $( document ).ready() block.
+$(document).ready(function() {
+
+	sq_init();
+	
+
+});

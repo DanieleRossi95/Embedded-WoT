@@ -1,0 +1,39 @@
+{
+	"files": [
+		"regex.nut"
+	],
+	"libraries": [],
+	"openedFiles": {
+		"PROJECTS/regex/regex.nut": {
+			"scrollInfo": {
+				"left": 0,
+				"top": 0,
+				"height": 454,
+				"width": 787,
+				"clientHeight": 454,
+				"clientWidth": 787
+			},
+			"cursor": {
+				"line": 10,
+				"ch": 0,
+				"sticky": null
+			}
+		},
+		"/SQUIRREL/PROJECTS/regex/regex.nut": {
+			"scrollInfo": {
+				"left": 0,
+				"top": 0,
+				"height": 454,
+				"width": 787,
+				"clientHeight": 454,
+				"clientWidth": 787
+			},
+			"cursor": {
+				"line": 10,
+				"ch": 0,
+				"sticky": null
+			}
+		}
+	},
+	"currentFile": "/SQUIRREL/PROJECTS/regex/regex.nut"
+}

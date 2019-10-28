@@ -1,0 +1,194 @@
+#ifdef __GNUC__
+#define zero $0
+#define a0 $4
+#define a1 $5
+#define a2 $6
+#define a3 $7
+#define t0 $8
+#define t1 $9
+#define t2 $10
+#define t3 $11
+#define t4 $12
+#define t5 $13
+#define t6 $14
+#define t7 $15
+#define t8 $24
+#define t9 $25
+#define sp $sp
+#define ra $31
+#endif
+
+.text
+
+/*
+   void lsp_loop_asm (ogg_uint32_t *qip, ogg_uint32_t *pip,
+                      ogg_int32_t *qexpp, ogg_int32_t *ilsp,
+                      ogg_int32_t wi, ogg_int32_t m);
+*/
+
+.globl lsp_loop_asm
+.ent lsp_loop_asm
+.set noreorder
+lsp_loop_asm:
+
+  lw    t0, (a0)
+  lw    t1, (a1)
+  lw    t2, (a2)
+
+  lw    t9, 20(sp)
+  lw    t8, 16(sp)
+
+/*
+  t0 = qi
+  t1 = pi
+  t2 = qexp
+  a3 = ilsp
+  t8 = wi
+  t9 = m
+*/
+
+  sll   t6, t9, 2;     /* t6 = m * 4 */
+  addu  t6, a3;        /* end_ptr = ilsp + (m * 4) */
+  andi  t9, 1;         /* t9 = m mod 2 */
+  sll   t3, t9, 2;     /* ptr = m mod 2 * 4 */
+  addu  t3, t6, t3;    /* ptr = ilsp + (m + m mod 2) * 4 */
+
+/*
+  a3 = ilsp
+  t0 = qi
+  t1 = pi
+  t2 = qexp
+  t3 = ptr
+  t4 = qi_hi
+  t5 = pi_hi
+  t6 = end_ptr
+  t7 = tmp
+  t8 = wi
+  t9 = m mod 2
+*/
+
+loop:
+  lw    t7, 0(a3);    /* tmp = ilsp [i] */
+  subu  t7, t8;        /* tmp = ilsp [i] - wi */
+
+  bgez  t7, qi_abs
+  nop
+  subu  t7, zero, t7
+qi_abs:;               /* tmp = labs (ilsp [i - 1] - wi) */
+
+  multu t0, t7;        /* qi_full = qi * labs (ilsp [i] - wi) */
+  lw    t7, 4(a3);    /* tmp = ilsp [i + 1] */
+
+  mfhi  t4;            /* qi_hi = hi32 (qi_full) */
+  mflo  t0;            /* qi    = lo32 (qi_full) */
+
+  subu  t7, t8;        /* tmp = ilsp [i + 1] - wi */
+
+  bgez  t7, pi_abs
+  nop
+  subu  t7, zero, t7
+pi_abs:;               /* tmp = labs (ilsp [i] - wi) */
+
+  multu t1, t7;        /* pi_full = pi * labs (ilsp [i + 1] - wi) */
+  mfhi  t5;            /* pi_hi = hi32 (pi_full) */
+  mflo  t1;            /* pi    = lo32 (pi_full) */
+
+  addu  t7, t4, t5;    /* tmp = qi_hi + pi_hi */
+  beqz  t7, endloop;   /* if (qi_hi + pi_hi == 0) goto endloop */
+  nop
+
+  addiu t2, 16;        /* qexp += 16 */
+
+  sll   t4, 16;        /* qi_hi << 16 */
+  srl   t0, 16;        /*    qi >> 16 */
+  or    t0, t4, t0;    /* qi = (qi_hi << 16) | (qi >> 16) */
+
+  sll   t5, 16;        /* pi_hi << 16 */
+  srl   t1, 16;        /*    pi >> 16 */
+  or    t1, t5, t1;    /* pi = (pi_hi << 16) | (pi >> 16) */
+
+endloop:
+  addiu a3, 8;         /* ptr += 2 */
+  bne   a3, t3, loop;  /* if (ptr != ilsp) goto loop */
+  nop
+
+  beq   t3, t6, normalize; /* if (m mod 2 == 0) goto normalize */
+  nop
+
+  /* Assimmetry if (m mod 2) = 1 */
+  lw    t7, 0(t6);     /* tmp = ilsp [m - 1] */
+  subu  t7, t8;        /* tmp = ilsp [m - 1] - wi */
+
+  bgez  t7, qi_abs2
+  nop
+  subu  t7, zero, t7
+qi_abs2:;              /* tmp = labs (ilsp [m - 1] - wi) */
+
+  multu t0, t7;        /* qi_full = qi * labs (ilsp [m - 1] - wi) */
+
+  mfhi  t4;            /* qi_hi = hi32 (qi_full) */
+  mflo  t0;            /* qi    = lo32 (qi_full) */
+
+  ori   t7, zero, 0x4000
+  nop
+
+  multu t1, t7;        /* pi_full = pi * 0x4000  */
+  mfhi  t5;            /* pi_hi = hi32 (pi_full) */
+  mflo  t1;            /* pi    = lo32 (pi_full) */
+
+  or    t7, t4, t5;    /* tmp = qi_hi | pi_hi */
+  beqz  t7, normalize; /* if (qi_hi + pi_hi == 0) goto normalize */
+  nop
+
+  addiu t2, 16;        /* qexp += 16 */
+
+  sll   t4, 16;        /* qi_hi << 16 */
+  srl   t0, 16;        /*    qi >> 16 */
+  or    t0, t4, t0;    /* qi = (qi_hi << 16) | (qi >> 16) */
+
+  sll   t5, 16;        /* pi_hi << 16 */
+  srl   t1, 16;        /*    pi >> 16 */
+  or    t1, t5, t1;    /* pi = (pi_hi << 16) | (pi >> 16) */
+
+normalize: 
+
+  or    t3, t0, t1
+  srl   t3, 16
+  move  t4, zero
+
+  andi  t5, t3, 0xff00
+  sltu  t7, zero, t5
+  sll   t7, 3;          /* t7 = 8 * ((t5 & 0xff00) > 0) */
+  addu  t4, t7
+  srlv  t3, t7
+
+  andi  t5, t3, 0x00f0
+  sltu  t7, zero, t5
+  sll   t7, 2;          /* t7 = 4 * (t5 & 0x00f0 > 0) */
+  addu  t4, t7
+  srlv  t3, t3, t7
+
+  andi  t5, t3, 0x000c
+  sltu  t7, zero, t5
+  sll   t7, 1;          /* t7 = 2 * (t5 & 0x000c > 0) */
+  addu  t4, t7
+  srlv  t3, t3, t7
+
+  andi  t5, t3, 0x0002
+  sltu  t7, zero, t5;   /* t7 = (t5 & 0x0002 > 0) */
+  addu  t4, t7
+  srlv  t3, t3, t7
+
+  addu  t4, t3;         /* t3 = 0 or 1, t4 += t3 */
+
+  srlv  t0, t0, t4
+  srlv  t1, t1, t4
+  addu  t2, t4
+
+  sw    t0, (a0)
+  sw    t1, (a1)
+  sw    t2, (a2)
+
+  j     ra
+.end lsp_loop_asm
+

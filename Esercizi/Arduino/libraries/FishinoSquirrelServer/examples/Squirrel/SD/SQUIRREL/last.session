@@ -1,0 +1,16 @@
+{
+	"projects": [
+		"fact",
+		"generators",
+		"coroutines",
+		"testthread",
+		"erathostenes",
+		"blink",
+		"threadblink",
+		"Client",
+		"Server",
+		"class",
+		"threadblink2"
+	],
+	"activeProject": "Server"
+}

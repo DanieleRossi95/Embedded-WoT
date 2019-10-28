@@ -1,0 +1,24 @@
+{
+	"files": [
+		"FileTest.nut"
+	],
+	"libraries": [],
+	"openedFiles": {
+		"/SQUIRREL/PROJECTS/FileTest/FileTest.nut": {
+			"scrollInfo": {
+				"left": 0,
+				"top": 0,
+				"height": 454,
+				"width": 787,
+				"clientHeight": 454,
+				"clientWidth": 787
+			},
+			"cursor": {
+				"line": 0,
+				"ch": 0,
+				"sticky": null
+			}
+		}
+	},
+	"currentFile": "/SQUIRREL/PROJECTS/FileTest/FileTest.nut"
+}

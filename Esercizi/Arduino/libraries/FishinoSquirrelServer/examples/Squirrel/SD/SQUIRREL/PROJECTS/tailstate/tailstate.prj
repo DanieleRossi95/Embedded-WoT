@@ -1,0 +1,39 @@
+{
+	"files": [
+		"tailstate.nut"
+	],
+	"libraries": [],
+	"openedFiles": {
+		"PROJECTS/tailstate/tailstate.nut": {
+			"scrollInfo": {
+				"left": 0,
+				"top": 0,
+				"height": 508,
+				"width": 774,
+				"clientHeight": 454,
+				"clientWidth": 774
+			},
+			"cursor": {
+				"line": 22,
+				"ch": 25,
+				"sticky": null
+			}
+		},
+		"/SQUIRREL/PROJECTS/tailstate/tailstate.nut": {
+			"scrollInfo": {
+				"left": 0,
+				"top": 0,
+				"height": 508,
+				"width": 774,
+				"clientHeight": 454,
+				"clientWidth": 774
+			},
+			"cursor": {
+				"line": 10,
+				"ch": 0,
+				"sticky": null
+			}
+		}
+	},
+	"currentFile": "/SQUIRREL/PROJECTS/tailstate/tailstate.nut"
+}
