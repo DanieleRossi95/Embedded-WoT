@@ -1,27 +1,39 @@
 #include <ESP8266WiFi.h>
 #include <ArduinoJson.h>
 
-//char* ssid = "Infostrada-2.4GHz-9454A5";
-//char* password = "0525646993722559";
-//char* ssid = "AndroidAP5ad0";
-//char* password = "gbuy4505";
-const char* ssid = "TIM-31734817";
-const char* password = "7dZ7sh43mfBiibn5";
-const char* thingName = "counter";
-const char* protocol = "http";
+const char* ssid = "Infostrada-2.4GHz-9454A5";
+const char* password = "0525646993722559";
+//const char* ssid = "AndroidAP5ad0";
+//const char* password = "gbuy4505";
+//const char* ssid = "TIM-31734817";
+//const char* password = "7dZ7sh43mfBiibn5";
+String protocol = "http";
 int portNumber = 80;
-String header;
 
-char myString[250];
+String thingName = "counter";
+String url;
+String td;
+
+//proprietà:
+String property1_name = "count";
+String property1_type = "integer";
+int property1_value = 0;
+
+//azioni:
+String action1_name = "increment";
+
+//richieste:
+String req1 = "GET /";
+String req2 = "GET /" + thingName;
+String req3 = "GET /" + thingName + "/properties/" + property1_name;
+String req4 = "POST /" + thingName + "/actions/" + action1_name;
+
+String header;
+String json;
 
 IPAddress ipS, ipC;
 WiFiServer server(portNumber);
 
-//TODO: 
-//gestire i link alle property e alle action presenti nella thing description nello stesso modo di come è stato gestito il click dei bottoni nello skatch web server,
-//cioè che al click sul link della property o della action, corrisponda il contenuto della property nel primo caso e l'esecuzione della funzione collegata all'azione nel secondo caso
-const char* td = "{\"title\":\"Contatore\",\"description\":\"Contatore Esempio\",\"support\":\"git://github.com/eclipse/thingweb.node-wot.git\",\"@context\":[\"https://www.w3.org/2019/wot/td/v1\",{\"iot\":\"http://example.org/iot\"},{\"@language\":\"it\"}],\"properties\":{\"count\":{\"type\":\"integer\",\"iot:Custom\":\"example annotation\",\"observable\":true,\"readOnly\":true,\"writeOnly\":false,\"forms\":[{\"href\":\"http://192.168.1.5:8080/counter/properties/count\",\"contentType\":\"application/json\",\"op\":[\"readproperty\"],\"htv:methodName\":\"GET\"},{\"href\":\"http://192.168.1.5:8080/counter/properties/count/observable\",\"contentType\":\"application/json\",\"op\":[\"observeproperty\"],\"subprotocol\":\"longpoll\"},{\"href\":\"coap://192.168.1.5:5683/counter/properties/count\",\"contentType\":\"application/json\",\"op\":[\"readproperty\"]}],\"description\":\"valore attuale del contatore\"},\"lastChange\":{\"type\":\"string\",\"observable\":true,\"readOnly\":true,\"writeOnly\":false,\"forms\":[{\"href\":\"http://192.168.1.5:8080/counter/properties/lastChange\",\"contentType\":\"application/json\",\"op\":[\"readproperty\"],\"htv:methodName\":\"GET\"},{\"href\":\"http://192.168.1.5:8080/counter/properties/lastChange/observable\",\"contentType\":\"application/json\",\"op\":[\"observeproperty\"],\"subprotocol\":\"longpoll\"},{\"href\":\"coap://192.168.1.5:5683/counter/properties/lastChange\",\"contentType\":\"application/json\",\"op\":[\"readproperty\"]}],\"description\":\"ultima modifica del valore\"}},\"actions\":{\"increment\":{\"uriVariables\":{\"step\":{\"type\":\"integer\",\"minimum\":1,\"maximum\":250}},\"forms\":[{\"href\":\"http://192.168.1.5:8080/counter/actions/increment{?step}\",\"contentType\":\"application/json\",\"op\":[\"invokeaction\"],\"htv:methodName\":\"POST\"},{\"href\":\"coap://192.168.1.5:5683/counter/actions/increment\",\"contentType\":\"application/json\",\"op\":\"invokeaction\"}],\"idempotent\":false,\"safe\":false,\"description\":\"incrementare valore\"},\"decrement\":{\"uriVariables\":{\"step\":{\"type\":\"integer\",\"minimum\":1,\"maximum\":250}},\"forms\":[{\"href\":\"http://192.168.1.5:8080/counter/actions/decrement{?step}\",\"contentType\":\"application/json\",\"op\":[\"invokeaction\"],\"htv:methodName\":\"POST\"},{\"href\":\"coap://192.168.1.5:5683/counter/actions/decrement\",\"contentType\":\"application/json\",\"op\":\"invokeaction\"}],\"idempotent\":false,\"safe\":false,\"description\":\"decrementare valore\"},\"reset\":{\"forms\":[{\"href\":\"http://192.168.1.5:8080/counter/actions/reset\",\"contentType\":\"application/json\",\"op\":[\"invokeaction\"],\"htv:methodName\":\"POST\"},{\"href\":\"coap://192.168.1.5:5683/counter/actions/reset\",\"contentType\":\"application/json\",\"op\":\"invokeaction\"}],\"idempotent\":false,\"safe\":false,\"description\":\"resettare valore\"}},\"events\":{\"change\":{\"forms\":[{\"href\":\"http://192.168.1.5:8080/counter/events/change\",\"contentType\":\"application/json\",\"subprotocol\":\"longpoll\",\"op\":[\"subscribeevent\"]},{\"href\":\"ws://192.168.1.5:8080/counter/events/change\",\"contentType\":\"application/json\",\"op\":\"subscribeevent\"},{\"href\":\"coap://192.168.1.5:5683/counter/events/change\",\"contentType\":"
-"\"application/json\",\"op\":\"subscribeevent\"}],\"description\":\"resettare valore\"}},\"@type\":\"Thing\",\"security\":[\"nosec_sc\"],\"id\":\"urn:uuid:038384cc-947c-4955-b348-e470b57114f0\",\"forms\":[{\"href\":\"http://192.168.1.5:8080/counter/all/properties\",\"contentType\":\"application/json\",\"op\":[\"readallproperties\",\"readmultipleproperties\",\"writeallproperties\",\"writemultipleproperties\"]}],\"securityDefinitions\":{\"nosec_sc\":{\"scheme\":\"nosec\"}}}";
 
 void connection(const char* ssid, const char* password) {
   
@@ -46,17 +58,84 @@ void connection(const char* ssid, const char* password) {
   
 }
 
+
 void setup() {
   
   Serial.begin(115200);
   
   connection(ssid, password);
 
-  char url[250];  
-  sprintf(url, "%s://%s:%i/%s", protocol, ipS.toString().c_str(), portNumber, thingName);
+  //char* url; 
+  //sprintf(url, "%s://%s:%i/%s", protocol, ipS.toString().c_str(), portNumber, thingName);
+
+  url = protocol + "://" + ipS.toString() + ":" + portNumber + "/" + thingName;
+  Serial.print("URL: ");
   Serial.println(url);
+
+  //TODO: 
+  //gestire i link alle property e alle action presenti nella thing description nello stesso modo di come è stato gestito il click dei bottoni nello skatch web server,
+  //cioè che al click sul link della property o della action, corrisponda il contenuto della property nel primo caso e l'esecuzione della funzione collegata all'azione nel secondo caso
+  td = 
+  "{"
+      "\"title\": \"Contatore\","
+      "\"description\": \"Contatore Esempio\","
+      "\"support\": \"git://github.com/eclipse/thingweb.node-wot.git\","
+      "\"@context\": ["
+          "\"https://www.w3.org/2019/wot/td/v1\","
+          "{"
+              "\"iot\": \"http://example.org/iot\""
+          "},"
+          "{"
+              "\"@language\": \"it\""
+          "}"
+      "],"
+      "\"properties\": {"
+          "\"count\": {"
+              "\"type\": \"integer\","
+              "\"iot:Custom\": \"example annotation\","
+              "\"observable\": true,"
+              "\"readOnly\": true,"
+              "\"writeOnly\": false,"
+              "\"forms\": ["
+                  "{"
+                      "\"href\": \"" + url + "/properties/" + property1_name + "\","
+                      "\"contentType\": \"application/json\","
+                      "\"op\": ["
+                          "\"readproperty\""
+                      "],"
+                      "\"htv:methodName\": \"GET\""
+                  "}"
+              "],"
+              "\"description\": \"valore attuale del contatore\""
+          "}"
+      "},"
+      "\"actions\": {"
+          "\"increment\": {"
+              "\"input\" : ["
+                  "{"
+                      "\"name\": \"" + property1_name + "\","
+                      "\"type\": \"" + property1_type + "\""
+                   "}"
+               "],"
+               "\"forms\": ["
+                  "{"
+                    "\"href\": \"" + url + "/actions/" + action1_name + "\","
+                    "\"contentType\": \"application/json\","
+                    "\"op\": ["
+                        "\"invokeaction\""
+                    "],"
+                    "\"htv:methodName\": \"POST\""
+                  "}"
+              "],"
+            "\"idempotent\": false,"
+            "\"safe\": false,"
+            "\"description\": \"incrementa il valore di " + property1_name + "\""    
+          "}"      
+      "}"  
+  "}";
   
 }
+
 
 void loop() {
 
@@ -65,7 +144,7 @@ void loop() {
   if (client) {
 
     Serial.println("\nNew Client");
-    Serial.print("IP address:");
+    Serial.print("IP address: ");
     ipC = client.remoteIP();
     Serial.println(ipC);
     String currentLine = "";
@@ -92,7 +171,30 @@ void loop() {
             //client.println(myString);
             //client.println("\"@context\":\"https://www.w3.org/2019/wot/td/v1\"");
             //client.println("}");
-            client.println(td);
+            
+            if (header.indexOf(req1) >= 0 && header.indexOf("H") == req1.length() + 1) {
+              Serial.println("GET thing url");
+              json = "[\"" + url + "\"]";
+              client.println(json);
+            }
+            else if (header.indexOf(req2) >= 0 && header.indexOf("H") == req2.length() + 1) {
+               Serial.println("GET thing description");
+               client.println(td);
+            }
+            else if (header.indexOf(req3) >= 0 && header.indexOf("H") == req3.length() + 1) {
+              Serial.print("GET ");
+              Serial.print(property1_name);
+              Serial.println(" value");
+              client.println(property1_value);
+            }
+            //else if (header.indexOf(req4) >= 0 && header.indexOf("H") == req4.length() + 1) {
+            //}
+            //nel caso in cui l'indirizzo a cui si è fatta la richiesta non esiste, si restituisce
+            //l'oggetto vuoto
+            else {
+              client.println("{}");
+            }
+            
             client.println("");
 
             break;  

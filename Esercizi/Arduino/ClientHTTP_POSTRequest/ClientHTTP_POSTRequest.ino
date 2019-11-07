@@ -32,7 +32,7 @@ void loop() {
  
    HTTPClient http;    //Declare object of class HTTPClient
  
-   http.begin("http://192.168.1.10:8080/counter/actions/increment");   //Specify request destination
+   http.begin("http://192.168.1.3:80/counter/actions/increment");   //Specify request destination
    http.addHeader("Content-Type", "application/json");  //Specify content-type header
    
    int httpCode = http.POST("invokeaction");   //Send the request
