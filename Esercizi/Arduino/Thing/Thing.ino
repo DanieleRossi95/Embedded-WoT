@@ -1,5 +1,5 @@
 #include <ESP8266WiFi.h>
-#include <WebSocketsServer.h>
+//#include <WebSocketsServer.h>
 
 /* TODO:
 -gestire gli eventi attraverso una variabile booleana che inizialmente è impostata su false, 
@@ -36,6 +36,7 @@ String action1_name = "increment";
 
 // events:
 String event1_name = "change";
+bool subscribe_event1 = false;
 int property1_lastValue = property1_value;
 
 //requests:
@@ -180,9 +181,9 @@ void loop() {
             //client.println(myString);
             //client.println("\"@context\":\"https://www.w3.org/2019/wot/td/v1\"");
             //client.println("}");
-            
+
             if (header.indexOf(req1) >= 0 && header.indexOf("H") == req1.length() + 1) {
-              Serial.println("GET thing urlServer");
+              Serial.println("GET thing url");
               json = "[\"" + urlServer + "\"]";
               client.println(json);
             }
@@ -209,25 +210,21 @@ void loop() {
               json = "{\"" + property1_name + "\":" + property1_value + "}";
               client.println(json);
               // event change
-              if (property1_lastValue != property1_value) {
-                property1_lastValue = property1_value;
+              if ((property1_lastValue != property1_value) && subscribe_event1) {
                 json = 
                 "{"
                   "\"count\": {"
                     "\"lastValue\":" + String(property1_lastValue) + ","
                     "\"currentValue\":" + String(property1_value) + "}"
-                "}";    
+                "}";   
                 client.println(json);  
               }
+              property1_lastValue = property1_value;
             }
             else if (header.indexOf(req5) >= 0 && header.indexOf("H") == req5.length() + 1) {
-              // pagina HTML con funzione javascript per la gestione della WebSocket
-              client.println("Content-Type: text/html");
-              client.println("");
-              client.println("<!DOCTYPE html><html>");
-              client.println("<head><meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">");
-              client.println("<link rel=\"icon\" href=\"data:,\">");
-              client.println("<body><h1>ESP8266 Web Server</h1></body></html>");
+              subscribe_event1 = true;
+              Serial.print("Subscribed event ");
+              Serial.println(event1_name);
             }
             //nel caso in cui l'indirizzo a cui si è fatta la richiesta non esiste, si restituisce
             //l'oggetto vuoto
@@ -302,7 +299,7 @@ void increment() {
   property1_value = property1_value + 1;
 }
 
-
+/*
 void change(uint8_t num, WStype_t type, uint8_t* payload, size_t length) {
    
   if (type == WStype_TEXT) { 
@@ -312,4 +309,4 @@ void change(uint8_t num, WStype_t type, uint8_t* payload, size_t length) {
     
     Serial.println(); 
   } 
-} 
+}*/ 
