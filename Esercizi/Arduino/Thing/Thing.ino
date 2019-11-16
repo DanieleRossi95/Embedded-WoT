@@ -1,14 +1,5 @@
 #include <ESP8266WiFi.h>
-//#include <WebSocketsServer.h>
-
-/* TODO:
--gestire gli eventi attraverso una variabile booleana che inizialmente è impostata su false, 
-poi quando un client fa una richiesta GET sulla risorsa (url) dell'evento, settare la variabile
-a true e ogni volta che la condizione dell'evento è vera e il valore della variabile è true
-si esegue il codice del'evento
-
--vedere se è possibile far connettere la board alla stessa rete del PC invece che fare la connesione manuale
-*/
+#include <WebSocketsServer.h>
 
 const char* ssid = "Infostrada-2.4GHz-9454A5";
 const char* password = "0525646993722559";
@@ -80,7 +71,6 @@ void setup() {
       "\"properties\": {"
           "\"count\": {"
               "\"type\": \"integer\","
-              "\"iot:Custom\": \"example annotation\","
               "\"observable\": true,"
               "\"readOnly\": true,"
               "\"writeOnly\": false,"
@@ -117,14 +107,6 @@ void setup() {
       "\"events\": {"
           "\"change\": {"
               "\"forms\": ["
-                "{"
-                    "\"href\": \"" + urlServer + "/events/" + event1_name + "\","
-                    "\"contentType\": \"application/json\","
-                    "\"subprotocol\": \"longpoll\","
-                    "\"op\": ["
-                        "\"subscribeevent\""
-                    "]"
-                "},"
                 "{"
                     "\"href\": \"" + urlSocket + "/events/" + event1_name + "\","
                     "\"contentType\": \"application/json\","
