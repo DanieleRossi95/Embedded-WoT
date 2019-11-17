@@ -266,13 +266,13 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t* payload, size_t length)
     {
       ip = webSocket.remoteIP(num);
       Serial.print(num);
-      Serial.print(" -> Connected from ");
+      Serial.print(" -> Subscribe request from ");
       Serial.println(ip);
       Serial.print("Payload: ");
       Serial.println((char *) payload);
     
-      // send message to client
-      webSocket.sendTXT(num, "Connected");
+      // invia la risposta al client
+      webSocket.sendTXT(num, "Subscribed");
     }
     break;
 
@@ -285,10 +285,10 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t* payload, size_t length)
       Serial.print("Payload: ");
       Serial.println((char *) payload);
 
-      // invia un messaggio al client
+      // invia la risposta al client
       // webSocket.sendTXT(num, "message here");
 
-      // send data to all connected clients
+      // invia la risposta a tutti i client connessi
       // webSocket.broadcastTXT("message here");
     }
    
