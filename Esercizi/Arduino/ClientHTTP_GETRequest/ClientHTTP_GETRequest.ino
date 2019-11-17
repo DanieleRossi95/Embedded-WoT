@@ -33,7 +33,7 @@ void loop() {
     HTTPClient http;  //Declare an object of class HTTPClient
 
     //Insert as URL the ip address not the word localhost
-    http.begin("http://192.168.1.10:8080/counter/all/properties");  //Specify request destination
+    http.begin("http://192.168.1.3:80/counter/properties/count");  //Specify request destination
     
     int httpCode = http.GET();  //Send the request
  
