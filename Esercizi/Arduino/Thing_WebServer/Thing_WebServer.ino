@@ -1,5 +1,6 @@
 #include <ESP8266WebServer.h>
 #include <WebSocketsServer.h>
+# include <ArduinoJson.h>
 
 const char* ssid = "Infostrada-2.4GHz-9454A5";
 const char* password = "0525646993722559";
@@ -27,27 +28,30 @@ String action1_name = "increment";
 
 // events:
 String event1_name = "change";
-bool subscribe_event1 = false;
-int property1_lastValue = property1_value;
+String events_list[] = {event1_name};
+
+DynamicJsonDocument doc(1024);
 
 //requests:
 String req1 = "/";
 String req2 = "/" + thingName;
 String req3 = "/" + thingName + "/properties/" + property1_name;
 String req4 = "/" + thingName + "/actions/" + action1_name;
-String req5 = "/" + thingName + "/events/" + event1_name;
 
 String header;
 String json;
 
 IPAddress ipS;
+
 ESP8266WebServer server(portServer);
 WebSocketsServer webSocket = WebSocketsServer(portSocket);
 
+int i, j;
 
 void setup() {
   
   Serial.begin(115200);
+  Serial.println();
   
   connection(ssid, password);
 
@@ -136,7 +140,21 @@ void setup() {
   
   Serial.println("Server started");
   Serial.println(urlServer);
-  
+
+  /*doc.createNestedArray("a");
+  JsonObject obj1 = doc["a"].createNestedObject();
+  obj1["change"] = true;
+
+  doc.createNestedArray("b");
+  JsonObject obj2 = doc["b"].createNestedObject();
+  obj2["change"] = true;
+
+  serializeJson(doc, Serial);
+  Serial.println();
+
+  serializeJson(doc["a"][0]["change"], Serial);
+  Serial.println();*/
+
 }
 
 
@@ -154,7 +172,7 @@ void connection(const char* ssid, const char* password) {
   
   WiFi.begin(ssid, password);
     
-  Serial.print("\nConnecting to ");
+  Serial.print("Connecting to ");
   Serial.print(ssid);
 
   while (WiFi.status() != WL_CONNECTED) {
@@ -214,6 +232,9 @@ void handleReq3() {
 
 void handleReq4() {
 
+  Serial.print("\nPOST invokeaction ");
+  Serial.println(action1_name);
+
   String body = "Body received: " + server.arg("plain");
   Serial.println(body);
   
@@ -229,36 +250,56 @@ void handleReq4() {
  
   }*/
 
-  Serial.print("\nPOST invokeaction ");
-  Serial.println(action1_name);
+  int property1_lastValue = property1_value; 
   
   increment();
   Serial.print("New value: ");
   Serial.println(property1_value);
-  json = "{\"" + property1_name + "\":" + property1_value + "}";
-
-  server.send(200, "application/ld+json", json);
- 
-}
-
-
-void handleReq5() {
   
-  Serial.println("\nGET Thing Description"); 
-  server.send(200, "application/ld+json", td);
+  json = "{\"" + property1_name + "\":" + property1_value + "}";
+  server.send(200, "application/ld+json", json);
+
+  // notifica client sottoscritti all'evento change
+  json = "{\"" + property1_name + "\":"
+    "{\"lastValue\":" + property1_lastValue + ","
+    "\"currentValue\": " + property1_value + "}}";
+  
+  for(i=0; i<doc.size(); i++) {
+    JsonArray ae = doc[(String) i];
+    for(j=0; j<ae.size(); j++) {
+      if(ae[j]["change"]) {
+        webSocket.sendTXT((unsigned char) i, json);
+        break;
+      }
+    }
+  }
  
 }
 
 
+// se un WebSocketClient manda al WebSocketServer una richiesta di connessione e il server è attivo,
+// allora quest'ultimo invia al client un messaggio di notifica dell'avvenuta connessione di tipo WStype_CONNECTED
+// dopo un tot di tempo che il client e il server non si scambiano messaggi, la connessione viene persa
 void webSocketEvent(uint8_t num, WStype_t type, uint8_t* payload, size_t length) {
 
   IPAddress ip;
+  String nums;
+
+  Serial.println();
    
   switch(type) {
     case WStype_DISCONNECTED: 
     {
+      // quando si disconnette un client, la webSocket non riesce a risalire al suo IP
+      // per cui webSocket.remoteIP(num) non restituisce nessun risultato
       Serial.print(num);
-      Serial.println(" -> Disconnected");  
+      Serial.println(" -> Disconnected");
+
+      // rimozione di tutte le sottoscrizioni del client
+      nums = (String) num;
+      doc.remove(nums);
+      serializeJson(doc, Serial);
+      Serial.println();
     }
     break;
 
@@ -266,13 +307,22 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t* payload, size_t length)
     {
       ip = webSocket.remoteIP(num);
       Serial.print(num);
-      Serial.print(" -> Subscribe request from ");
+      Serial.print(" -> Connection request from ");
       Serial.println(ip);
       Serial.print("Payload: ");
       Serial.println((char *) payload);
     
       // invia la risposta al client
-      webSocket.sendTXT(num, "Subscribed");
+      // prima di inviare il messaggio al client, il server gli manda un ping per verificare che sia connesso
+      webSocket.sendTXT(num, "Connection confirmed");
+
+      // se l'IP del client non è presente nel json lo aggiungo
+      nums = (String) num;
+      if(doc[nums].isNull()) {
+        doc.createNestedArray(nums);
+        serializeJson(doc, Serial);
+        Serial.println();
+      }
     }
     break;
 
@@ -280,18 +330,56 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t* payload, size_t length)
     { 
       ip = webSocket.remoteIP(num);
       Serial.print(num);  
-      Serial.println(" -> Get Text from ");
+      Serial.print(" -> Get Text from ");
       Serial.println(ip);
       Serial.print("Payload: ");
       Serial.println((char *) payload);
 
-      // invia la risposta al client
-      // webSocket.sendTXT(num, "message here");
+      String message;
+      int el_size = sizeof(events_list) / sizeof(String);
 
+      nums = (String) num;
+      for(i=0; i<el_size; i++) {
+        message = "Subscribe " + events_list[i];
+        if(message.equals((char *) payload)) {
+          webSocket.sendTXT(num, "Subscription confirmed");
+          if(doc[nums].isNull()) {
+            JsonObject obj = doc.createNestedArray(nums).createNestedObject();
+            obj[events_list[i]] = true;
+          }
+          else {
+            // prima di aggiungere l'evento, si verifica se è già presente (count != doc[nums].size())
+            int count = 0;
+            for(j=0; j<doc[nums].size(); j++) {
+              if(!doc[nums][j][events_list[i]]) {
+                count++;
+              }
+            }
+            if(count == doc[nums].size()) {
+              JsonObject obj = doc[nums].createNestedObject();
+              obj[events_list[i]] = true;
+            }
+          }
+          serializeJson(doc, Serial);
+          Serial.println();
+          break;
+        }
+      }
+      
       // invia la risposta a tutti i client connessi
       // webSocket.broadcastTXT("message here");
     }
-   
     break;
+
+    /*case WStype_PONG:
+    {
+      ip = webSocket.remoteIP(num);
+      Serial.print(num);  
+      Serial.print(" -> Get PONG from ");
+      Serial.println(ip);
+      Serial.print("Payload: ");
+      Serial.println((char *) payload);
+    }
+    break;*/
   }
-} 
+}
