@@ -28,7 +28,7 @@ String action1_name = "increment";
 
 // events:
 String event1_name = "change";
-String events_list[] = {event1_name};
+String events_list[1] = {event1_name};
 
 DynamicJsonDocument doc(1024);
 
@@ -37,6 +37,7 @@ String req1 = "/";
 String req2 = "/" + thingName;
 String req3 = "/" + thingName + "/properties/" + property1_name;
 String req4 = "/" + thingName + "/actions/" + action1_name;
+String req5 = "/" + thingName + "/all/properties";
 
 String header;
 String json;
@@ -44,6 +45,7 @@ String json;
 IPAddress ipS;
 
 ESP8266WebServer server(portServer);
+
 WebSocketsServer webSocket = WebSocketsServer(portSocket);
 
 int i, j;
@@ -121,7 +123,17 @@ void setup() {
               "],"
               "\"description\": \"notifica cambiamento valore della property " + property1_name + "\""
           "}"
-      "}"          
+      "},"
+      "\"forms\" : ["
+        "{"
+          "\"href\": \"" + urlServer + "/all/properties\","
+          "\"contentType\": \"application/json\","
+          "\"op\": ["
+            "\"readallproperties\","
+            "\"readmultipleproperties\""
+          "]"
+        "}"
+      "]"            
   "}";
 
   // richieste server  
@@ -131,6 +143,7 @@ void setup() {
   server.on(req2, HTTP_GET, handleReq2);
   server.on(req3, HTTP_GET, handleReq3);
   server.on(req4, HTTP_POST, handleReq4);
+  server.on(req5, HTTP_GET, handleReq5);
 
   // il server si deve far partire una volta terminato di gestire tutte le richieste
   server.begin();
@@ -273,6 +286,16 @@ void handleReq4() {
       }
     }
   }
+ 
+}
+
+
+void handleReq5() {
+  
+  Serial.print("\nGET all properties");
+  
+  json = "{\"" + property1_name + "\":" + property1_value + "}";
+  server.send(200, "application/ld+json", json);
  
 }
 
