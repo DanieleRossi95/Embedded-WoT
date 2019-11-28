@@ -5,6 +5,7 @@ import functools
 import json
 import jsonschema as js
 import ast
+from datetime import datetime
 
 
 # le funzioni non sono legate alle proprietà anche se ci accedono, 
@@ -37,7 +38,7 @@ class NotZeroIntParamType(click.ParamType):
         except TypeError:
             self.fail('Expected string for int() conversion, got {a} of type {b}'.format(a=value, b=type(value).__name__), param, ctx)
         except ValueError:
-            self.fail('0 is not an allowed number', param, ctx)
+            self.fail('0 is not an allowed number\n', param, ctx)
 
 
 class ObjectStringParamType(click.ParamType):
@@ -45,14 +46,31 @@ class ObjectStringParamType(click.ParamType):
 
     def convert(self, value, param, ctx):
         try:
-            return ast.literal_eval(value)
+            if(('{' in value) or (':' in value)):
+                return ast.literal_eval(value)  
+            else:
+                value = value.replace('"', '')
+                value = value.replace("'", '')
+                s = "'" + value + "'"
+                return ast.literal_eval(s)
         except Exception:
             self.fail('Element format is incorrect\n', param, ctx)
 
 
+class DateTimeParamType(click.ParamType):
+    name = 'datetime'            
+    
+    def convert(self, value, param, ctx):
+        try:
+            date = datetime.strptime(value, '%m-%d-%Y %H:%M')
+            return str(date)
+        except Exception:
+            self.fail('Element format is incorrect', param, ctx)     
+
 SWN_STRING = StartWithoutNumberStringParamType()
 NZ_INT = NotZeroIntParamType()
 OBJ_STRING = ObjectStringParamType()
+DATETIME_STRING = DateTimeParamType()
 
 # JSON SCHEMA per la TD
 schema = json.load(open('prova_schema.json'))
@@ -109,22 +127,69 @@ def start(ctx, thingname, **kwargs):
     ctx.obj['title'] = thingTitle     
     # THING CONTEXT
     uri = 'https://www.w3.org/2019/wot/td/v1'
-    if(click.confirm('\nUse the default context?', default=True)):
+    if(click.confirm('\nUse the default Thing Context?', default=True)):
         ctx.obj['@context'] = uri
     else:
-        contextElement = click.prompt('\nContext elements number', type=NZ_INT)
-        click.echo('Warning: String context element MUST be enclosed by single or double quotes')
-        click.echo('Mandatory element: %s \n' % uri)
+        contextElements = click.prompt('Thing Context number of elements', type=NZ_INT)
+        click.echo('Tip: Thing Context elements MUST be URIs or JSON OBJECTs')
+        click.echo("Mandatory element: '%s' \n" % uri)
         # se all'interno di un dizionario (ctx.obj) si vuole definire un array a cui aggiungere un
         # elemento alla volta, si possono utilizzare i metodi setdeafult per creare l'array e 
         # append per aggiungere gli elementi
         ctx.obj.setdefault('@context', [])
-        for i in range(1, contextElement+1):
+        for i in range(1, contextElements+1):
             inp = click.prompt('Insert element %d' % i, type=OBJ_STRING)
-            ctx.obj['@context'].append(inp)
+            ctx.obj['@context'].append(inp)        
     # THING TYPE
-    if(click.confirm('\nInsert Thing type?', default=True)):
-        inp = click.prompt('Scelta', type=click.Choice([1,2]), show_choices=True)
+    if(click.confirm('\nInsert Thing Type?', default=False)):
+       typeElements = click.prompt('Thing Type number of elements', type=NZ_INT)
+       click.echo('Tip: Thing Type elements MUST be STRINGs\n')
+       if(typeElements == 1):
+           inp = click.prompt('Insert element', type=SWN_STRING)
+           ctx.obj['@type'] = inp
+       elif(typeElements > 1):
+           ctx.obj.setdefault('@type', [])
+           for i in range(1, typeElements+1):
+               inp = click.prompt('Insert element %d' % i, type=SWN_STRING)
+               ctx.obj['@type'].append(inp)
+    # THING ID
+    if(click.confirm('\nInsert Thing ID URI?', default=False)):
+        inp = click.prompt('Thing ID URI', type=SWN_STRING)
+        ctx.obj['id'] = inp
+    # THING DESCRIPTION
+    if(click.confirm('\nInsert Thing Description?', default=False)):
+        inp = click.prompt('Thing Description', type=SWN_STRING)
+        ctx.obj['description'] = inp
+    # THING VERSION
+    if(click.confirm('\nInsert Thing Version?', default=False)):
+        inp = click.prompt('Thing Version', type=str)
+        ctx.obj['version'] = inp 
+    # THING CREATION
+    if(click.confirm('\nInsert Thing Creation Date?', default=False)):
+        click.echo('Tip: Insert date (mm-dd-yyyy) and time (hh:mm) split by one space')
+        inp = click.prompt('\nThing Creation Date', type=DATETIME_STRING)
+        ctx.obj['created'] = inp   
+    # THING MODIFICATION
+    if(click.confirm('\nInsert Thing Modification Date?', default=False)):
+        click.echo('Tip: Insert date (mm-dd-yyyy) and time (hh:mm) split by one space')
+        inp = click.prompt('\nThing Modification Date', type=DATETIME_STRING)
+        ctx.obj['modified'] = inp   
+    # THING SUPPORT
+    if(click.confirm('\nInsert Thing Support URI?', default=False)):
+        inp = click.prompt('Thing Support URI', type=SWN_STRING)
+        ctx.obj['support'] = inp
+    # THING BASE
+    if(click.confirm('\nInsert Thing Base URI?', default=False)):
+        inp = click.prompt('Thing Base URI', type=SWN_STRING)
+        ctx.obj['base'] = inp   
+    # THING LINKS
+    if(click.confirm('\nInsert Thing links?', default=False)):
+       linksElements = click.prompt('Thing Links number of elements', type=NZ_INT)
+       click.echo('Tip: Thing Links elements MUST be JSON OBJECTs\n') 
+       ctx.obj.setdefault('links', [])
+       for i in range(1, linksElements+1):
+           inp = click.prompt('Insert element %d' % i, type=OBJ_STRING)
+           ctx.obj['links'].append(inp)            
     try:
         js.validate(ctx.obj, schema)
     except Exception as e:
