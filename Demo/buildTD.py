@@ -21,9 +21,9 @@ class StartWithoutNumberStringParamType(click.ParamType):
             else:
                 raise ValueError
         except TypeError:
-            self.fail('Expected string, got {a} of type {b}'.format(a=value, b=type(value).__name__), param, ctx)
+            self.fail('Expected string, got {a} of type {b}\n'.format(a=value, b=type(value).__name__), param, ctx)
         except ValueError:
-            self.fail('Thing title MUST start with a character, not with a number', param, ctx)
+            self.fail('Thing title MUST start with a character, not with a number\n', param, ctx)
 
 
 class NotZeroIntParamType(click.ParamType):
@@ -31,12 +31,14 @@ class NotZeroIntParamType(click.ParamType):
 
     def convert(self, value, param, ctx):
         try:
-            if(value != "0"):
-                return int(value)
+            try:
+                n = int(value)
+            except Exception:
+                self.fail("Expected string for int() conversion, got '{a}' of type {b}\n".format(a=value, b=type(value).__name__), param, ctx)
+            if(n > 0):
+                return n
             else:
                 raise ValueError
-        except TypeError:
-            self.fail('Expected string for int() conversion, got {a} of type {b}'.format(a=value, b=type(value).__name__), param, ctx)
         except ValueError:
             self.fail('0 is not an allowed number\n', param, ctx)
 
@@ -51,8 +53,19 @@ class ObjectStringParamType(click.ParamType):
             else:
                 value = value.replace('"', '')
                 value = value.replace("'", '')
-                s = "'" + value + "'"
-                return ast.literal_eval(s)
+                isNumber = False
+                try:
+                    if('.' in value):
+                        n = float(value)
+                    else:
+                        n = int(value)
+                    isNumber = True        
+                    return n
+                except Exception as e:
+                    pass
+                if(not(isNumber)):      
+                    s = "'" + value + "'"
+                    return ast.literal_eval(s)
         except Exception:
             self.fail('Element format is incorrect\n', param, ctx)
 
@@ -65,7 +78,24 @@ class DateTimeParamType(click.ParamType):
             date = datetime.strptime(value, '%m-%d-%Y %H:%M')
             return str(date)
         except Exception:
-            self.fail('Element format is incorrect', param, ctx)     
+            self.fail('Element format is incorrect\n', param, ctx)     
+
+
+def MultipleInputString(inputList, ValidateInputList):
+    try:
+        if((len(inputList) == 1) and (int(inputList) == 0)):
+            return [0]
+        else:    
+            inputIndexes = inputList.split(' ')
+            inputIndexes = [int(i) for i in inputIndexes]
+            validateInputIndexes = [i for i in range(1, len(ValidateInputList)+1)]
+            if(all(x in max(validateInputIndexes, inputIndexes, key=len) for x in min(inputIndexes, validateInputIndexes, key=len))):
+                return inputIndexes
+            else:
+                return []    
+    except Exception:
+        return []  
+
 
 SWN_STRING = StartWithoutNumberStringParamType()
 NZ_INT = NotZeroIntParamType()
@@ -121,9 +151,11 @@ def cli(ctx, **kwargs):
 def start(ctx, thingname, **kwargs):
     """Start wizard"""
     ctx.ensure_object(dict)
-    click.echo('\nWizard start...')
+    click.echo('\nWizard start...\n')
+    click.echo('THING')
     # THING TITLE
-    thingTitle = click.prompt('\nThing Title', type=SWN_STRING)
+    ctx.obj['pippo'] = 'c'
+    thingTitle = click.prompt('Thing Title', type=SWN_STRING)
     ctx.obj['title'] = thingTitle     
     # THING CONTEXT
     uri = 'https://www.w3.org/2019/wot/td/v1'
@@ -131,19 +163,20 @@ def start(ctx, thingname, **kwargs):
         ctx.obj['@context'] = uri
     else:
         contextElements = click.prompt('Thing Context number of elements', type=NZ_INT)
-        click.echo('Tip: Thing Context elements MUST be URIs or JSON OBJECTs')
-        click.echo("Mandatory element: '%s' \n" % uri)
+        click.echo('\nTip: Thing Context elements MUST be URIs or JSON OBJECTs')
+        click.echo("Mandatory element: '%s'" % uri)
         # se all'interno di un dizionario (ctx.obj) si vuole definire un array a cui aggiungere un
         # elemento alla volta, si possono utilizzare i metodi setdeafult per creare l'array e 
         # append per aggiungere gli elementi
         ctx.obj.setdefault('@context', [])
         for i in range(1, contextElements+1):
             inp = click.prompt('Insert element %d' % i, type=OBJ_STRING)
-            ctx.obj['@context'].append(inp)        
-    # THING TYPE
-    if(click.confirm('\nInsert Thing Type?', default=False)):
-       typeElements = click.prompt('Thing Type number of elements', type=NZ_INT)
-       click.echo('Tip: Thing Type elements MUST be STRINGs\n')
+            ctx.obj['@context'].append(inp) 
+    '''               
+    # THING META-TYPE
+    if(click.confirm('\nInsert Thing Meta-Type?', default=False)):
+       typeElements = click.prompt('Thing Meta-Type number of elements', type=NZ_INT)
+       click.echo('\nTip: Thing Meta-Type elements MUST be STRINGs')
        if(typeElements == 1):
            inp = click.prompt('Insert element', type=SWN_STRING)
            ctx.obj['@type'] = inp
@@ -166,13 +199,13 @@ def start(ctx, thingname, **kwargs):
         ctx.obj['version'] = inp 
     # THING CREATION
     if(click.confirm('\nInsert Thing Creation Date?', default=False)):
-        click.echo('Tip: Insert date (mm-dd-yyyy) and time (hh:mm) split by one space')
-        inp = click.prompt('\nThing Creation Date', type=DATETIME_STRING)
+        click.echo('\nTip: Insert date (mm-dd-yyyy) and time (hh:mm) split by one space')
+        inp = click.prompt('Thing Creation Date', type=click.DateTime('%m-%d-%Y %H:%M'))
         ctx.obj['created'] = inp   
     # THING MODIFICATION
     if(click.confirm('\nInsert Thing Modification Date?', default=False)):
-        click.echo('Tip: Insert date (mm-dd-yyyy) and time (hh:mm) split by one space')
-        inp = click.prompt('\nThing Modification Date', type=DATETIME_STRING)
+        click.echo('\nTip: Insert date (mm-dd-yyyy) and time (hh:mm) split by one space')
+        inp = click.prompt('Thing Modification Date', type=click.DateTime('%m-%d-%Y %H:%M'))
         ctx.obj['modified'] = inp   
     # THING SUPPORT
     if(click.confirm('\nInsert Thing Support URI?', default=False)):
@@ -183,18 +216,176 @@ def start(ctx, thingname, **kwargs):
         inp = click.prompt('Thing Base URI', type=SWN_STRING)
         ctx.obj['base'] = inp   
     # THING LINKS
-    if(click.confirm('\nInsert Thing links?', default=False)):
+    if(click.confirm('\nInsert Thing Links?', default=False)):
        linksElements = click.prompt('Thing Links number of elements', type=NZ_INT)
-       click.echo('Tip: Thing Links elements MUST be JSON OBJECTs\n') 
+       click.echo('\nTip: Thing Links elements MUST be JSON OBJECTs') 
        ctx.obj.setdefault('links', [])
        for i in range(1, linksElements+1):
            inp = click.prompt('Insert element %d' % i, type=OBJ_STRING)
-           ctx.obj['links'].append(inp)            
+           ctx.obj['links'].append(inp)
+    # THING ADDITIONAL TERMS
+    while(click.confirm('\nAdd additional Term', default=False)):
+        termName = click.prompt('Term name', type=SWN_STRING)
+        smElements = click.prompt('Press 1 for single element term or 2 for multiple elements term', type=click.IntRange(1,2))  
+        click.echo('\nTip: elements MUST have primitive type or be JSON OBJECTs')
+        if(smElements == 1):
+            termValue = click.prompt('Insert element', type=OBJ_STRING)
+            ctx.obj[termName] = termValue
+        elif(smElements == 2):
+            ctx.obj.setdefault(termName, [])
+            numElements = click.prompt('Number of elements', type=NZ_INT)
+            for i in range(1, numElements+1):
+                inp = click.prompt('Insert element %d' % i, type=OBJ_STRING)
+                ctx.obj[termName].append(inp)
+    '''              
+    # THING PROPERTIES
+    click.echo('\n\nTHING PROPERTIES')
+    if(click.confirm('Insert Thing Properties?', default=True)):
+        ctx.obj.setdefault('properties', {})
+        numProperties = click.prompt('Number of Properties', type=NZ_INT)
+        for p in range(1, numProperties+1):
+            # PROPERTY NAME
+            click.echo()
+            propertyName = click.prompt("Insert Property %d Name" % p, type=SWN_STRING)
+            click.echo('\n%s' % propertyName.upper())
+            ctx.obj['properties'].setdefault(propertyName, {})
+            # PROPERTY FORM
+            ctx.obj['properties'][propertyName].setdefault('forms', [])
+            opType = ['readproperty', 'writeproperty']
+            cType = ['application/json', 'text/html']
+            click.echo("Tip: Property Operation Type has only two possible values ('%s', '%s'). You can choose both or one of them" % (opType[0], opType[1]))
+            click.echo("Tip: Property Operation Content-Type has only two possible values ('%s', '%s'). The default value is the first" % (cType[0], cType[1]))
+            numOperationType = click.prompt('Press 1 for insert one Property Operation Type or 2 for insert both of them', type=click.IntRange(1,2))
+            if(numOperationType == 1):
+                ot = click.prompt('Property Operation Type', type=click.Choice(opType))
+                oct = click.prompt('Property Operation Content-Type', type=click.Choice(cType), default=cType[0], show_default=True)
+                ctx.obj['properties'][propertyName]['forms'].append({'href':'', 'contentType':oct, 'op': [ot]})
+            elif(numOperationType == 2):
+                inp = click.prompt('Property Operation Content-Type', type=click.Choice(cType), default=cType[0], show_default=True)
+                ctx.obj['properties'][propertyName]['forms'].append({'href': '', 'contentType': inp, 'op': opType})
+            # PROPERTY FORM RESPONSE
+            if(click.confirm('\nInsert Property Operation Response?', default=False)):
+                inp = click.prompt('Insert Property Operation Response Content-Type', type=click.Choice(cType), show_default=True)
+                ctx.obj['properties'][propertyName]['forms'][0]['response'] = inp      
+            # PROPERTY FORM ADDITIONAL TERMS 
+            while(click.confirm('\nAdd additional Form Term?', default=False)):
+                termName = click.prompt('Term name', type=SWN_STRING)
+                smElements = click.prompt('Press 1 for single element term or 2 for multiple elements term', type=click.IntRange(1,2))  
+                click.echo('\nTip: elements MUST be STRINGs')
+                if(smElements == 1):
+                    termValue = click.prompt('Element', type=SWN_STRING)
+                    ctx.obj['properties'][propertyName]['forms'][0][termName] = termValue
+                elif(smElements == 2):
+                    ctx.obj['properties'][propertyName]['forms'][0].setdefault(termName, [])
+                    numElements = click.prompt('Number of elements', type=NZ_INT)
+                    for i in range(1, numElements+1):
+                        inp = click.prompt('Element %d' % i, type=SWN_STRING)
+                        ctx.obj['properties'][propertyName]['forms'][0][termName].append(inp)  
+            # PROPERTY TYPE
+            if(click.confirm('\nInsert Property Type?', default=False)):
+                inpType = click.prompt('Property Type', type=click.Choice(['boolean', 'integer', 'number', 'string', 'object', 'array', 'null']), show_default=True) 
+                ctx.obj['properties'][propertyName]['type'] = inpType
+                # INTEGER/NUMBER
+                if(inpType == 'integer' or inpType == 'number'):
+                    if(click.confirm('\nInsert Property Minimum Value?', default=False)):
+                        inp = click.prompt('Property Minimum Value', type=int)
+                        ctx.obj['properties'][propertyName]['minimum'] = inp
+                    if(click.confirm('Insert Property Maximum Value?', default=False)):
+                        inp = click.prompt('Property Maximum Value', type=int)
+                        ctx.obj['properties'][propertyName]['maximum'] = inp
+                # ARRAY
+                elif(inpType == 'array'):
+                    if(click.confirm('\nInsert Array Items?', default=False)):
+                        arrayElements = click.prompt('Array Items number of elements', type=NZ_INT)
+                        click.echo('\nTip: Array elements MUST be JSON OBJECTs')
+                        if(arrayElements == 1):
+                            inp = click.prompt('Element', type=OBJ_STRING)
+                            ctx.obj['properties'][propertyName]['items'] = inp
+                        elif(arrayElements > 1):
+                            ctx.obj['properties'][propertyName].setdefault('items', [])
+                            for i in range(1, arrayElements+1):
+                                inp = click.prompt('Element %d' % i, type=OBJ_STRING)
+                                ctx.obj['properties'][propertyName]['items'].append(inp)
+                    if(click.confirm('Insert Array minIntems?', default=None)):
+                        inp = click.prompt('Array minIntems', type=NZ_INT)
+                        ctx.obj['properties'][propertyName]['minItems'] = inp
+                    if(click.confirm('Insert Array maxIntems?', default=None)):
+                        inp = click.prompt('Array maxIntems', type=NZ_INT)
+                        ctx.obj['properties'][propertyName]['maxItems'] = inp               
+                # OBJECT
+                elif(inpType == 'object'):
+                    if(click.confirm('\nInsert Object Properties?', default=False)):
+                        propertyElements = click.prompt('Object number of Properties', type=NZ_INT)
+                        ctx.obj['properties'][propertyName].setdefault('properties', {})
+                        properties = []
+                        click.echo('\nTip: Object Properties elements MUST have primitive type or be JSON OBJECTs')
+                        for i in range(1, propertyElements+1):
+                            name = click.prompt('Object Property %d Name' % i, type=SWN_STRING)
+                            properties.append(name)
+                            numElements = click.prompt('Object Property %d number of elements' % i, type=NZ_INT)
+                            if(numElements == 1):
+                                value = click.prompt('Object Property %d element' % i, type=OBJ_STRING)
+                                ctx.obj['properties'][propertyName]['properties'][name] = value
+                            elif(numElements > 1):
+                                ctx.obj['properties'][propertyName]['properties'].setdefault(name, [])
+                                for j in range(1, numElements+1):
+                                    value = click.prompt('Object Property %d element %d' % (i, j), type=OBJ_STRING)
+                                    ctx.obj['properties'][propertyName]['properties'][name].append(value)
+                        if(click.confirm('\nInsert which Object Proprerty are required?', default=False)):
+                            click.echo('\nTip: Insert the indexes divided by one space of the required Object Properties within the previously registered')
+                            click.echo('Consider index 0 for no required Object Property, 1 as Object Property one, index 2 as Object Property two etc...')
+                            correctType = False
+                            while(not(correctType)):
+                                inp = click.prompt('Required Object Properties indexes', type=str)
+                                inputIndexes = MultipleInputString(inp, properties)
+                                if((len(inputIndexes) > 0) and (inputIndexes[0] != 0)):
+                                    ctx.obj['properties'][propertyName].setdefault('required', [])
+                                    ctx.obj['properties'][propertyName]['required'] = [properties[i-1] for i in inputIndexes]
+                                    correctType = True
+                                elif((len(inputIndexes) > 0) and (inputIndexes[0] == 0)):
+                                    correctType = True
+                                else:    
+                                    click.echo('Error: Object Properties indexes provided are incorrect\n')         
+            # PROPERTY META-TYPE    
+            if(click.confirm('\nInsert Property Meta-Type?', default=False)):
+                typeElements = click.prompt('Thing Meta-Type number of elements', type=NZ_INT)
+                click.echo('\nTip: Property Meta-Type elements MUST be STRINGs')
+                if(typeElements == 1):
+                    inp = click.prompt('Insert element', type=SWN_STRING)
+                    ctx.obj['properties'][propertyName]['@type'] = inp
+                elif(typeElements > 1):
+                    ctx.obj['properties'][propertyName].setdefault('@type', [])
+                    for i in range(1, typeElements+1):
+                        inp = click.prompt('Insert element %d' % i, type=SWN_STRING)
+                        ctx.obj['properties'][propertyName]['@type'].append(inp)
+            # PROPERTY FORMAT
+            if(click.confirm('\nInsert Property Format?', default=False)):
+                inp = click.prompt('Property Format', type=SWN_STRING) 
+                ctx.obj['properties'][propertyName]['format'] = inp
+            # PROPERTY TITLE
+            if(click.confirm('\nInsert Property Title?', default=False)):
+                inp = click.prompt('Property Title', type=SWN_STRING) 
+                ctx.obj['properties'][propertyName]['title'] = inp
+            # PROPERTY DESCRIPTION 
+            if(click.confirm('\nInsert Property Description?', default=False)):
+                inp = click.prompt('Property Description', type=SWN_STRING) 
+                ctx.obj['properties'][propertyName]['description'] = inp    
+            # PROPERTY READONLY/WRITEONLY
+            op = ctx.obj['properties'][propertyName]['forms'][p-1]['op']
+            if((len(op) == 2) and (op[0] == 'readproperty' and op[1] == 'writeproperty')):
+                ctx.obj['properties'][propertyName]['readOnly'] = True  
+                ctx.obj['properties'][propertyName]['writeOnly'] = True
+            elif((len(op) == 1) and (op[0] == 'readproperty')):
+                ctx.obj['properties'][propertyName]['readOnly'] = True  
+                ctx.obj['properties'][propertyName]['writeOnly'] = False
+            elif((len(op) == 1) and (op[0] == 'writeproperty')):
+                ctx.obj['properties'][propertyName]['readOnly'] = False  
+                ctx.obj['properties'][propertyName]['writeOnly'] = True     
     try:
         js.validate(ctx.obj, schema)
     except Exception as e:
         click.echo(str(e))
-    click.echo(ctx.obj)
+    click.echo('\n{}'.format(json.dumps(ctx.obj, indent=4)))
     
 
 
