@@ -133,7 +133,7 @@
                             "type": "array",
                             "items":
                             {
-                                "type": "#/definitions/dataSchema"
+                                "$ref": "#/definitions/dataSchema"
                             }
                         }
                     ]
@@ -152,8 +152,14 @@
             "type": "object",
             "properties":
             {
-                "minimum": "number",
-                "maximum": "number"
+                "minimum": 
+                {
+                    "type": "number"
+                },
+                "maximum": 
+                {
+                    "type": "number"
+                }
             }
         },
         "dataSchema": {
@@ -205,26 +211,11 @@
                 "unit":
                 {
                     "type": "string"
-                },
-                "oneOf":
-                [
-                    {
-                        "$ref": "#/definitions/objectSchema"
-                    },
-                    {
-                        "$ref": "#/definitions/arraySchema"
-                    },
-                    {
-                        "$ref": "#/definitions/numberSchema"
-                    },
-                    {   
-                        "type": "array",
-                        "items": 
-                        {
-                            "$ref": "#/definitions/dataSchema"
-                        }
-                    }
-                ]
+                }
+            },
+            "additionalProperties": 
+            { 
+                "$ref": "#/definitions/dataSchema"
             }
         },
         "property_element":
@@ -278,14 +269,14 @@
                         "array",
                         "null"
                     ]
-                }
-            },
-            "oneOf": 
-            {
-                "type": "array",
-                "items": 
+                },
+                "oneOf": 
                 {
-                    "$ref": "#/definitions/dataSchema"
+                    "type": "array",
+                    "items": 
+                    {
+                        "$ref": "#/definitions/dataSchema"
+                    }
                 }
             },
             "required": 
