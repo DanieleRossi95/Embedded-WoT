@@ -114,6 +114,72 @@ def MultipleInputString(inputList, ValidateInputList):
         return []  
 
 
+#def addMetaType(ctx, InteractionTypeS, InteractionTypeTD='', InteractionName=''):
+
+
+def addTerm(ctx, form, InteractionTypeS, InteractionTypeTD='', InteractionName=''):
+    terms = []
+    question = ''
+    if(form):
+        question = '\nAdd additional Form Term?'
+    else:
+        question = '\nAdd additional ' + InteractionTypeS + ' Term?'
+    while(click.confirm(question, default=False)):
+        termName = ''
+        termAlreadyExists = True
+        while(termAlreadyExists):
+            termName = click.prompt('Term name', type=SWN_STRING)
+            if(termName.lower() in terms):
+                click.echo('Error: Term already exists\n')
+            else:
+                termAlreadyExists = False    
+    terms.append(termName.lower()) 
+    smElements = click.prompt('Press 1 for single element term or 2 for multiple elements term', type=click.IntRange(1,2))  
+    elementType = ''
+    if(form):
+        click.echo('\nTip: elements MUST be STRINGs')
+        elementType = SWN_STRING
+    else:
+        click.echo('\nTip: elements MUST have primitive type or be JSON OBJECTs')
+        elementType = OBJ_STRING   
+    if(smElements == 1):
+        termValue = click.prompt('Element', type=elementType)
+        if(form):
+            if(InteractionTypeS == 'Thing'):
+                ctx.obj['forms'][0][termName] = termValue
+            else:
+                ctx.obj[InteractionTypeTD][InteractionName]['forms'][0][termName] = termValue
+        else:
+            if(InteractionTypeS == 'Thing'):
+                ctx.obj[termName] = termValue     
+            else:
+                ctx.obj[InteractionTypeTD][InteractionName][termName] = termValue               
+    elif(smElements == 2):
+        numElements = click.prompt('Number of elements', type=NZ_INT)
+        if(form):
+            if(InteractionTypeS == 'Thing'):
+                ctx.obj['forms'][0].setdefault(termName, [])
+            else:
+                ctx.obj[InteractionTypeTD][InteractionName]['forms'][0].setdefault(termName, [])
+        else:
+            if(InteractionTypeS == 'Thing'):
+                ctx.obj.setdefault(termName, [])    
+            else:
+                ctx.obj[InteractionTypeTD][InteractionName].setdefault(termName, [])
+        for i in range(1, numElements+1):
+            inp = click.prompt('Element %d' % i, type=elementType)
+            if(form):
+                if(InteractionTypeS == 'Thing'):
+                    ctx.obj['forms'][0][termName].append(inp) 
+                else:
+                    ctx.obj[InteractionTypeTD][InteractionName]['forms'][0][termName].append(inp)
+            else:
+                if(InteractionTypeS == 'Thing'):
+                    ctx.obj[termName].append(inp)   
+                else:
+                    ctx.obj[InteractionTypeTD][InteractionName][termName].append(inp)       
+
+
 def handleThingTypes(ctx, inpType, affordanceType, affordanceName, inpName=''):
     # INTEGER/NUMBER
     if(inpType == 'integer' or inpType == 'number'):
@@ -300,8 +366,30 @@ def start(ctx, thingname, **kwargs):
         ctx.obj.setdefault('@context', [])
         for i in range(1, contextElements+1):
             inp = click.prompt('Insert element %d' % i, type=OBJ_STRING)
-            ctx.obj['@context'].append(inp) 
-                   
+            ctx.obj['@context'].append(inp)  
+    # THING FORM
+    ctx.obj.setdefault('forms', [])
+    opType = ['readallproperties', 'writeallproperties', 'readmultipleproperties', 'writemultipleproperties']
+    click.echo("\nTip: Thing Operation Type has four possible values ('%s', '%s', '%s', '%s'). You can choose a subset or all of them" % (opType[0], opType[1], opType[2], opType[3]))
+    click.echo("Tip: Thing Operation Content-Type has only two possible values ('%s', '%s'). The default value is the first" % (cType[0], cType[1]))
+    numOperationType = click.prompt('Press 1 for insert a subset of Thing Operation Types or 2 for insert all of them', type=click.IntRange(1,2))
+    if(numOperationType == 1):
+        numberOT = click.prompt('Number of Thing Operation Types', type=NZ_INT)
+        thingOT = []
+        for i in range(1, numberOT+1):
+            ot = click.prompt('Thing Operation Type %d' % i, type=click.Choice(opType))
+            thingOT.append(ot)
+        oct = click.prompt('\nThing Operation Content-Type', type=click.Choice(cType), default=cType[0], show_default=True)
+        ctx.obj['forms'].append({'href':'', 'contentType': oct, 'op': thingOT})
+    elif(numOperationType == 2):
+        inp = click.prompt('Thing Operation Content-Type', type=click.Choice(cType), default=cType[0], show_default=True)
+        ctx.obj['forms'].append({'href': '', 'contentType': inp, 'op': opType})                
+    # THING FORM RESPONSE
+    if(click.confirm('\nInsert Thing Operation Response?', default=False)):
+            inp = click.prompt('Insert Thing Operation Response Content-Type', type=click.Choice(cType), default=cType[0], show_default=True)
+            ctx.obj['forms'][0]['response'] = inp     
+    # THING FORM ADDITIONAL TERMS 
+    addTerm(ctx, True, 'Thing')      
     # THING META-TYPE
     if(click.confirm('\nInsert Thing Meta-Type?', default=False)):
        typeElements = click.prompt('Thing Meta-Type number of elements', type=NN_INT)
@@ -354,28 +442,7 @@ def start(ctx, thingname, **kwargs):
                 inp = click.prompt('Insert element %d' % i, type=OBJ_STRING)
                 ctx.obj['links'].append(inp)
     # THING ADDITIONAL TERMS
-    thingTerms = []
-    while(click.confirm('\nAdd additional Thing Term', default=False)):
-        termName = ''
-        termAlreadyExists = True
-        while(termAlreadyExists):
-            termName = click.prompt('Thing Term name', type=SWN_STRING)
-            if(termName.lower() in thingTerms):
-                click.echo('Error: Thing Term already exists\n')
-            else:
-                termAlreadyExists = False    
-        thingTerms.append(termName.lower())
-        smElements = click.prompt('Press 1 for single element term or 2 for multiple elements term', type=click.IntRange(1,2))  
-        click.echo('\nTip: elements MUST have primitive type or be JSON OBJECTs')
-        if(smElements == 1):
-            termValue = click.prompt('Insert element', type=OBJ_STRING)
-            ctx.obj[termName] = termValue
-        elif(smElements == 2):
-            ctx.obj.setdefault(termName, [])
-            numElements = click.prompt('Number of elements', type=NZ_INT)
-            for i in range(1, numElements+1):
-                inp = click.prompt('Insert element %d' % i, type=OBJ_STRING)
-                ctx.obj[termName].append(inp)              
+    addTerm(ctx, False, 'Thing')       
     cType = ['application/json', 'text/html']
     # THING PROPERTIES
     click.echo('\n\nTHING PROPERTIES')
@@ -402,53 +469,32 @@ def start(ctx, thingname, **kwargs):
             opType = ['readproperty', 'writeproperty']
             click.echo("Tip: Property Operation Type has only two possible values ('%s', '%s'). You can choose both or one of them" % (opType[0], opType[1]))
             click.echo("Tip: Property Operation Content-Type has only two possible values ('%s', '%s'). The default value is the first" % (cType[0], cType[1]))
-            numOperationType = click.prompt('Press 1 for insert one Property Operation Type or 2 for insert both of them', type=click.IntRange(1,2))
+            numOperationType = click.prompt('Press 1 for insert one Property %d Operation Type or 2 for insert both of them' % p, type=click.IntRange(1,2))
             if(numOperationType == 1):
-                ot = click.prompt('Property Operation Type', type=click.Choice(opType))
-                oct = click.prompt('Property Operation Content-Type', type=click.Choice(cType), default=cType[0], show_default=True)
+                ot = click.prompt('Property %d Operation Type' % p, type=click.Choice(opType))
+                oct = click.prompt('Property %d Operation Content-Type' % p, type=click.Choice(cType), default=cType[0], show_default=True)
                 ctx.obj['properties'][propertyName]['forms'].append({'href':'', 'contentType':oct, 'op': [ot]})
             elif(numOperationType == 2):
-                inp = click.prompt('Property Operation Content-Type', type=click.Choice(cType), default=cType[0], show_default=True)
+                inp = click.prompt('Property %d Operation Content-Type' % p, type=click.Choice(cType), default=cType[0], show_default=True)
                 ctx.obj['properties'][propertyName]['forms'].append({'href': '', 'contentType': inp, 'op': opType})
             # PROPERTY FORM RESPONSE
-            if(click.confirm('\nInsert Property Operation Response?', default=False)):
-                inp = click.prompt('Insert Property Operation Response Content-Type', type=click.Choice(cType), show_default=True)
+            if(click.confirm('\nInsert Property %d Operation Response?' % p, default=False)):
+                inp = click.prompt('Insert Property %d Operation Response Content-Type' % p, type=click.Choice(cType), default=cType[0], show_default=True)
                 ctx.obj['properties'][propertyName]['forms'][0]['response'] = inp      
             # PROPERTY FORM ADDITIONAL TERMS 
-            formTerms = []
-            while(click.confirm('\nAdd additional Form Term?', default=False)):
-                termName = ''
-                termAlreadyExists = True
-                while(termAlreadyExists):
-                    termName = click.prompt('Form Term name', type=SWN_STRING)
-                    if(termName.lower() in formTerms):
-                        click.echo('Error: Form Term already exists\n')
-                    else:
-                        termAlreadyExists = False    
-                formTerms.append(termName.lower())
-                smElements = click.prompt('Press 1 for single element term or 2 for multiple elements term', type=click.IntRange(1,2))  
-                click.echo('\nTip: elements MUST be STRINGs')
-                if(smElements == 1):
-                    termValue = click.prompt('Element', type=SWN_STRING)
-                    ctx.obj['properties'][propertyName]['forms'][0][termName] = termValue
-                elif(smElements == 2):
-                    ctx.obj['properties'][propertyName]['forms'][0].setdefault(termName, [])
-                    numElements = click.prompt('Number of elements', type=NZ_INT)
-                    for i in range(1, numElements+1):
-                        inp = click.prompt('Element %d' % i, type=SWN_STRING)
-                        ctx.obj['properties'][propertyName]['forms'][0][termName].append(inp)  
+            addTerm(ctx, True, 'Property', 'properties', propertyName) 
             # PROPERTY TYPE
-            if(click.confirm('\nInsert Property Type?', default=False)):
-                inpType = click.prompt('Property Type', type=click.Choice(['boolean', 'integer', 'number', 'string', 'object', 'array', 'null']), show_default=True) 
+            if(click.confirm('\nInsert Property %d Type?' % p, default=False)):
+                inpType = click.prompt('Property %d Type' % p, type=click.Choice(['boolean', 'integer', 'number', 'string', 'object', 'array', 'null']), show_default=True) 
                 ctx.obj['properties'][propertyName]['type'] = inpType
                 handleThingTypes(ctx, inpType, 'properties', propertyName)       
             # PROPERTY FORMAT
-            if(click.confirm('\nInsert Property Format?', default=False)):
+            if(click.confirm('\nInsert Property %d Format?' % p, default=False)):
                 inp = click.prompt('Property Format', type=SWN_STRING) 
                 ctx.obj['properties'][propertyName]['format'] = inp
             # PROPERTY META-TYPE    
-            if(click.confirm('\nInsert Property Meta-Type?', default=False)):
-                typeElements = click.prompt('Property Meta-Type number of elements', type=NN_INT)
+            if(click.confirm('\nInsert Property %d Meta-Type?' % p, default=False)):
+                typeElements = click.prompt('Property %d Meta-Type number of elements' % p, type=NN_INT)
                 if(typeElements != 0):
                     click.echo('\nTip: Property Meta-Type elements MUST be STRINGs')
                     if(typeElements == 1):
@@ -460,7 +506,8 @@ def start(ctx, thingname, **kwargs):
                             inp = click.prompt('Insert element %d' % i, type=SWN_STRING)
                             ctx.obj['properties'][propertyName]['@type'].append(inp)
             # PROPERTY READONLY/WRITEONLY
-            op = ctx.obj['properties'][propertyName]['forms'][p-1]['op']
+            ctx.obj['properties'][propertyName]['observable'] = False  
+            op = ctx.obj['properties'][propertyName]['forms'][0]['op']
             if((len(op) == 2) and (op[0] == 'readproperty' and op[1] == 'writeproperty')):
                 ctx.obj['properties'][propertyName]['readOnly'] = True  
                 ctx.obj['properties'][propertyName]['writeOnly'] = True
@@ -469,38 +516,17 @@ def start(ctx, thingname, **kwargs):
                 ctx.obj['properties'][propertyName]['writeOnly'] = False
             elif((len(op) == 1) and (op[0] == 'writeproperty')):
                 ctx.obj['properties'][propertyName]['readOnly'] = False  
-                ctx.obj['properties'][propertyName]['writeOnly'] = True                 
+                ctx.obj['properties'][propertyName]['writeOnly'] = True
             # PROPERTY TITLE
-            if(click.confirm('\nInsert Property Title?', default=False)):
+            if(click.confirm('\nInsert Property %d Title?' % p, default=False)):
                 inp = click.prompt('Property Title', type=SWN_STRING) 
                 ctx.obj['properties'][propertyName]['title'] = inp
             # PROPERTY DESCRIPTION 
-            if(click.confirm('\nInsert Property Description?', default=False)):
-                inp = click.prompt('Property Description', type=SWN_STRING) 
+            if(click.confirm('\nInsert Property %d Description?' % p, default=False)):
+                inp = click.prompt('Property %d Description' % p, type=SWN_STRING) 
                 ctx.obj['properties'][propertyName]['description'] = inp 
             # PROPERTY ADDITIONAL TERMS
-            propertyTerms = []
-            while(click.confirm('\nAdd additional Property Term', default=False)):
-                termName = ''
-                termAlreadyExists = True
-                while(termAlreadyExists):
-                    termName = click.prompt('Property Term name', type=SWN_STRING)
-                    if(termName.lower() in propertyTerms):
-                        click.echo('Error: Property Term already exists\n')
-                    else:
-                        termAlreadyExists = False    
-                propertyTerms.append(termName.lower())
-                smElements = click.prompt('Press 1 for single element term or 2 for multiple elements term', type=click.IntRange(1,2))  
-                click.echo('\nTip: elements MUST have primitive type or be JSON OBJECTs')
-                if(smElements == 1):
-                    termValue = click.prompt('Insert element', type=OBJ_STRING)
-                    ctx.obj['properties'][propertyName][termName] = termValue
-                elif(smElements == 2):
-                    ctx.obj['properties'][propertyName].setdefault(termName, [])
-                    numElements = click.prompt('Number of elements', type=NZ_INT)
-                    for i in range(1, numElements+1):
-                        inp = click.prompt('Insert element %d' % i, type=OBJ_STRING)
-                        ctx.obj['properties'][propertyName][termName].append(inp)             
+            addTerm(ctx, False, 'Property', 'properties', propertyName)          
     # THING ACTION
     click.echo('\n\nTHING ACTIONS')
     if(click.confirm('Insert Thing Actions?', default=True)):
@@ -525,37 +551,16 @@ def start(ctx, thingname, **kwargs):
             ctx.obj['actions'].setdefault(actionName, {})
             # ACTION FORM          
             ctx.obj['actions'][actionName].setdefault('forms', [])
-            inp = click.prompt('Action Operation Content-Type', type=click.Choice(cType), default=cType[0], show_default=True)
+            inp = click.prompt('Action %d Operation Content-Type' % a, type=click.Choice(cType), default=cType[0], show_default=True)
             ctx.obj['actions'][actionName]['forms'].append({'href': '', 'contentType': inp, 'op': 'invokeaction'})
             # ACTION FORM RESPONSE
-            if(click.confirm('\nInsert Action Operation Response?', default=False)):
-                inp = click.prompt('Insert Action Operation Response Content-Type', type=click.Choice(cType), show_default=True)
+            if(click.confirm('\nInsert Action %d Operation Response?' % a, default=False)):
+                inp = click.prompt('Insert Action %d Operation Response Content-Type' % a, type=click.Choice(cType), default=cType[0], show_default=True)
                 ctx.obj['actions'][actionName]['forms'][0]['response'] = inp    
             # ACTION FORM ADDITIONAL TERMS 
-            formTerms = []
-            while(click.confirm('\nAdd additional Form Term?', default=False)):
-                termName = ''
-                termAlreadyExists = True
-                while(termAlreadyExists):
-                    termName = click.prompt('Form Term name', type=SWN_STRING)
-                    if(termName.lower() in formTerms):
-                        click.echo('Error: Form Term already exists\n')
-                    else:
-                        termAlreadyExists = False    
-                formTerms.append(termName.lower())
-                smElements = click.prompt('Press 1 for single element term or 2 for multiple elements term', type=click.IntRange(1,2))  
-                click.echo('\nTip: elements MUST be STRINGs')
-                if(smElements == 1):
-                    termValue = click.prompt('Element', type=SWN_STRING)
-                    ctx.obj['actions'][actionName]['forms'][0][termName] = termValue
-                elif(smElements == 2):
-                    ctx.obj['actions'][actionName]['forms'][0].setdefault(termName, [])
-                    numElements = click.prompt('Number of elements', type=NZ_INT)
-                    for i in range(1, numElements+1):
-                        inp = click.prompt('Element %d' % i, type=SWN_STRING)
-                        ctx.obj['actions'][actionName]['forms'][0][termName].append(inp)
+            addTerm(ctx, True, 'Action', 'actions', actionName) 
             # ACTION INPUT
-            if(click.confirm('\nThis Action has Inputs?', default=True)):
+            if(click.confirm('\nAction %d has Inputs?' % a, default=True)):
                 inputNumber = click.prompt('Number of Action Inputs', type=NN_INT)
                 if(inputNumber != 0):
                     ctx.obj['actions'][actionName].setdefault('input', {})
@@ -575,7 +580,7 @@ def start(ctx, thingname, **kwargs):
             else:
                 actionFunctions[a-1]['isInput'] = False                
             # ACTION OUTPUT
-            if(click.confirm('\nThis Action has Output?', default=True)):    
+            if(click.confirm('\nAction %d has Output?' % a, default=True)):    
                 ctx.obj['actions'][actionName].setdefault('output', {})
                 actionFunctions[a-1]['isOutput'] = True
                 actionFunctions[a-1].setdefault('output', {})
@@ -598,18 +603,18 @@ def start(ctx, thingname, **kwargs):
             click.echo('\n{}\n'.format(actionFunctions[a-1]))
             click.echo(body)
             # ACTION SAFETY
-            if(click.confirm('\nThis Action is safe?', default=False)):
+            if(click.confirm('\nAction %d is safe?' % a, default=False)):
                 ctx.obj['actions'][actionName]['safe'] = True
             else:
                 ctx.obj['actions'][actionName]['safe'] = False
             # ACTION IDEMPOTENCY
-            if(click.confirm('\nThis Action is idempotent?', default=False)):
+            if(click.confirm('\nAction %d is idempotent?' % a, default=False)):
                 ctx.obj['actions'][actionName]['idempotent'] = True
             else:
                 ctx.obj['actions'][actionName]['idempotent'] = False            
             # ACTION META-TYPE    
-            if(click.confirm('\nInsert Action Meta-Type?', default=False)):
-                typeElements = click.prompt('Action Meta-Type number of elements', type=NN_INT)
+            if(click.confirm('\nInsert Action %d Meta-Type?' % a, default=False)):
+                typeElements = click.prompt('Action %d Meta-Type number of elements' % a, type=NN_INT)
                 if(typeElements != 0):
                     click.echo('\nTip: Action Meta-Type elements MUST be STRINGs')
                     if(typeElements == 1):
@@ -621,36 +626,160 @@ def start(ctx, thingname, **kwargs):
                             inp = click.prompt('Insert element %d' % i, type=SWN_STRING)
                             ctx.obj['actions'][actionName]['@type'].append(inp)  
             # ACTION TITLE
-            if(click.confirm('\nInsert Action Title?', default=False)):
+            if(click.confirm('\nInsert Action %d Title?' % a, default=False)):
                 inp = click.prompt('Action Title', type=SWN_STRING) 
                 ctx.obj['actions'][actionName]['title'] = inp
             # ACTION DESCRIPTION 
-            if(click.confirm('\nInsert Action Description?', default=False)):
+            if(click.confirm('\nInsert Action %d Description?' % a, default=False)):
                 inp = click.prompt('Action Description', type=SWN_STRING) 
                 ctx.obj['actions'][actionName]['description'] = inp    
             # ACTION ADDITIONAL TERMS
-            actionTerms = []
-            while(click.confirm('\nAdd additional Action Term', default=False)):
-                termName = ''
-                termAlreadyExists = True
-                while(termAlreadyExists):
-                    termName = click.prompt('Action Term name', type=SWN_STRING)
-                    if(termName.lower() in actionTerms):
-                        click.echo('Error: Action Term already exists\n')
-                    else:
-                        termAlreadyExists = False    
-                actionTerms.append(termName.lower()) 
-                smElements = click.prompt('Press 1 for single element term or 2 for multiple elements term', type=click.IntRange(1,2))  
-                click.echo('\nTip: elements MUST have primitive type or be JSON OBJECTs')
-                if(smElements == 1):
-                    termValue = click.prompt('Insert element', type=OBJ_STRING)
-                    ctx.obj['actions'][actionName][termName] = termValue
-                elif(smElements == 2):
-                    ctx.obj['actions'][actionName].setdefault(termName, [])
-                    numElements = click.prompt('Number of elements', type=NZ_INT)
-                    for i in range(1, numElements+1):
-                        inp = click.prompt('Insert element %d' % i, type=OBJ_STRING)
-                        ctx.obj['actions'][actionName][termName].append(inp)                             
+            addTerm(ctx, False, 'Action', 'actions', actionName)   
+    # THING EVENT
+    click.echo('\n\nTHING EVENTS')
+    if(click.confirm('Insert Thing Events?', default=True)):
+        ctx.obj.setdefault('events', {})
+        numEvents = click.prompt('Number of Events', type=NN_INT)
+        thingEvents = []
+        eventConditions = []
+        for e in range(1, numEvents+1):    
+            # EVENT NAME
+            click.echo()
+            eventName = ''
+            eventAlreadyExists = True
+            while(eventAlreadyExists):
+                eventName = click.prompt("Insert Event %d Name" % e, type=SWN_STRING)
+                if(eventName.lower() in thingEvents):
+                    click.echo('Error: Thing Event already exists\n')
+                else:
+                    eventAlreadyExists = False    
+            thingEvents.append(eventName.lower())   
+            click.echo('\n%s' % eventName.upper())
+            ctx.obj['events'].setdefault(eventName, {})  
+            # EVENT FORM
+            ctx.obj['events'][eventName].setdefault('forms', [])
+            opType = ["subscribeevent", "unsubscribeevent"]
+            click.echo("Tip: Event Operation Type has only two possible values ('%s', '%s'). You can choose both or one of them. The default value is the first" % (opType[0], opType[1]))
+            click.echo("Tip: Event Operation Content-Type has only two possible values ('%s', '%s'). The default value is the first" % (cType[0], cType[1]))
+            numOperationType = click.prompt('Press 1 for insert one Event Operation Type or 2 for insert both of them', type=click.IntRange(1,2))
+            if(numOperationType == 1):
+                ot = click.prompt('Event %d Operation Type' % e, type=click.Choice(opType))
+                oct = click.prompt('Event %d Operation Content-Type' % e, type=click.Choice(cType), default=cType[0], show_default=True)
+                ctx.obj['events'][eventName]['forms'].append({'href':'', 'contentType':oct, 'op': [ot]})
+            elif(numOperationType == 2):
+                oct = click.prompt('Event %d Operation Content-Type' % e, type=click.Choice(cType), default=cType[0], show_default=True)
+                ctx.obj['events'][eventName]['forms'].append({'href': '', 'contentType': oct, 'op': opType}) 
+            # THING FORM RESPONSE
+            if(click.confirm('\nInsert Event %d Operation Response?' % e, default=False)):
+                inp = click.prompt('Insert Thing %d Operation Response Content-Type' % e, type=click.Choice(cType), default=cType[0], show_default=True)
+                ctx.obj['events'][eventName]['forms'][0]['response'] = inp  
+            # EVENT FORM ADDITIONAL TERMS    
+            addTerm(ctx, True, 'Event', 'events', eventName) 
+            # EVENT CONDITION
+            click.echo('\nTip: The Event Condition that, when it is True, will trigger the asynchronous data pushing to Consumers, can include every relational and logic operator like standard conditions in programming languages')
+            eventConditions[e-1] = click.prompt('Event %d Condition' % e, type=str)
+            # EVENT SUBSCRIPTION
+            if(click.confirm('\nInsert Event %d Subscription Schema?' % e, default=True)):
+                ctx.obj['events'][eventName].setdefault('subscription', {})
+                subscriptionTerms = click.prompt('Event %d Subscription Schema number of Terms' % e, type=NN_INT)
+                if(subscriptionTerms != 0):
+                    subscriptions = []
+                    for i in range(1, subscriptionTerms+1):
+                        termName = ''
+                        termAlreadyExists = True
+                        while(termAlreadyExists):
+                            termName = click.prompt('Insert Term %d Name' % i, type=SWN_STRING)
+                            if(termName.lower() in subscriptions):
+                                click.echo('Error: Subscription Term already exists\n')
+                            else:
+                                termAlreadyExists = False
+                        subscriptions.append(termName.lower()) 
+                        elementsNumber = click.prompt('Insert Term %d number of elements' % i, type=NZ_INT)       
+                        click.echo('\nTip: Event Subscription Term elements MUST have primitive types or be a JSON OBJECTs')
+                        if(elementsNumber == 1):
+                            termValue = click.prompt('Insert Term %d element' % i, type=OBJ_STRING)
+                            ctx.obj['events'][eventName]['subscription'][termName] = termValue
+                        elif(elementsNumber > 1):
+                            ctx.obj['events'][eventName]['subscription'].detdefault(termName, [])
+                        for j in range(1, elementsNumber+1):
+                            inp = click.prompt('Insert Term %d element %d' % (i, j), type=OBJ_STRING)
+                            ctx.obj['events'][eventName]['subscription'][termName].append(inp)
+            # EVENT DATA
+            if(click.confirm('\nInsert Event %d Data Schema?' % e, default=True)):
+                ctx.obj['events'][eventName].setdefault('data', {})
+                dataTerms = click.prompt('Event %d Data Schema number of Terms' % e, type=NN_INT)
+                if(dataTerms != 0):
+                    data = []
+                    for i in range(1, dataTerms+1):
+                        termName = ''
+                        termAlreadyExists = True
+                        while(termAlreadyExists):
+                            termName = click.prompt('Insert Term %d Name' % i, type=SWN_STRING)
+                            if(termName.lower() in data):
+                                click.echo('Error: Data Term already exists\n')
+                            else:
+                                termAlreadyExists = False
+                        data.append(termName.lower()) 
+                        elementsNumber = click.prompt('Insert Term %d number of elements' % i, type=NZ_INT)       
+                        click.echo('\nTip: Event Data Term elements MUST have primitive types or be a JSON OBJECTs')
+                        if(elementsNumber == 1):
+                            termValue = click.prompt('Insert Term %d element' % i, type=OBJ_STRING)
+                            ctx.obj['events'][eventName]['data'][termName] = termValue
+                        elif(elementsNumber > 1):
+                            ctx.obj['events'][eventName]['data'].detdefault(termName, [])
+                        for j in range(1, elementsNumber+1):
+                            inp = click.prompt('Insert Term %d element %d' % (i, j), type=OBJ_STRING)
+                            ctx.obj['events'][eventName]['data'][termName].append(inp)  
+            # EVENT CANCELLATION
+            if(click.confirm('\nInsert Event %d Cancellation Schema?' % e, default=True)):
+                ctx.obj['events'][eventName].setdefault('cancellation', {})
+                cancellationTerms = click.prompt('Event %d Cancellation Schema number of Terms' % e, type=NN_INT)
+                if(cancellationTerms != 0):
+                    cancellations = []
+                    for i in range(1, cancellationTerms+1):
+                        termName = ''
+                        termAlreadyExists = True
+                        while(termAlreadyExists):
+                            termName = click.prompt('Insert Term %d Name' % i, type=SWN_STRING)
+                            if(termName.lower() in cancellations):
+                                click.echo('Error: Cancellation Term already exists\n')
+                            else:
+                                termAlreadyExists = False
+                        cancellations.append(termName.lower()) 
+                        elementsNumber = click.prompt('Insert Term %d number of elements' % i, type=NZ_INT)       
+                        click.echo('\nTip: Event Cancellation Term elements MUST have primitive types or be a JSON OBJECTs')
+                        if(elementsNumber == 1):
+                            termValue = click.prompt('Insert Term %d element' % i, type=OBJ_STRING)
+                            ctx.obj['events'][eventName]['cancellation'][termName] = termValue
+                        elif(elementsNumber > 1):
+                            ctx.obj['events'][eventName]['cancellation'].detdefault(termName, [])
+                        for j in range(1, elementsNumber+1):
+                            inp = click.prompt('Insert Term %d element %d' % (i, j), type=OBJ_STRING)
+                            ctx.obj['events'][eventName]['cancellation'][termName].append(inp)
+            # EVENT META-TYPE    
+            if(click.confirm('\nInsert Event %d Meta-Type?' % e, default=False)):
+                typeElements = click.prompt('Event %d Meta-Type number of elements' % e, type=NN_INT)
+                if(typeElements != 0):
+                    click.echo('\nTip: Event Meta-Type elements MUST be STRINGs')
+                    if(typeElements == 1):
+                        inp = click.prompt('Insert element', type=SWN_STRING)
+                        ctx.obj['events'][eventName]['@type'] = inp
+                    elif(typeElements > 1):
+                        ctx.obj['events'][eventName].setdefault('@type', [])
+                        for i in range(1, typeElements+1):
+                            inp = click.prompt('Insert element %d' % i, type=SWN_STRING)
+                            ctx.obj['event'][eventName]['@type'].append(inp)  
+            # EVENT TITLE
+            if(click.confirm('\nInsert Event %d Title?' % e, default=False)):
+                inp = click.prompt('Event %d Title' % e, type=SWN_STRING) 
+                ctx.obj['events'][eventName]['title'] = inp
+            # EVENT DESCRIPTION 
+            if(click.confirm('\nInsert Event %d Description?' % e, default=False)):
+                inp = click.prompt('Event %d Description' % e, type=SWN_STRING) 
+                ctx.obj['events'][eventName]['description'] = inp    
+            # EVENT ADDITIONAL TERMS
+            addTerm(ctx, False, 'Event', 'events', eventName)         
+
     try:
         js.validate(ctx.obj, schema)
     except Exception as e:
