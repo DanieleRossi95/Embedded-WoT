@@ -204,30 +204,30 @@
                         "null"
                     ]
                 },
-                "oneOf":
-                [
+                "number":
+                {   
+                    "type": "object",
+                    "additionalProperties":
                     {
-                        "type": "object",
-                        "additionalProperties":
-                        {
-                            "$ref": "#/definitions/objectSchema"
-                        }
-                    },
-                    {
-                        "type": "object",
-                        "additionalProperties":
-                        {
-                            "$ref": "#/definitions/arraySchema"
-                        } 
-                    },
-                    {
-                        "type": "object",
-                        "additionalProperties":
-                        {
-                            "$ref": "#/definitions/numberSchema"
-                        } 
+                        "$ref": "#/definitions/objectSchema"
                     }
-                ],
+                },
+                "array":    
+                {
+                    "type": "object",
+                    "additionalProperties":
+                    {
+                        "$ref": "#/definitions/arraySchema"
+                    } 
+                },
+                "object":
+                {
+                    "type": "object",
+                    "additionalProperties":
+                    {
+                        "$ref": "#/definitions/numberSchema"
+                    } 
+                },
                 "enum":
                 {
                     "type": "array"
@@ -237,10 +237,7 @@
                     "type": "string"
                 }
             },
-            "additionalProperties": 
-            { 
-                "$ref": "#/definitions/dataSchema"
-            }
+            "additionalProperties": true
         },
         "property_element":
         {
