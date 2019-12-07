@@ -103,9 +103,14 @@
             "type": "object",
             "properties": 
             {
+
                 "properties":
                 {
-                    "$ref": "#/definitions/dataSchema"
+                    "type" : "object",
+                    "additionalProperties": 
+                    {
+                        "$ref": "#/definitions/dataSchema"
+                    }
                 },
                 "required": 
                 {
@@ -127,13 +132,21 @@
                     "oneOf":
                     [
                         {
-                            "$ref": "#/definitions/dataSchema"
+                            "type": "object",
+                            "additionalProperties":
+                            {
+                                "$ref": "#/definitions/dataSchema"
+                            }
                         },
                         {
                             "type": "array",
                             "items":
                             {
-                                "$ref": "#/definitions/dataSchema"
+                                "type": "object",
+                                "additionalProperties":
+                                {
+                                    "$ref": "#/definitions/dataSchema"
+                                }
                             }
                         }
                     ]
@@ -204,29 +217,61 @@
                         "null"
                     ]
                 },
-                "number":
-                {   
-                    "type": "object",
-                    "additionalProperties":
+                "properties":
+                {
+                    "type" : "object",
+                    "additionalProperties": 
                     {
-                        "$ref": "#/definitions/objectSchema"
+                        "$ref": "#/definitions/dataSchema"
                     }
                 },
-                "array":    
+                "required": 
                 {
-                    "type": "object",
-                    "additionalProperties":
+                    "type": "array",
+                    "items": 
                     {
-                        "$ref": "#/definitions/arraySchema"
-                    } 
+                        "type": "string"
+                    }
                 },
-                "object":
+                "items" :
                 {
-                    "type": "object",
-                    "additionalProperties":
-                    {
-                        "$ref": "#/definitions/numberSchema"
-                    } 
+                    "oneOf":
+                    [
+                        {
+                            "type": "object",
+                            "additionalProperties":
+                            {
+                                "$ref": "#/definitions/dataSchema"
+                            }
+                        },
+                        {
+                            "type": "array",
+                            "items":
+                            {
+                                "type": "object",
+                                "additionalProperties":
+                                {
+                                    "$ref": "#/definitions/dataSchema"
+                                }
+                            }
+                        }
+                    ]
+                },
+                "minItems":
+                {
+                    "type": "number"
+                },
+                "maxItems":
+                {
+                    "type": "number"
+                },
+                "minimum": 
+                {
+                    "type": "number"
+                },
+                "maximum": 
+                {
+                    "type": "number"
                 },
                 "enum":
                 {
@@ -295,12 +340,72 @@
                         "null"
                     ]
                 },
+                "properties":
+                {
+                    "type" : "object",
+                    "additionalProperties": 
+                    {
+                        "$ref": "#/definitions/dataSchema"
+                    }
+                },
+                "required": 
+                {
+                    "type": "array",
+                    "items": 
+                    {
+                        "type": "string"
+                    }
+                },
+                "items" :
+                {
+                    "oneOf":
+                    [
+                        {
+                            "type": "object",
+                            "additionalProperties":
+                            {
+                                "$ref": "#/definitions/dataSchema"
+                            }
+                        },
+                        {
+                            "type": "array",
+                            "items":
+                            {
+                                "type": "object",
+                                "additionalProperties":
+                                {
+                                    "$ref": "#/definitions/dataSchema"
+                                }
+                            }
+                        }
+                    ]
+                },
+                "minItems":
+                {
+                    "type": "number"
+                },
+                "maxItems":
+                {
+                    "type": "number"
+                },
+                "minimum": 
+                {
+                    "type": "number"
+                },
+                "maximum": 
+                {
+                    "type": "number"
+                },
                 "oneOf": 
                 {
                     "type": "array",
                     "items": 
                     {
-                        "$ref": "#/definitions/dataSchema"
+                        "type": "object",
+                        "additionalProperties": 
+                        {
+                            "$ref": "#/definitions/dataSchema"
+                        }
                     }
                 }
             },
@@ -340,11 +445,19 @@
                 },
                 "input": 
                 {
-                    "$ref": "#/definitions/dataSchema"
+                    "type":"object",
+                    "additionalProperties":  
+                    {
+                        "$ref": "#/definitions/dataSchema"
+                    }
                 },
                 "output": 
                 {
-                    "$ref": "#/definitions/dataSchema"
+                    "type":"object",
+                    "additionalProperties":  
+                    {
+                        "$ref": "#/definitions/dataSchema"
+                    }
                 },
                 "safe": 
                 {
@@ -396,15 +509,27 @@
                 },
                 "data": 
                 {
-                    "$ref": "#/definitions/dataSchema"
+                    "type":"object",
+                    "additionalProperties":  
+                    {
+                        "$ref": "#/definitions/dataSchema"
+                    }
                 },
                 "subscription": 
                 {
-                    "$ref": "#/definitions/dataSchema"
+                    "type":"object",
+                    "additionalProperties":  
+                    {
+                        "$ref": "#/definitions/dataSchema"
+                    }
                 },
                 "cancellation": 
                 {
-                    "$ref": "#/definitions/dataSchema"
+                    "type":"object",
+                    "additionalProperties":  
+                    {
+                        "$ref": "#/definitions/dataSchema"
+                    }
                 }
             },
             "required": 

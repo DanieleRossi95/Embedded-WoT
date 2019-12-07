@@ -16,14 +16,45 @@ class StartWithoutNumberStringParamType(click.ParamType):
 
     def convert(self, value, param, ctx):
         try:
-            if(value[0].isdigit() == False):
-                return str(value)
-            else:
+            if('{' in value):
+                raise Exception
+            elif(value[0].isdigit() == True):
                 raise ValueError
+            else:
+                return str(value)        
         except TypeError:
             self.fail('Expected string, got {a} of type {b}\n'.format(a=value, b=type(value).__name__), param, ctx)
         except ValueError:
-            self.fail('Thing title MUST start with a character, not with a number\n', param, ctx)
+            self.fail('This Element MUST start with a character, not with a number\n', param, ctx)
+        except Exception:
+            self.fail('OBJECT Type is not allowed\n', param, ctx)    
+
+
+class ObjectStringParamType(click.ParamType):
+    name = 'dict'
+
+    def convert(self, value, param, ctx):
+        try:
+            if(('{' in value) or (':' in value)):
+                return ast.literal_eval(value)  
+            else:
+                value = value.replace('"', '')
+                value = value.replace("'", '')
+                isNumber = False
+                try:
+                    if('.' in value):
+                        n = float(value)
+                    else:
+                        n = int(value)
+                    isNumber = True        
+                    return n
+                except Exception:
+                    pass
+                if(not(isNumber)):      
+                    s = "'" + value + "'"
+                    return ast.literal_eval(s)
+        except Exception:
+            self.fail('Element format is incorrect\n', param, ctx)            
 
 
 class NotZeroIntParamType(click.ParamType):
@@ -60,33 +91,6 @@ class NonNegativeIntParamType(click.ParamType):
             self.fail('Negative numbers are not allowed\n', param, ctx)           
 
 
-class ObjectStringParamType(click.ParamType):
-    name = 'dict'
-
-    def convert(self, value, param, ctx):
-        try:
-            if(('{' in value) or (':' in value)):
-                return ast.literal_eval(value)  
-            else:
-                value = value.replace('"', '')
-                value = value.replace("'", '')
-                isNumber = False
-                try:
-                    if('.' in value):
-                        n = float(value)
-                    else:
-                        n = int(value)
-                    isNumber = True        
-                    return n
-                except Exception:
-                    pass
-                if(not(isNumber)):      
-                    s = "'" + value + "'"
-                    return ast.literal_eval(s)
-        except Exception:
-            self.fail('Element format is incorrect\n', param, ctx)
-
-
 class DateTimeParamType(click.ParamType):
     name = 'datetime'            
     
@@ -114,12 +118,19 @@ def MultipleInputString(inputList, ValidateInputList):
         return []  
 
 
-def searchName(namesList, interactionTypeS, index):
+def searchName(namesList, interactionTypeS, index, opType=[]):
+    name = ''
     nameAlreadyExists = True
     while(nameAlreadyExists):
-        name = click.prompt("Insert %s %d Name" % (interactionTypeS, index), type=SWN_STRING)
+        if(interactionTypeS == 'Thing'):
+            name = click.prompt("Insert %s Operation Type %d" % (interactionTypeS, index), type=click.Choice(opType))
+        else:    
+            name = click.prompt("Insert %s %d Name" % (interactionTypeS, index), type=SWN_STRING)
         if(name.lower() in namesList):
-            click.echo('Error: Thing %s already exists\n' % interactionTypeS)
+            if(interactionTypeS == 'Thing'):
+                click.echo('Error: Operation Type already exists\n')
+            else:    
+                click.echo('Error: Thing %s already exists\n' % interactionTypeS)
         else:
             nameAlreadyExists = False  
             return name
@@ -142,7 +153,7 @@ def addForm(ctx, opType, cType, interactionTypeS, interactionTypeTD='', interact
         if(interactionTypeS == 'Thing'):
             numberOT = click.prompt('Number of Thing Operation Types', type=NZ_INT)
             for i in range(1, numberOT+1):
-                inp = click.prompt('Thing Operation Type %d' % i, type=click.Choice(opType))
+                inp = searchName(ot, 'Thing', i, opType)
                 ot.append(inp)
             ct = click.prompt('\nThing Operation Content-Type', type=click.Choice(cType), default=cType[0], show_default=True)    
             ctx.obj['forms'].append({'href': '', 'contentType': ct, 'op': ot}) 
@@ -252,7 +263,7 @@ def addDescription(ctx, interactionTypeS, interactionTypeTD='', interactionName=
 def handleThingTypes(ctx, inpType, interactionTypeTD, affordanceName, dataType='', termName=''):
     # INTEGER/NUMBER
     if(inpType == 'integer' or inpType == 'number'):
-        if(click.confirm('\nInsert Minimum Value?', default=False)):
+        if(click.confirm('\nInsert Minimum Value?', default=False)):   
             inp = click.prompt('Minimum Value', type=int)
             if(interactionTypeTD == 'properties'):
                 ctx.obj[interactionTypeTD][affordanceName]['minimum'] = inp
@@ -266,30 +277,39 @@ def handleThingTypes(ctx, inpType, interactionTypeTD, affordanceName, dataType='
                 ctx.obj[interactionTypeTD][affordanceName][dataType][termName]['maximum'] = inp     
     # ARRAY
     elif(inpType == 'array'):
-        insertItems = False
         if(click.confirm('\nInsert Array Items?', default=False)):
-            arrayElements = click.prompt('Array Items number of elements', type=NN_INT)
-            insertItems = True
-            if(arrayElements != 0):
-                click.echo('\nTip: Array elements MUST be JSON OBJECTs')
-                if(arrayElements == 1):
-                    inp = click.prompt('Element', type=OBJ_STRING)
-                    if(interactionTypeTD == 'properties'):
-                        ctx.obj[interactionTypeTD][affordanceName]['items'] = inp
-                    else:
-                        ctx.obj[interactionTypeTD][affordanceName][dataType][termName]['items'] = inp  
-                elif(arrayElements > 1):
-                    if(interactionTypeTD == 'properties'):
-                        ctx.obj[interactionTypeTD][affordanceName].setdefault('items', [])
-                    else:
-                        ctx.obj[interactionTypeTD][affordanceName][dataType][termName].setdefault('items', [])    
-                    for i in range(1, arrayElements+1):
-                        inp = click.prompt('Element %d' % i, type=OBJ_STRING)
-                        if(interactionTypeTD == 'properties'):
-                            ctx.obj[interactionTypeTD][affordanceName]['items'].append(inp)
-                        else:
-                            ctx.obj[interactionTypeTD][affordanceName][dataType][termName]['items'].append(inp)
-        if(click.confirm('Insert Array minIntems?', default=None)):
+            arrayItems = click.prompt('Number of Items', type=NN_INT)
+            if(arrayItems != 0):
+                if(interactionTypeTD == 'properties'):
+                    ctx.obj[interactionTypeTD][affordanceName].setdefault('items', [])
+                else:
+                    ctx.obj[interactionTypeTD][affordanceName][dataType][termName].setdefault('items', [])
+                for i in range(1, arrayItems+1):
+                    obj = {}
+                    itemName = click.prompt('Item %d Name' % i, type=SWN_STRING)
+                    obj.setdefault(itemName, {})
+                    itemNumTerm = click.prompt('Item %d Number of Terms' % i, type=NZ_INT)
+                    for j in range(1, itemNumTerm+1):
+                        tName = click.prompt('Item %d Term %d Name' % (i,j), type=SWN_STRING)
+                        numElements = click.prompt('Item %d Term %d number of elements' % (i,j), type=NZ_INT)
+                        click.echo('\nTip: Term elements MUST have primitive type or be JSON OBJECTs')
+                        if(numElements == 1):    
+                            tElement = click.prompt('Item %d Term %d element' % (i,j), type=OBJ_STRING)
+                            obj[itemName][tName] = tElement
+                            if(interactionTypeTD == 'properties'):
+                                ctx.obj[interactionTypeTD][affordanceName]['items'].append(obj)
+                            else:
+                                ctx.obj[interactionTypeTD][affordanceName][dataType][termName]['items'].append(obj)  
+                        elif(numElements > 1):
+                            obj[itemName].setdefault(tName, [])
+                            for z in range(1, numElements+1):
+                                value = click.prompt('Item %d Term %d element %d' % (i, j, z), type=OBJ_STRING)
+                                obj[itemName][tName].append(value)
+                                if(interactionTypeTD == 'properties'):
+                                    ctx.obj[interactionTypeTD][affordanceName]['items'].append(obj)
+                                else:
+                                    ctx.obj[interactionTypeTD][affordanceName][dataType][termName]['items'].append(obj)
+        if(click.confirm('\nInsert Array minIntems?', default=None)):
             inp = click.prompt('Array minIntems', type=NN_INT)
             if(interactionTypeTD == 'properties'):
                 ctx.obj[interactionTypeTD][affordanceName]['minItems'] = inp
@@ -311,7 +331,6 @@ def handleThingTypes(ctx, inpType, interactionTypeTD, affordanceName, dataType='
                 else:
                     ctx.obj[interactionTypeTD][affordanceName][dataType][termName].setdefault('properties', {})    
                 properties = []
-                click.echo('\nTip: Object Properties elements MUST have primitive types or be JSON OBJECTs')
                 for i in range(1, propertyNumber+1):
                     name = ''
                     nameAlreadyExists = True
@@ -321,25 +340,33 @@ def handleThingTypes(ctx, inpType, interactionTypeTD, affordanceName, dataType='
                             click.echo('Error: Object Property already exists\n')
                         else:
                             nameAlreadyExists = False
-                    properties.append(name.lower())            
-                    numElements = click.prompt('Object Property %d number of elements' % i, type=NZ_INT)
-                    if(numElements == 1):
-                        value = click.prompt('Object Property %d element' % i, type=OBJ_STRING)
-                        if(interactionTypeTD == 'properties'):
-                            ctx.obj[interactionTypeTD][affordanceName]['properties'][name] = value
-                        else:
-                            ctx.obj[interactionTypeTD][affordanceName][dataType][termName]['properties'][name] = value    
-                    elif(numElements > 1):
-                        if(interactionTypeTD == 'properties'):
-                            ctx.obj[interactionTypeTD][affordanceName]['properties'].setdefault(name, [])
-                        else:
-                            ctx.obj[interactionTypeTD][affordanceName][dataType][termName]['properties'].setdefault(name, [])
-                        for j in range(1, numElements+1):
-                            value = click.prompt('Object Property %d element %d' % (i, j), type=OBJ_STRING)
+                    properties.append(name.lower())     
+                    if(interactionTypeTD == 'properties'):
+                        ctx.obj[interactionTypeTD][affordanceName]['properties'].setdefault(name, {})    
+                    else:
+                        ctx.obj[interactionTypeTD][affordanceName][dataType][termName]['properties'].setdefault(name, {})           
+                    numTerms = click.prompt('Object Property %d number of Terms' % i, type=NZ_INT)
+                    for j in range(1, numTerms+1):
+                        tName = click.prompt('Object Property %d Term %d name' % (i,j), type=SWN_STRING)
+                        numElements = click.prompt('Object Property %d Term %d number of elements' % (i,j), type=NZ_INT)
+                        click.echo('\nTip: Term elements MUST have primitive type or be JSON OBJECTs')
+                        if(numElements == 1):    
+                            tElement = click.prompt('Object Property %d Term %d element' % (i,j), type=OBJ_STRING)
                             if(interactionTypeTD == 'properties'):
-                                ctx.obj[interactionTypeTD][affordanceName]['properties'][name].append(value)
+                                ctx.obj[interactionTypeTD][affordanceName]['properties'][name][tName] = tElement
                             else:
-                                ctx.obj[interactionTypeTD][affordanceName][dataType][termName]['properties'][name].append(value)    
+                                ctx.obj[interactionTypeTD][affordanceName][dataType][termName]['properties'][name][tName] = tElement    
+                        elif(numElements > 1):
+                            if(interactionTypeTD == 'properties'):
+                                ctx.obj[interactionTypeTD][affordanceName]['properties'][name].setdefault(tName, [])
+                            else:
+                                ctx.obj[interactionTypeTD][affordanceName][dataType][termName]['properties'][name].setdefault(tName, [])
+                            for z in range(1, numElements+1):
+                                value = click.prompt('Object Property %d Term %d element %d' % (i, j, z), type=OBJ_STRING)
+                                if(interactionTypeTD == 'properties'):
+                                    ctx.obj[interactionTypeTD][affordanceName]['properties'][name][tName].append(value)
+                                else:
+                                    ctx.obj[interactionTypeTD][affordanceName][dataType][termName]['properties'][name][tName].append(value)    
             if(click.confirm('\nInsert which Object Proprerty are required?', default=False)):
                 click.echo('\nTip: Insert the indexes divided by one space of the required Object Properties within the previously registered')
                 click.echo('Consider index 0 for no required Object Property, 1 as Object Property one, index 2 as Object Property two etc...')
@@ -380,7 +407,7 @@ def handleEventData(ctx, dataTypeS, eventName, index):
                 termNames.append(termName.lower())
                 ctx.obj['events'][eventName][dataTypeTD].setdefault(termName, {}) 
                 if(click.confirm('Insert Term %d Type?' % i, default=True)):
-                    inpType = click.prompt('Element %d Type' % i, type=click.Choice(['boolean', 'integer', 'number', 'string', 'object', 'array', 'null']), show_default=True) 
+                    inpType = click.prompt('Term %d Type' % i, type=click.Choice(['boolean', 'integer', 'number', 'string', 'object', 'array', 'null']), show_default=True) 
                     ctx.obj['events'][eventName][dataTypeTD][termName]['type'] = inpType
                     handleThingTypes(ctx, inpType, 'events', eventName, dataTypeTD, termName)
                 while(click.confirm('\nAdd additional Term %d element?' % i, default=False)):
@@ -399,9 +426,9 @@ def handleEventData(ctx, dataTypeS, eventName, index):
 
 # CUSTOM TYPES
 SWN_STRING = StartWithoutNumberStringParamType()
+OBJ_STRING = ObjectStringParamType()
 NZ_INT = NotZeroIntParamType()
 NN_INT = NonNegativeIntParamType() 
-OBJ_STRING = ObjectStringParamType()
 DATETIME_STRING = DateTimeParamType()
 
 # JSON SCHEMA per la TD
