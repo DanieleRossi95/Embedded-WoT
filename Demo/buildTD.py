@@ -437,7 +437,7 @@ schema = json.load(open('thing-schema.json'))
 
 # JINJA2 Template
 file_loader = FileSystemLoader('Templates')
-env = Environment(loader=file_loader)
+env = Environment(loader=file_loader, extensions=['jinja2.ext.do'])
 env.trim_blocks = True
 env.lstrip_blocks = True
 env.rstrip_blocks = True
@@ -531,13 +531,13 @@ def start(ctx, thingname, **kwargs):
     # THING CREATION
     if(click.confirm('\nInsert Thing Creation Date?', default=False)):
         click.echo('\nTip: Insert date (mm-dd-yyyy) and time (hh:mm) split by one space')
-        inp = click.prompt('Thing Creation Date', type=click.DateTime(formats=['%m-%d-%Y %H:%M']))
+        inp = click.prompt('Thing Creation Date', type=click.DateTime(formats=['%m-%d-%Y %H:%M']), default=datetime.now().strftime('%m-%d-%Y %H:%M:%S'))
         inp = str(inp).replace(' ', 'T') 
         ctx.obj['created'] = inp  
     # THING MODIFICATION
     if(click.confirm('\nInsert Thing Modification Date?', default=False)):
         click.echo('\nTip: Insert date (mm-dd-yyyy) and time (hh:mm) split by one space')
-        inp = click.prompt('Thing Modification Date', type=click.DateTime(formats=['%m-%d-%Y %H:%M']))
+        inp = click.prompt('Thing Modification Date', type=click.DateTime(formats=['%m-%d-%Y %H:%M']), default=datetime.now().strftime('%m-%d-%Y %H:%M:%S'))
         inp = str(inp).replace(' ', 'T') 
         ctx.obj['modified'] = inp   
     # THING SUPPORT
