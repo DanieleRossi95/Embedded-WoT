@@ -1,6 +1,7 @@
 # coding=utf-8
 
 import click
+from jinja2 import Template, FileSystemLoader, Environment
 import functools
 import json
 import jsonschema as js
@@ -432,11 +433,19 @@ NN_INT = NonNegativeIntParamType()
 DATETIME_STRING = DateTimeParamType()
 
 # JSON SCHEMA per la TD
-schema = json.load(open('prova_schema.json'))
+schema = json.load(open('thing-schema.json'))
+
+# JINJA2 Template
+file_loader = FileSystemLoader('Templates')
+env = Environment(loader=file_loader)
+env.trim_blocks = True
+env.lstrip_blocks = True
+env.rstrip_blocks = True
+
+template = env.get_template('thing-template.txt')
 
 # dictionary contenente la TD
-x = {}
-
+td = {}
 
 # option in comune ai diversi comandi
 def common_options(f):
@@ -522,12 +531,14 @@ def start(ctx, thingname, **kwargs):
     # THING CREATION
     if(click.confirm('\nInsert Thing Creation Date?', default=False)):
         click.echo('\nTip: Insert date (mm-dd-yyyy) and time (hh:mm) split by one space')
-        inp = click.prompt('Thing Creation Date', type=click.DateTime('%m-%d-%Y %H:%M'))
-        ctx.obj['created'] = inp   
+        inp = click.prompt('Thing Creation Date', type=click.DateTime(formats=['%m-%d-%Y %H:%M']))
+        inp = str(inp).replace(' ', 'T') 
+        ctx.obj['created'] = inp  
     # THING MODIFICATION
     if(click.confirm('\nInsert Thing Modification Date?', default=False)):
         click.echo('\nTip: Insert date (mm-dd-yyyy) and time (hh:mm) split by one space')
-        inp = click.prompt('Thing Modification Date', type=click.DateTime('%m-%d-%Y %H:%M'))
+        inp = click.prompt('Thing Modification Date', type=click.DateTime(formats=['%m-%d-%Y %H:%M']))
+        inp = str(inp).replace(' ', 'T') 
         ctx.obj['modified'] = inp   
     # THING SUPPORT
     if(click.confirm('\nInsert Thing Support URI?', default=False)):
@@ -721,11 +732,13 @@ def start(ctx, thingname, **kwargs):
             addDescription(ctx, 'Event', 'events', eventName, e)
             # EVENT ADDITIONAL TERMS
             addTerm(ctx, False, 'Event', 'events', eventName)         
-    try:
+    '''try:
         js.validate(ctx.obj, schema)
     except Exception as e:
-        click.echo(str(e))
-    click.echo('\n{}'.format(json.dumps(ctx.obj, indent=4)))
+        click.echo(str(e))'''
+    output = template.render(obj=ctx.obj)    
+    click.echo('\n{}'.format(output))
+    #click.echo('\n{}'.format(json.dumps(ctx.obj, indent=4)))
     
 
 if __name__ == "__main__":

@@ -1,0 +1,5 @@
+{% for item in obj['forms'] %}
+    {% do item.update(href='" + urlServer + "/properties/" + property1_name + "') %}
+{% endfor %}   
+
+String td = "{{ obj | replace("'", '\\"') }}";
