@@ -1,6 +1,6 @@
 #include <ESP8266WebServer.h>
 #include <WebSocketsServer.h>
-# include <ArduinoJson.h>
+#include <ArduinoJson.h>
 
 const char* ssid = "Infostrada-2.4GHz-9454A5";
 const char* password = "0525646993722559";
@@ -19,14 +19,17 @@ String thingName = "counter";
 String td;
 
 // properties:
+int properties_number = 1;
 String property1_name = "count";
 String property1_type = "integer";
 int property1_value = 0;
 
 // actions:
+int actions_number = 1;
 String action1_name = "increment";
 
 // events:
+int events_number = 1;
 String event1_name = "change";
 String events_list[1] = {event1_name};
 
