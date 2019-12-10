@@ -1,4 +1,5 @@
 import jinja2
+import json
 
 # se il template viene passato direttamente in input  
 # template = Template('Hello {{ name }}!')
@@ -7,30 +8,7 @@ import jinja2
 # inizialmente, si deve specificare il percorso dove si trova il file di template e lo si passa a FileSystemLoader,
 # poi si dichiara un ambiente a partire dal loader definito precedentemente e infine si carica il file di template 
 
-
-d = {
-    "title": "a",
-    "@context": "https://www.w3.org/2019/wot/td/v1",
-    "forms": [
-        {
-            "href": "a",
-            "contentType": "application/json",
-            "op": [
-                "readallproperties",
-                "writeallproperties",
-                "readmultipleproperties",
-                "writemultipleproperties"
-            ]
-        }
-    ],
-    "@type": [
-        "a",
-        "b"
-    ],
-    "description": "thing di prova",
-    "version": "1.0",
-    "created": "2020-12-09 10:10:00"
-}
+d = json.load(open('prova-td.json'))
 
 #d['forms'][0]['href'] = '" + urlServer + "/properties/" + property1_name + "'
 

@@ -413,10 +413,7 @@
             [
                 "forms"
             ],
-            "additionalProperties": 
-            { 
-                "type": "string" 
-            }
+            "additionalProperties": true
         },
         "action_element": {
             "type": "object",
@@ -476,10 +473,7 @@
                     }
                 }
             },
-            "additionalProperties": 
-            { 
-                "type": "string" 
-            }
+            "additionalProperties": true
         },
         "event_element":
         {
@@ -536,10 +530,7 @@
             [
                 "forms"
             ],
-            "additionalProperties": 
-            { 
-                "type": "string" 
-            }
+            "additionalProperties": true
         },
         "form_property_element": {
             "type": "object",
@@ -611,13 +602,28 @@
                         "application/json"
                     ]
                 },
-                "op": 
-                {
-                    "type": "string",
-                    "enum": 
+                "op": {
+                    "oneOf": 
                     [
-                        "invokeaction"
-                    ]      
+                        {
+                            "type": "string",
+                            "enum": 
+                            [
+                               "invokeaction"
+                            ]
+                        },
+                        {
+                            "type": "array",
+                            "items": 
+                            {
+                                "type": "string",
+                                "enum": 
+                                [
+                                    "invokeaction"
+                                ]
+                            }
+                        }
+                    ]
                 }
             },
             "required": 
