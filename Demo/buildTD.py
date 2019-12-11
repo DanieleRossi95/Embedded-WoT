@@ -1,5 +1,6 @@
 # coding=utf-8
 
+import os
 import click
 from jinja2 import Template, FileSystemLoader, Environment
 import functools
@@ -122,12 +123,13 @@ def MultipleInputString(inputList, ValidateInputList):
 def searchName(namesList, interactionTypeS, index, opType=[]):
     name = ''
     nameAlreadyExists = True
+    listLower = [name.lower() for name in namesList]
     while(nameAlreadyExists):
         if(interactionTypeS == 'Thing'):
             name = click.prompt("Insert %s Operation Type %d" % (interactionTypeS, index), type=click.Choice(opType))
         else:    
             name = click.prompt("Insert %s %d Name" % (interactionTypeS, index), type=SWN_STRING)
-        if(name.lower() in namesList):
+        if(name.lower() in listLower):
             if(interactionTypeS == 'Thing'):
                 click.echo('Error: Operation Type already exists\n')
             else:    
@@ -261,30 +263,30 @@ def addDescription(ctx, interactionTypeS, interactionTypeTD='', interactionName=
             ctx.obj['td'][interactionTypeTD][interactionName]['description'] = inp   
 
 
-def handleThingTypes(ctx, inpType, interactionTypeTD, affordanceName, dataType='', termName=''):
+def handleThingTypes(ctx, inpType, interactionTypeTD, interactionName, dataType='', termName=''):
     # INTEGER/NUMBER
     if(inpType == 'integer' or inpType == 'number'):
         if(click.confirm('\nInsert Minimum Value?', default=False)):   
             inp = click.prompt('Minimum Value', type=int)
             if(interactionTypeTD == 'properties'):
-                ctx.obj['td'][interactionTypeTD][affordanceName]['minimum'] = inp
+                ctx.obj['td'][interactionTypeTD][interactionName]['minimum'] = inp
             else:
-                ctx.obj['td'][interactionTypeTD][affordanceName][dataType][termName]['minimum'] = inp     
+                ctx.obj['td'][interactionTypeTD][interactionName][dataType][termName]['minimum'] = inp     
         if(click.confirm('Insert Maximum Value?', default=False)):
             inp = click.prompt('Maximum Value', type=int)
             if(interactionTypeTD == 'properties'):
-                ctx.obj['td'][interactionTypeTD][affordanceName]['maximum'] = inp   
+                ctx.obj['td'][interactionTypeTD][interactionName]['maximum'] = inp   
             else:
-                ctx.obj['td'][interactionTypeTD][affordanceName][dataType][termName]['maximum'] = inp     
+                ctx.obj['td'][interactionTypeTD][interactionName][dataType][termName]['maximum'] = inp     
     # ARRAY
     elif(inpType == 'array'):
         if(click.confirm('\nInsert Array Items?', default=False)):
             arrayItems = click.prompt('Number of Items', type=NN_INT)
             if(arrayItems != 0):
                 if(interactionTypeTD == 'properties'):
-                    ctx.obj['td'][interactionTypeTD][affordanceName].setdefault('items', [])
+                    ctx.obj['td'][interactionTypeTD][interactionName].setdefault('items', [])
                 else:
-                    ctx.obj['td'][interactionTypeTD][affordanceName][dataType][termName].setdefault('items', [])
+                    ctx.obj['td'][interactionTypeTD][interactionName][dataType][termName].setdefault('items', [])
                 for i in range(1, arrayItems+1):
                     obj = {}
                     itemName = click.prompt('Item %d Name' % i, type=SWN_STRING)
@@ -298,39 +300,39 @@ def handleThingTypes(ctx, inpType, interactionTypeTD, affordanceName, dataType='
                             tElement = click.prompt('Item %d Term %d element' % (i,j), type=OBJ_STRING)
                             obj[itemName][tName] = tElement
                             if(interactionTypeTD == 'properties'):
-                                ctx.obj['td'][interactionTypeTD][affordanceName]['items'].append(obj)
+                                ctx.obj['td'][interactionTypeTD][interactionName]['items'].append(obj)
                             else:
-                                ctx.obj['td'][interactionTypeTD][affordanceName][dataType][termName]['items'].append(obj)  
+                                ctx.obj['td'][interactionTypeTD][interactionName][dataType][termName]['items'].append(obj)  
                         elif(numElements > 1):
                             obj[itemName].setdefault(tName, [])
                             for z in range(1, numElements+1):
                                 value = click.prompt('Item %d Term %d element %d' % (i, j, z), type=OBJ_STRING)
                                 obj[itemName][tName].append(value)
                                 if(interactionTypeTD == 'properties'):
-                                    ctx.obj['td'][interactionTypeTD][affordanceName]['items'].append(obj)
+                                    ctx.obj['td'][interactionTypeTD][interactionName]['items'].append(obj)
                                 else:
-                                    ctx.obj['td'][interactionTypeTD][affordanceName][dataType][termName]['items'].append(obj)
+                                    ctx.obj['td'][interactionTypeTD][interactionName][dataType][termName]['items'].append(obj)
         if(click.confirm('\nInsert Array minIntems?', default=None)):
             inp = click.prompt('Array minIntems', type=NN_INT)
             if(interactionTypeTD == 'properties'):
-                ctx.obj['td'][interactionTypeTD][affordanceName]['minItems'] = inp
+                ctx.obj['td'][interactionTypeTD][interactionName]['minItems'] = inp
             else:
-                ctx.obj['td'][interactionTypeTD][affordanceName][dataType][termName]['minItems'] = inp
+                ctx.obj['td'][interactionTypeTD][interactionName][dataType][termName]['minItems'] = inp
         if(click.confirm('Insert Array maxIntems?', default=None)):
             inp = click.prompt('Array maxIntems', type=NN_INT)
             if(interactionTypeTD == 'properties'):
-                ctx.obj['td'][interactionTypeTD][affordanceName]['maxItems'] = inp  
+                ctx.obj['td'][interactionTypeTD][interactionName]['maxItems'] = inp  
             else:
-                ctx.obj['td'][interactionTypeTD][affordanceName][dataType][termName]['maxItems'] = inp                 
+                ctx.obj['td'][interactionTypeTD][interactionName][dataType][termName]['maxItems'] = inp                 
     # OBJECT
     elif(inpType == 'object'):
         if(click.confirm('\nInsert Object Properties?', default=False)):
             propertyNumber = click.prompt('Number of Object Properties', type=NN_INT)
             if(propertyNumber != 0):
                 if(interactionTypeTD == 'properties'):
-                    ctx.obj['td'][interactionTypeTD][affordanceName].setdefault('properties', {})
+                    ctx.obj['td'][interactionTypeTD][interactionName].setdefault('properties', {})
                 else:
-                    ctx.obj['td'][interactionTypeTD][affordanceName][dataType][termName].setdefault('properties', {})    
+                    ctx.obj['td'][interactionTypeTD][interactionName][dataType][termName].setdefault('properties', {})    
                 properties = []
                 for i in range(1, propertyNumber+1):
                     name = ''
@@ -343,9 +345,9 @@ def handleThingTypes(ctx, inpType, interactionTypeTD, affordanceName, dataType='
                             nameAlreadyExists = False
                     properties.append(name.lower())     
                     if(interactionTypeTD == 'properties'):
-                        ctx.obj['td'][interactionTypeTD][affordanceName]['properties'].setdefault(name, {})    
+                        ctx.obj['td'][interactionTypeTD][interactionName]['properties'].setdefault(name, {})    
                     else:
-                        ctx.obj['td'][interactionTypeTD][affordanceName][dataType][termName]['properties'].setdefault(name, {})           
+                        ctx.obj['td'][interactionTypeTD][interactionName][dataType][termName]['properties'].setdefault(name, {})           
                     numTerms = click.prompt('Object Property %d number of Terms' % i, type=NZ_INT)
                     for j in range(1, numTerms+1):
                         tName = click.prompt('Object Property %d Term %d name' % (i,j), type=SWN_STRING)
@@ -354,20 +356,20 @@ def handleThingTypes(ctx, inpType, interactionTypeTD, affordanceName, dataType='
                         if(numElements == 1):    
                             tElement = click.prompt('Object Property %d Term %d element' % (i,j), type=OBJ_STRING)
                             if(interactionTypeTD == 'properties'):
-                                ctx.obj['td'][interactionTypeTD][affordanceName]['properties'][name][tName] = tElement
+                                ctx.obj['td'][interactionTypeTD][interactionName]['properties'][name][tName] = tElement
                             else:
-                                ctx.obj['td'][interactionTypeTD][affordanceName][dataType][termName]['properties'][name][tName] = tElement    
+                                ctx.obj['td'][interactionTypeTD][interactionName][dataType][termName]['properties'][name][tName] = tElement    
                         elif(numElements > 1):
                             if(interactionTypeTD == 'properties'):
-                                ctx.obj['td'][interactionTypeTD][affordanceName]['properties'][name].setdefault(tName, [])
+                                ctx.obj['td'][interactionTypeTD][interactionName]['properties'][name].setdefault(tName, [])
                             else:
-                                ctx.obj['td'][interactionTypeTD][affordanceName][dataType][termName]['properties'][name].setdefault(tName, [])
+                                ctx.obj['td'][interactionTypeTD][interactionName][dataType][termName]['properties'][name].setdefault(tName, [])
                             for z in range(1, numElements+1):
                                 value = click.prompt('Object Property %d Term %d element %d' % (i, j, z), type=OBJ_STRING)
                                 if(interactionTypeTD == 'properties'):
-                                    ctx.obj['td'][interactionTypeTD][affordanceName]['properties'][name][tName].append(value)
+                                    ctx.obj['td'][interactionTypeTD][interactionName]['properties'][name][tName].append(value)
                                 else:
-                                    ctx.obj['td'][interactionTypeTD][affordanceName][dataType][termName]['properties'][name][tName].append(value)    
+                                    ctx.obj['td'][interactionTypeTD][interactionName][dataType][termName]['properties'][name][tName].append(value)    
             if(click.confirm('\nInsert which Object Proprerty are required?', default=False)):
                 click.echo('\nTip: Insert the indexes divided by one space of the required Object Properties within the previously registered')
                 click.echo('Consider index 0 for no required Object Property, 1 as Object Property one, index 2 as Object Property two etc...')
@@ -377,11 +379,11 @@ def handleThingTypes(ctx, inpType, interactionTypeTD, affordanceName, dataType='
                     inputIndexes = MultipleInputString(inp, properties)
                     if((len(inputIndexes) > 0) and (inputIndexes[0] != 0)):
                         if(interactionTypeTD == 'properties'):
-                            ctx.obj['td'][interactionTypeTD][affordanceName].setdefault('required', [])
-                            ctx.obj['td'][interactionTypeTD][affordanceName]['required'] = [properties[i-1] for i in inputIndexes]
+                            ctx.obj['td'][interactionTypeTD][interactionName].setdefault('required', [])
+                            ctx.obj['td'][interactionTypeTD][interactionName]['required'] = [properties[i-1] for i in inputIndexes]
                         else:
-                            ctx.obj['td'][interactionTypeTD][affordanceName][dataType][termName].setdefault('required', [])    
-                            ctx.obj['td'][interactionTypeTD][affordanceName][dataType][termName]['required'] = [properties[i-1] for i in inputIndexes]
+                            ctx.obj['td'][interactionTypeTD][interactionName][dataType][termName].setdefault('required', [])    
+                            ctx.obj['td'][interactionTypeTD][interactionName][dataType][termName]['required'] = [properties[i-1] for i in inputIndexes]
                         correctType = True
                     elif((len(inputIndexes) > 0) and (inputIndexes[0] == 0)):
                         correctType = True
@@ -425,6 +427,39 @@ def handleEventData(ctx, dataTypeS, eventName, index):
                             ctx.obj['td']['events'][eventName][dataTypeTD][termName][termElementName].append(termElementValue)     
 
 
+def handleTemplateTypes(ctx, termName, interactionTypeTD, interactionName='', dataType=''):
+    t = {}
+    t['name'] = termName
+    termType = ''
+    if(interactionTypeTD == 'properties'):
+        termType = ctx.obj['td']['properties'][termName]['type']
+    else:
+        termType = ctx.obj['td']['actions'][interactionName][dataType][termName]['type']      
+    t['type'] = termType
+    if(termType == 'integer' or termType == 'number'):
+        if(interactionTypeTD == 'properties'):
+            if('minimum' in ctx.obj['td'][interactionTypeTD][termName]):
+                t['minimum'] = ctx.obj['td'][interactionTypeTD][termName]['minimum']
+            if('maximum' in ctx.obj['td'][interactionTypeTD][termName]):
+                t['maximum'] = ctx.obj['td'][interactionTypeTD][termName]['maximum']
+        else:
+            if('minimum' in ctx.obj['td'][interactionTypeTD][interactionName][dataType][termName]):
+                t['minimum'] = ctx.obj['td'][interactionTypeTD][interactionName][dataType][termName]['minimum']
+            if('maximum' in ctx.obj['td'][interactionTypeTD][interactionName][dataType][termName]):
+                t['maximum'] = ctx.obj['td'][interactionTypeTD][interactionName][dataType][termName]['maximum']
+    # manca la gestione del tipo array e del tipo object     
+    return t    
+
+
+def writeFile(filePath, fileContent):
+    directory = os.path.dirname(filePath)
+    if not os.path.exists(directory):
+        os.makedirs(directory)
+    of = open(filePath, 'w')
+    of.write(fileContent)
+    of.close()
+
+
 # CUSTOM TYPES
 SWN_STRING = StartWithoutNumberStringParamType()
 OBJ_STRING = ObjectStringParamType()
@@ -444,8 +479,12 @@ env.rstrip_blocks = True
 
 template = env.get_template('thing-template.txt')
 
-# dictionary contenente la TD
-#td = {}
+# THING Informations
+thingProperties = []
+thingActions = []
+actionFunctions = []
+thingEvents = []
+eventConditions = []
 
 # option in comune ai diversi comandi
 def common_options(f):
@@ -565,12 +604,11 @@ def start(ctx, **kwargs):
     if(click.confirm('Insert Thing Properties?', default=True)):
         ctx.obj['td'].setdefault('properties', {})
         numProperties = click.prompt('Number of Properties', type=NN_INT)
-        thingProperties = []
         for p in range(1, numProperties+1):
             # PROPERTY NAME
             click.echo()
             propertyName = searchName(thingProperties, 'Property', p)  
-            thingProperties.append(propertyName.lower())
+            thingProperties.append(propertyName)
             click.echo('\n%s' % propertyName.upper())
             ctx.obj['td']['properties'].setdefault(propertyName, {})
             # PROPERTY FORM
@@ -581,10 +619,9 @@ def start(ctx, **kwargs):
             # PROPERTY FORM ADDITIONAL TERMS 
             addTerm(ctx, True, 'Property', 'properties', propertyName) 
             # PROPERTY TYPE
-            if(click.confirm('\nInsert Property Type?', default=True)):
-                inpType = click.prompt('Property %d Type' % p, type=click.Choice(['boolean', 'integer', 'number', 'string', 'object', 'array', 'null']), show_default=True) 
-                ctx.obj['td']['properties'][propertyName]['type'] = inpType
-                handleThingTypes(ctx, inpType, 'properties', propertyName)       
+            inpType = click.prompt('Property %d Type' % p, type=click.Choice(['boolean', 'integer', 'number', 'string', 'object', 'array', 'null']), show_default=True) 
+            ctx.obj['td']['properties'][propertyName]['type'] = inpType
+            handleThingTypes(ctx, inpType, 'properties', propertyName)       
             # PROPERTY FORMAT
             if(click.confirm('\nInsert Property Format?', default=False)):
                 inp = click.prompt('Property Format', type=SWN_STRING) 
@@ -614,13 +651,11 @@ def start(ctx, **kwargs):
     if(click.confirm('Insert Thing Actions?', default=True)):
         ctx.obj['td'].setdefault('actions', {})
         numActions = click.prompt('Number of Actions', type=NN_INT)
-        thingActions = []
-        actionFunctions = []
         for a in range(1, numActions+1):    
             # ACTION NAME
             click.echo()
             actionName = searchName(thingActions, 'Action', a)    
-            thingActions.append(actionName.lower())
+            thingActions.append(actionName)
             actionFunctions.append({'name':actionName})        
             click.echo('\n%s' % actionName.upper())
             ctx.obj['td']['actions'].setdefault(actionName, {})
@@ -637,8 +672,8 @@ def start(ctx, **kwargs):
                 inputNumber = click.prompt('Number of Action Inputs', type=NN_INT)
                 if(inputNumber != 0):
                     ctx.obj['td']['actions'][actionName].setdefault('input', {})
-                    actionFunctions[a-1]['isInput'] = True
-                    actionFunctions[a-1]['inputNumber'] = inputNumber 
+                    actionFunctions[a-1]['isinput'] = True
+                    actionFunctions[a-1]['inputnumber'] = inputNumber 
                     actionFunctions[a-1].setdefault('input', [])
                     for i in range(1, inputNumber+1):
                         inpName = click.prompt('\nAction Input %s Name' % i, type=SWN_STRING)
@@ -670,9 +705,7 @@ def start(ctx, **kwargs):
             click.echo('\nTip: The Body of the function corresponding to the Thing Action MUST be written in Embedded-C directly executable in Embedded-Systems')
             click.echo('You have to provide only the code enclosed by braces on one line, neither Function name, inputs, outputs (return)')
             click.echo('This elements are retrived from the information you gave before')
-            actionFunctions[a-1].setdefault('body', {})
             actionFunctions[a-1]['body'] = click.prompt('Function Body', type=str) 
-            body = actionFunctions[a-1]['body']
             # ACTION SAFETY
             if(click.confirm('\nAction %d is safe?' % a, default=False)):
                 ctx.obj['td']['actions'][actionName]['safe'] = True
@@ -696,13 +729,11 @@ def start(ctx, **kwargs):
     if(click.confirm('Insert Thing Events?', default=True)):
         ctx.obj['td'].setdefault('events', {})
         numEvents = click.prompt('Number of Events', type=NN_INT)
-        thingEvents = []
-        eventConditions = []
         for e in range(1, numEvents+1):    
             # EVENT NAME
             click.echo()
             eventName = searchName(thingEvents, 'Event', e)  
-            thingEvents.append(eventName.lower())   
+            thingEvents.append(eventName)   
             click.echo('\n%s' % eventName.upper())
             ctx.obj['td']['events'].setdefault(eventName, {})  
             # EVENT FORM
@@ -716,7 +747,7 @@ def start(ctx, **kwargs):
             tip = ('\nTip: The Event Condition that, when it is True, will trigger the asynchronous data pushing to Consumers,'
                     '\ncan include every relational and logic operator like standard conditions in programming languages but no brackets or punctuation marks')
             click.echo(tip)
-            click.echo('Example: if (property1 <= 0)')
+            click.echo('Example: if (property1_name <= 0)')
             condition = click.prompt('Event %d Condition' % e, type=str)
             eventConditions.append(condition)
             # EVENT SUBSCRIPTION
@@ -737,7 +768,7 @@ def start(ctx, **kwargs):
         js.validate(ctx.obj['td'], schema)
     except Exception as e:
         click.echo(str(e))
-    click.echo('{}\n'.format(json.dumps(ctx.obj['td'], indent=4)))
+    click.echo('\n{}\n'.format(json.dumps(ctx.obj['td'], indent=4)))
     if(click.confirm('Build Embedded-C File starting from this Thing Description?', default=True)):
         ctx.invoke(build)
     else:
@@ -754,6 +785,44 @@ def build(ctx):
         ctx.ensure_object(dict)
         ctx.obj.setdefault('td', {})
         ctx.obj['td'] = json.load(open(fileName))
+        thingProperties = list(ctx.obj['td']['properties'].keys())
+        thingActions = list(ctx.obj['td']['actions'].keys())
+        thingEvents = list(ctx.obj['td']['events'].keys())
+        for i in range(0, len(thingActions)):
+            action = {}
+            action['name'] = thingActions[i]
+            if('input' in ctx.obj['td']['actions'][thingActions[i]]):
+                action['isinput'] = True
+                actionInputs = list(ctx.obj['td']['actions'][thingActions[i]]['input'].keys())
+                action['inputnumber'] = len(actionInputs)
+                action.setdefault('input', [])
+                for j in range(0, action['inputnumber']):
+                    inp = handleTemplateTypes(ctx, actionInputs[j], 'actions', thingActions[i], 'input')
+                    action['input'].append(inp)
+            else:
+                action['isinput'] = False
+            if('output' in ctx.obj['td']['actions'][thingActions[i]]):
+                action['isoutput'] = True
+                actionOutput = list(ctx.obj['td']['actions'][thingActions[i]]['output'].keys())       
+                out = handleTemplateTypes(ctx, actionOutput[0], 'actions', thingActions[i], 'output')
+                action.setdefault('output', {})
+                action['output'] = out
+            else:
+                action['isoutput'] = False    
+            if(i == 0):
+                click.echo('\nTip: The Body of the function corresponding to the Thing Action MUST be written in Embedded-C directly executable in Embedded-Systems')
+                click.echo('You have to provide only the code enclosed by braces on one line, neither Function name, inputs, outputs (return)')
+                click.echo('This elements are retrived from the information you gave before')    
+            action['body'] = click.prompt('\nFunction %s Body' % thingActions[i], type=str) 
+            actionFunctions.append(action)    
+        for i in range(0, len(thingEvents)):
+            if(i == 0):
+                tip = ('\nTip: The Event Condition that, when it is True, will trigger the asynchronous data pushing to Consumers,'
+                    '\ncan include every relational and logic operator like standard conditions in programming languages but no brackets or punctuation marks')
+                click.echo(tip)
+                click.echo('Example: if (property1_name <= 0)')
+            condition = click.prompt('\nEvent %s Condition' % thingEvents[i], type=str)  
+            eventConditions.append(condition)
         try:
             js.validate(ctx.obj['td'], schema)
         except Exception as e:
@@ -763,9 +832,11 @@ def build(ctx):
     inp = click.prompt('\nNetwork SSID to which the Embedded-System will connect', type=str)
     ctx.obj['template']['ssid'] = inp
     # NETWORK PASSWORD
-    if(click.confirm('Network has password?', default=True)):
-        inp = click.prompt('\nNetwork Password (hide_input)', type=str, hide_input=True)
+    if(click.confirm('\nNetwork has password?', default=True)):
+        inp = click.prompt('Network Password (hide_input)', type=str, hide_input=True)
         ctx.obj['template']['password'] = inp
+    else:
+        ctx.obj['template']['password'] = ''   
     # WEBSERVER PORT
     inp = click.prompt('\nWebServer Port', type=NN_INT, default=80, show_default=True)
     ctx.obj['template']['portserver'] = str(inp)
@@ -773,10 +844,28 @@ def build(ctx):
     if('events' in ctx.obj['td']):
         inp = click.prompt('\nWebSocket Port', type=NN_INT, default=81, show_default=True)
         ctx.obj['template']['portsocket'] = str(inp)    
+    # THING INTERACTION AFFORDANCE
+    ctx.obj['template']['numproperties'] = len(thingProperties)
+    ctx.obj['template']['numactions'] = len(thingActions)
+    ctx.obj['template']['numevents'] = len(thingEvents)
+    # THING PROPERTIES
+    ctx.obj['template'].setdefault('properties', [])
+    for i in range(0, ctx.obj['template']['numproperties']):
+        p = handleTemplateTypes(ctx, thingProperties[i], 'properties')
+        ctx.obj['template']['properties'].append(p) 
+    # THING ACTIONS
+    ctx.obj['template'].setdefault('actions', []) 
+    ctx.obj['template']['actions'] = actionFunctions
+    # THING EVENTS
+    ctx.obj['template'].setdefault('events', [])    
+    for i in range(0, ctx.obj['template']['numevents']):
+        e = {}
+        e['name'] = thingEvents[i]
+        e['condition'] = eventConditions[i]
+        ctx.obj['template']['events'].append(e)
     output = template.render(td=ctx.obj['td'], template=ctx.obj['template'])    
-    of = open(ctx.obj['td']['title'].lower() + '.ino', 'w')
-    of.write(output)
-    of.close()
+    filePath = ctx.obj['td']['title'].lower() + '/' + ctx.obj['td']['title'].lower() + '.ino'
+    writeFile(filePath, output)
 
 
 if __name__ == "__main__":

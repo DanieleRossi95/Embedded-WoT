@@ -9,19 +9,19 @@
 {% set urlServer = protocolServer + "://" + ipServer + ":" + portServer + "/" + thingName %}
 
 {% macro defineVariable(type, name, value) -%}
-    {%- if type == 'const char*' or type == 'String' %}
+    {%- if (type == 'const char*') or (type == 'String' and value != 'NULL') %}
 {{ type }} {{ name }} = "{{ value }}";
-    {%- elif type == 'int' %}
+    {%- else %}
 {{ type }} {{ name }} = {{ value }};
     {%- endif %}    
 {%- endmacro %}
 
 {% macro updateEndPoints() -%}
-{# EndPoint Thing #}
-{% for item in td['forms'] if 'href' in item %}
-    {% do item.update(href=urlServer + '/all/properties') %}
-{% endfor %}    
-{# EndPoint Properties #}
+{#- EndPoint Thing #}
+{%- for item in td['forms'] if 'href' in item %}
+    {%- do item.update(href=urlServer + '/all/properties') -%}
+{%- endfor %}    
+{#- EndPoint Properties #}
 {%- endmacro %}
 
 {{ updateEndPoints() }}
@@ -41,5 +41,48 @@
 
 {{ defineVariable('String', 'thingName', thingName) }}
 {{ defineVariable('String', 'td', '') }}
+
+{{ defineVariable('int', 'properties_number', template['numproperties']) }}
+{{ defineVariable('int', 'actions_number', template['numactions']) }}
+{{ defineVariable('int', 'events_number', template['numevents']) }}
+
+//properties
+{% for property in template['properties'] %}
+{{ defineVariable('String', 'property' + loop.index | string + '_name', property['name']) }}
+    {% if property['type'] == 'integer' or property['type'] == 'number' %}
+{{ defineVariable('int', 'property' + loop.index | string + '_value', 0) }}
+    {%- elif property['type'] == 'boolean' %}   
+{{ defineVariable('boolean', 'property' + loop.index | string + '_value', 'false') }}
+    {%- elif property['type'] == 'string' -%}       
+{{ defineVariable('String', 'property' + loop.index | string + '_value', '') }}
+    {%- elif property['type'] == 'null' %}       
+{{ defineVariable('String', 'property' + loop.index | string + '_value', 'NULL') }} 
+    {% endif %}   
+{% endfor %}   
+//actions
+{% for action in template['actions'] %}
+{{ defineVariable('String', 'action' + loop.index | string + '_name', action['name']) }}
+{% endfor %}
+
+//events
+{% for event in template['events'] %}
+{{ defineVariable('String', 'event' + loop.index | string + '_name', event['name']) }}
+{% endfor %}
+String events_list[{{ template['numevents'] }}] = {
+    {%- for i in range(1, template['numevents']+1) -%}
+    {%- if i == template['numevents'] -%}
+    {{ 'event' + loop.index | string + '_name' }}
+    {%- else -%}
+    {{ 'event' + loop.index | string + '_name' }},
+    {%- endif -%}
+    {%- endfor -%}
+};
+
+DynamicJsonDocument doc(1024);
+
+//requests
+{{ defineVariable('String', 'req1', '/') }}
+{# capire come costruire le stringhe delle richieste #}
+{{ defineVariable('String', 'req1', '/') }}
 
 {#- String td = "{{ td | replace("'", '\\"') }}"; #}
