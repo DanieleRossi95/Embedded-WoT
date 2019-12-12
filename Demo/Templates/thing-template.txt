@@ -1,3 +1,50 @@
+{% macro updateEndPoints() -%}
+{#- EndPoint Thing #}
+{%- for item in td['forms'] if 'href' in item %}
+    {%- do item.update(href='" + urlServer + "/all/properties') -%}
+{%- endfor %}    
+{#- EndPoint Properties #}
+{%- for property in template['properties'] %}
+    {%- set i = loop.index -%}
+    {%- for item in td['properties'][property['name']]['forms'] if 'href' in item -%}
+        {%- do item.update(href='" + urlServer + "/properties/" + property' + i | string + '_name + "' ) -%}
+    {%- endfor -%}
+{%- endfor %}
+{#- EndPoint Actions  #}    
+{%- for action in template['actions'] %}
+    {%- set i = loop.index -%}
+    {%- for item in td['actions'][action['name']]['forms'] if 'href' in item -%}
+        {%- do item.update(href='" + urlServer + "/actions/" + action' + i | string + '_name + "' ) -%}
+    {%- endfor -%}
+{%- endfor %}     
+{#- EndPoint Events  #}    
+{%- for event in template['events'] %}
+    {%- set i = loop.index -%}
+    {%- for item in td['events'][event['name']]['forms'] if 'href' in item -%}
+        {%- do item.update(href='" + urlSocket + "/events/" + event' + i | string + '_name + "' ) -%}
+    {%- endfor -%}
+{%- endfor %}   
+{%- endmacro %}
+
+{% macro defineVariable(typeV, name, value) -%}
+    {%- if value is iterable and value is not string %}
+{{ typeV }} {{ name }} = 
+        {%- for elem in value -%}
+            {%- if loop.last -%} 
+                {{ ' ' + elem }};
+            {%- else -%}
+                {{ ' ' + elem }}
+            {%- endif -%}
+        {%- endfor -%}     
+    {%- elif (typeV == 'const char*') or (typeV == 'String' and value != 'NULL') %}
+{{ typeV }} {{ name }} = "{{ value }}";
+    {%- else %}
+{{ typeV }} {{ name }} = {{ value }};
+    {%- endif %}    
+{%- endmacro %}
+
+{{ updateEndPoints() }}
+
 {% set ssid = template['ssid'] %}
 {% set password = template['password'] %}
 {% set protocolServer = 'http' %}
@@ -7,24 +54,8 @@
 {% set ipServer = '192.168.1.5' %}
 {% set thingName = td['title'].lower() %}
 {% set urlServer = protocolServer + "://" + ipServer + ":" + portServer + "/" + thingName %}
-
-{% macro defineVariable(type, name, value) -%}
-    {%- if (type == 'const char*') or (type == 'String' and value != 'NULL') %}
-{{ type }} {{ name }} = "{{ value }}";
-    {%- else %}
-{{ type }} {{ name }} = {{ value }};
-    {%- endif %}    
-{%- endmacro %}
-
-{% macro updateEndPoints() -%}
-{#- EndPoint Thing #}
-{%- for item in td['forms'] if 'href' in item %}
-    {%- do item.update(href=urlServer + '/all/properties') -%}
-{%- endfor %}    
-{#- EndPoint Properties #}
-{%- endmacro %}
-
-{{ updateEndPoints() }}
+{% set thingD = td | replace("'", '\\"') | replace(' ', '') %}
+{% set req = [] %}
 
 #include <ESP8266WebServer.h>
 #include <WebSocketsServer.h>
@@ -33,11 +64,13 @@
 {{ defineVariable('const char*', 'ssid', ssid) }}
 {{ defineVariable('const char*', 'password', password) }}
 {{ defineVariable('String', 'protocolServer', protocolServer) }}
-{{ defineVariable('String', 'protocolSocket', protocolSocket) }}
-{{ defineVariable('String', 'urlServer', '') }}
-{{ defineVariable('String', 'urlSocket', '') }}
 {{ defineVariable('int', 'portServer', portServer) }}
+{{ defineVariable('String', 'urlServer', '') }}
+{% if template['numevents'] != 0 %}
+{{ defineVariable('String', 'protocolSocket', protocolSocket) }}
 {{ defineVariable('int', 'portSocket', portSocket) }}
+{{ defineVariable('String', 'urlSocket', '') }}
+{% endif %}
 
 {{ defineVariable('String', 'thingName', thingName) }}
 {{ defineVariable('String', 'td', '') }}
@@ -78,11 +111,60 @@ String events_list[{{ template['numevents'] }}] = {
     {%- endfor -%}
 };
 
-DynamicJsonDocument doc(1024);
-
 //requests
 {{ defineVariable('String', 'req1', '/') }}
-{# capire come costruire le stringhe delle richieste #}
-{{ defineVariable('String', 'req1', '/') }}
+{% do req.append(('req1', 'HTTP_GET')) %}
+{{ defineVariable('String', 'req2', ['"/"', '+', 'thingName']) }}
+{% do req.append(('req2', 'HTTP_GET')) %}
+{% for i in range(0, template['numproperties']) %}
+{% set request = 'req' + (loop.index + 2) | string %}
+{{ defineVariable('String', request, ['"/"', '+', 'thingName', '+', '"/properties/"', '+', 'property' + loop.index | string + '_name']) }}
+{% do req.append((request, 'HTTP_GET')) %}
+{% endfor %}
+{% for i in range(0, template['numactions']) %}
+{% set request = 'req' + (loop.index + 2 + template['numproperties']) | string %}
+{{ defineVariable('String', request, ['"/"', '+', 'thingName', '+', '"/actions/"', '+', 'action' + loop.index | string + '_name']) }}
+{% do req.append((request, 'HTTP_POST')) %}
+{% endfor %}
+{% set request = 'req' + (3 + template['numproperties'] + template['numactions']) | string %}
+{{ defineVariable('String', request, ['"/"', '+', 'thingName', '+', '"/all/properties"' ]) }}
+{% do req.append((request, 'HTTP_GET')) %}
 
-{#- String td = "{{ td | replace("'", '\\"') }}"; #}
+ESP8266WebServer server(portServer);
+{% if template['numevents'] != 0 %}
+WebSocketsServer webSocket = WebSocketsServer(portSocket);
+{% endif %}
+
+IPAddress ipS;
+
+String header;
+String json;
+DynamicJsonDocument doc(1024);
+
+int i, j;
+
+void setup() {
+  
+    Serial.begin(115200);
+    Serial.println();
+  
+    connection(ssid, password);
+    
+    td = "{{ thingD }}";
+
+    // server requests
+    {% for r in req %}
+    server.on({{ r[0] }},{{ r[1] }},{{ 'handleReq' + loop.index | string }});
+    {% endfor %}
+
+    server.begin();
+    
+    {% if template['numevents'] != 0 %}
+    webSocket.begin();
+    webSocket.onEvent(webSocketEvent);
+    {% endif %}
+
+    Serial.println("Server started");
+    Serial.println(urlServer);
+
+}    

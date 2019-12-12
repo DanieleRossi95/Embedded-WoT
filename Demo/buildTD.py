@@ -769,6 +769,9 @@ def start(ctx, **kwargs):
     except Exception as e:
         click.echo(str(e))
     click.echo('\n{}\n'.format(json.dumps(ctx.obj['td'], indent=4)))
+    filePath = ctx.obj['td']['title'].lower() + '/' + ctx.obj['td']['title'].lower() + '.json'
+    output = json.dump(ctx.obj['td'], indent=4)
+    writeFile(filePath, output)
     if(click.confirm('Build Embedded-C File starting from this Thing Description?', default=True)):
         ctx.invoke(build)
     else:
