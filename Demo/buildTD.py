@@ -668,13 +668,12 @@ def start(ctx, **kwargs):
             # ACTION FORM ADDITIONAL TERMS 
             addTerm(ctx, True, 'Action', 'actions', actionName) 
             # ACTION INPUT
+            actionFunctions[a-1].setdefault('input', [])
+            actionFunctions[a-1].setdefault('output', {})
             if(click.confirm('\nAction %d has Inputs?' % a, default=True)):
                 inputNumber = click.prompt('Number of Action Inputs', type=NN_INT)
                 if(inputNumber != 0):
                     ctx.obj['td']['actions'][actionName].setdefault('input', {})
-                    actionFunctions[a-1]['isinput'] = True
-                    actionFunctions[a-1]['inputnumber'] = inputNumber 
-                    actionFunctions[a-1].setdefault('input', [])
                     for i in range(1, inputNumber+1):
                         inpName = click.prompt('\nAction Input %s Name' % i, type=SWN_STRING)
                         inpType = click.prompt('Action Input %s Type' % i, type=click.Choice(['boolean', 'integer', 'number', 'string', 'object', 'array', 'null']), show_default=True) 
@@ -682,16 +681,10 @@ def start(ctx, **kwargs):
                         ctx.obj['td']['actions'][actionName]['input'][inpName]['type'] = inpType
                         actionFunctions[a-1]['input'].append({'name':inpName})
                         actionFunctions[a-1]['input'][i-1]['type'] = inpType
-                        handleThingTypes(ctx, inpType, 'actions', actionName, 'input', inpName)  
-                else:
-                    actionFunctions[a-1]['isInput'] = False
-            else:
-                actionFunctions[a-1]['isInput'] = False                
+                        handleThingTypes(ctx, inpType, 'actions', actionName, 'input', inpName)              
             # ACTION OUTPUT
             if(click.confirm('\nAction %d has Output?' % a, default=True)):    
                 ctx.obj['td']['actions'][actionName].setdefault('output', {})
-                actionFunctions[a-1]['isOutput'] = True
-                actionFunctions[a-1].setdefault('output', {})
                 outName = click.prompt('\nAction Output Name', type=SWN_STRING)
                 outType = click.prompt('Action Output Type', type=click.Choice(['boolean', 'integer', 'number', 'string', 'object', 'array', 'null']), show_default=True) 
                 ctx.obj['td']['actions'][actionName]['output'].setdefault(outName, {})
@@ -699,8 +692,6 @@ def start(ctx, **kwargs):
                 actionFunctions[a-1]['output']['name'] = outName
                 actionFunctions[a-1]['output']['type'] = outType
                 handleThingTypes(ctx, outType, 'actions', actionName, 'output', outName)
-            else:
-                actionFunctions[a-1]['isOutput'] = False
             # ACTION BODY 
             click.echo('\nTip: The Body of the function corresponding to the Thing Action MUST be written in Embedded-C directly executable in Embedded-Systems')
             click.echo('You have to provide only the code enclosed by braces on one line, neither Function name, inputs, outputs (return)')
@@ -794,24 +785,17 @@ def build(ctx):
         for i in range(0, len(thingActions)):
             action = {}
             action['name'] = thingActions[i]
+            action.setdefault('input', [])
+            action.setdefault('output', {})
             if('input' in ctx.obj['td']['actions'][thingActions[i]]):
-                action['isinput'] = True
                 actionInputs = list(ctx.obj['td']['actions'][thingActions[i]]['input'].keys())
-                action['inputnumber'] = len(actionInputs)
-                action.setdefault('input', [])
-                for j in range(0, action['inputnumber']):
+                for j in range(0, len(actionInputs)):
                     inp = handleTemplateTypes(ctx, actionInputs[j], 'actions', thingActions[i], 'input')
                     action['input'].append(inp)
-            else:
-                action['isinput'] = False
             if('output' in ctx.obj['td']['actions'][thingActions[i]]):
-                action['isoutput'] = True
                 actionOutput = list(ctx.obj['td']['actions'][thingActions[i]]['output'].keys())       
                 out = handleTemplateTypes(ctx, actionOutput[0], 'actions', thingActions[i], 'output')
-                action.setdefault('output', {})
                 action['output'] = out
-            else:
-                action['isoutput'] = False    
             if(i == 0):
                 click.echo('\nTip: The Body of the function corresponding to the Thing Action MUST be written in Embedded-C directly executable in Embedded-Systems')
                 click.echo('You have to provide only the code enclosed by braces on one line, neither Function name, inputs, outputs (return)')

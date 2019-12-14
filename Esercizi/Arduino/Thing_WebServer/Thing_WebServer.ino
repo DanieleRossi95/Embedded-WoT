@@ -34,6 +34,7 @@ String event1_name = "change";
 String events_list[1] = {event1_name};
 
 DynamicJsonDocument doc(1024);
+DeserializationError err;
 
 //requests:
 String req1 = "/";
@@ -193,8 +194,7 @@ void connection(const char* ssid, const char* password) {
 
   while (WiFi.status() != WL_CONNECTED) {
     delay(1000);
-    Serial.print(".");
- 
+    Serial.print("."); 
   }
 
   Serial.println("\nConnected");
@@ -245,14 +245,25 @@ void handleReq3() {
  
 }
 
-
 void handleReq4() {
 
   Serial.print("\nPOST invokeaction ");
   Serial.println(action1_name);
 
-  String body = "Body received: " + server.arg("plain");
-  Serial.println(body);
+  String body = server.arg("plain");
+  Serial.printf("Body received: %s", body.c_str());
+
+  err = deserializeJson(doc, body);
+  
+  if(err) {
+    Serial.print("deserializeJson() failed with code ");
+    Serial.println(err.c_str());
+  }
+  else {
+    int i1 = doc["pippo"];
+    String i2 = doc["pluto"];
+    Serial.printf("\ni1:%d, i2: %s", i1, i2.c_str()); 
+  }
   
   // controllo se il body della richiesta è stato ricevuto
   // se si vuole controllare la presenza di un determinato argomento del body, lo si deve
@@ -269,7 +280,7 @@ void handleReq4() {
   int property1_lastValue = property1_value; 
   
   increment();
-  Serial.print("New value: ");
+  Serial.print("\nNew value: ");
   Serial.println(property1_value);
   
   json = "{\"" + property1_name + "\":" + property1_value + "}";

@@ -36,11 +36,48 @@
                 {{ ' ' + elem }}
             {%- endif -%}
         {%- endfor -%}     
-    {%- elif (typeV == 'const char*') or (typeV == 'String' and value != 'NULL') %}
+    {%- elif (typeV == 'const char*') or (typeV == 'String' and value != 'NULL') or (typeV == 'string') %}
 {{ typeV }} {{ name }} = "{{ value }}";
-    {%- else %}
-{{ typeV }} {{ name }} = {{ value }};
+    {%- elif typeV == 'integer' or typeV == 'number' %}
+int {{ name }} = {{ value }};
+    {% else %}
+{{ typeV }} {{ name }} = {{ value }};    
     {%- endif %}    
+{%- endmacro %}
+
+{% macro defineFunction(name, input, output, body) -%}
+{%- if 'type' in output -%}
+    {%- if output['type'] == 'integer' or output['type'] == 'number' -%}
+int 
+    {%- elif output['type'] == 'string' or output['type'] == 'null' -%}
+String
+    {%- elif output['type'] == 'boolean' -%}
+{{ output['type'] }} 
+    {%- endif -%}  
+{%- else -%}      
+void       
+{%- endif -%}        
+{{ ' ' + name }}(
+    {%- for item in input -%}
+        {%- if item['type'] == 'integer' or item['type'] == 'number' -%}
+            int
+        {%- elif item['type'] == 'string' or item['type'] == 'null' -%}
+            String
+        {%- elif item['type'] == 'boolean' -%}
+            {{ item['type'] }} 
+        {%- endif -%} 
+        {%- if loop.last -%}      
+        {{ ' ' + item['name'] }}
+        {%- else -%} 
+        {{ ' ' + item['name'] }},
+        {%- endif -%}
+    {%- endfor -%}
+) {
+    {{ body }}
+    {% if 'name' in output %}
+    return {{ output['name'] }};
+    {% endif %}
+}    
 {%- endmacro %}
 
 {{ updateEndPoints() }}
@@ -94,7 +131,22 @@
 {% endfor %}   
 //actions
 {% for action in template['actions'] %}
-{{ defineVariable('String', 'action' + loop.index | string + '_name', action['name']) }}
+{%- set actionIndex = 'action' + loop.index | string -%}
+{{ defineVariable('String', actionIndex + '_name', action['name']) }}
+{{ defineVariable('int', actionIndex + '_inputsNumber', action['input'] | length) }}
+{% for item in action['input'] %}
+{% if loop.first %}
+{{ defineVariable('JsonArray',  actionIndex + '_input', 'doc.createNestedArray("' + actionIndex + '_input' + '")') }}
+{% endif %}
+{{ defineVariable('JsonObject', actionIndex + '_input' + loop.index | string, 'doc["' + actionIndex + '_input' + '"].createNestedObject()') }}
+{% endfor %}
+{% for item in action['input'] %}
+{{ actionIndex + '_input' + loop.index | string }}["name"] = "{{ item['name'] }}";
+{{ actionIndex + '_input' + loop.index | string }}["type"] = "{{ item['type'] }}";
+{% if loop.last -%}
+{{ '\n' }}
+{%- endif %}
+{% endfor %}
 {% endfor %}
 
 //events
@@ -104,9 +156,9 @@
 String events_list[{{ template['numevents'] }}] = {
     {%- for i in range(1, template['numevents']+1) -%}
     {%- if i == template['numevents'] -%}
-    {{ 'event' + loop.index | string + '_name' }}
+    {{ 'event' + i | string + '_name' }}
     {%- else -%}
-    {{ 'event' + loop.index | string + '_name' }},
+    {{ 'event' + i | string + '_name' }},
     {%- endif -%}
     {%- endfor -%}
 };
@@ -116,19 +168,18 @@ String events_list[{{ template['numevents'] }}] = {
 {% do req.append(('req1', 'HTTP_GET')) %}
 {{ defineVariable('String', 'req2', ['"/"', '+', 'thingName']) }}
 {% do req.append(('req2', 'HTTP_GET')) %}
-{% for i in range(0, template['numproperties']) %}
-{% set request = 'req' + (loop.index + 2) | string %}
-{{ defineVariable('String', request, ['"/"', '+', 'thingName', '+', '"/properties/"', '+', 'property' + loop.index | string + '_name']) }}
+{{ defineVariable('String', 'req3', ['"/"', '+', 'thingName', '+', '"/all/properties"' ]) }}
+{% do req.append(('req3', 'HTTP_GET')) %}
+{% for i in range(1, template['numproperties']+1) %}
+{% set request = 'req' + (i + 3) | string %}
+{{ defineVariable('String', request, ['"/"', '+', 'thingName', '+', '"/properties/"', '+', 'property' + i | string + '_name']) }}
 {% do req.append((request, 'HTTP_GET')) %}
 {% endfor %}
-{% for i in range(0, template['numactions']) %}
-{% set request = 'req' + (loop.index + 2 + template['numproperties']) | string %}
-{{ defineVariable('String', request, ['"/"', '+', 'thingName', '+', '"/actions/"', '+', 'action' + loop.index | string + '_name']) }}
+{% for i in range(1, template['numactions']+1) %}
+{% set request = 'req' + (i + 3 + template['numproperties']) | string %}
+{{ defineVariable('String', request, ['"/"', '+', 'thingName', '+', '"/actions/"', '+', 'action' + i | string + '_name']) }}
 {% do req.append((request, 'HTTP_POST')) %}
 {% endfor %}
-{% set request = 'req' + (3 + template['numproperties'] + template['numactions']) | string %}
-{{ defineVariable('String', request, ['"/"', '+', 'thingName', '+', '"/all/properties"' ]) }}
-{% do req.append((request, 'HTTP_GET')) %}
 
 ESP8266WebServer server(portServer);
 {% if template['numevents'] != 0 %}
@@ -138,13 +189,14 @@ WebSocketsServer webSocket = WebSocketsServer(portSocket);
 IPAddress ipS;
 
 String header;
-String json;
+String resp;
 DynamicJsonDocument doc(1024);
+DynamicJsonDocument respDoc(1024);
+DeserializationError err;
 
 int i, j;
 
 void setup() {
-  
     Serial.begin(115200);
     Serial.println();
   
@@ -166,5 +218,159 @@ void setup() {
 
     Serial.println("Server started");
     Serial.println(urlServer);
-
 }    
+
+void loop() {
+    // handle requests
+    {% if template['numevents'] != 0 %}
+    webSocket.loop()
+    {% endif %}
+    server.handleClient();
+}
+
+void connection(const char* ssid, const char* password) {
+    WiFi.begin(ssid, password);
+    
+    Serial.print("\nConnecting to ");
+    Serial.print(ssid);
+
+    while (WiFi.status() != WL_CONNECTED) {
+        delay(1000);
+        Serial.print(".");
+ 
+    }
+
+    Serial.println("\nConnected");
+    Serial.print("IP address: ");
+    ipS = WiFi.localIP();
+    Serial.println(ipS);
+
+    urlServer = protocolServer + "://" + ipS.toString() + ":" + portServer + "/" + thingName;
+    urlSocket = protocolSocket + "://" + ipS.toString() + ":" + portSocket + "/" + thingName;
+}
+
+// action functions
+{% for action in template['actions'] %}
+{{ defineFunction(action['name'], action['input'], action['output'], action['body']) }}
+
+{% endfor %}
+
+// request functions
+void handleReq1() {
+    Serial.println("\nGET thing url");
+    resp = "[\"" + urlServer + "\"]";
+    server.send(200, "application/ld+json", resp);
+}
+
+void handleReq2() {
+    Serial.println("\nGET Thing Description"); 
+    server.send(200, "application/ld+json", td);
+}
+
+void handleReq3() {
+    Serial.print("\nGET all properties");
+    JsonObject obj = doc.createNestedObject();
+    {% for i in range(1, template['numproperties']+1) %}
+    obj[{{ 'property' + i | string + '_name' }}] = {{ 'property' + i | string + '_value' }};
+    {% endfor %}
+    server.send(200, "application/ld+json", obj);
+}
+
+{# HandleReq for Properties #}
+{% for i in range(1, template['numproperties']+1) %}
+void handleReq{{ i+3 }}() {
+    Serial.printf("\nGET %s value", property{{ i }}_name);
+    resp = "{\"" + property{{ i }}_name + "\":" + property{{ i }}_value + "}";
+    server.send(200, "application/ld+json", json);
+}
+
+{% endfor %}
+
+{# HandleReq for Actions #}
+{% for action in template['actions'] %}
+{%- set a = loop.index -%}
+void handleReq{{ loop.index+3+template['numproperties'] }}() {
+    Serial.printf("\nPOST invokeaction %s", action{{ loop.index }}_name);
+    String body = server.arg("plain");
+    Serial.printf("Body received: %s", body.c_str());
+
+    err = deserializeJson(respDoc, body);
+    if(err) {
+        Serial.printf("deserializeJson() failed with code %s", err.c_str());
+        server.send(400, "text/plain", err);
+    }
+    else {
+        {% if action['input'] | length > 0 %}
+        if(
+        {%- for item in action['input'] -%}
+        respDoc[action{{ a }}_input{{ loop.index }}["name"]].isNull() 
+        {%- if not(loop.last) -%}
+        {{ ' or ' }}
+        {%- endif -%}
+        {%- endfor -%}
+        ) {
+            resp = "InvalidInput";
+            server.send(400, "text/plain", resp);
+        }
+        else {
+            {% if 'type' in action['output'] %}
+            {{ action['output']['type'] }} output = {{ action['name'] }}(
+                {%- for item in action['input'] -%}
+                {%- if loop.last -%}
+                respDoc[action{{ a }}_input{{ loop.index }}["name"]]
+                {%- else -%}
+                respDoc[action{{ a }}_input{{ loop.index }}["name"]],
+                {%- endif -%}
+                {%- endfor -%}
+            );   
+            {%- else %}
+            {{ action['name'] }}(
+                {%- for item in action['input'] -%}
+                {%- if loop.last -%}
+                respDoc[action{{ a }}_input{{ loop.index }}["name"]]
+                {%- else -%}
+                respDoc[action{{ a }}_input{{ loop.index }}["name"]],
+                {%- endif -%}
+                {%- endfor -%}
+            ); 
+            {% endif %}
+            {% if 'type' in action['output'] %}    
+            server.send(200, "text/plain", output);
+            {% else %}
+            resp = action{{ a }}_name + " invoked";
+            server.send(200, "text/plain", resp);
+            {% endif %}
+        }
+        {% else %}
+        {% if 'type' in action['output'] %}
+            {{ action['output']['type'] }} output = {{ action['name'] }}(
+            {%- for item in action['input'] -%}
+            {%- if loop.last -%}
+            respDoc[action{{ a }}_input{{ loop.index }}["name"]]
+            {%- else -%}
+            respDoc[action{{ a }}_input{{ loop.index }}["name"]],
+            {%- endif -%}
+            {%- endfor -%}
+        );
+        {%- else %}
+        {{ action['name'] }}(
+            {%- for item in action['input'] -%}
+            {%- if loop.last -%}
+            respDoc[action{{ a }}_input{{ loop.index }}["name"]]
+            {%- else -%}
+            respDoc[action{{ a }}_input{{ loop.index }}["name"]],
+            {%- endif -%}
+            {%- endfor -%}
+        ); 
+        {% endif %}
+        {% if 'type' in action['output'] %}    
+        server.send(200, "text/plain", output);
+        {% else %}
+        resp = action{{ a }}_name + " invoked";
+        server.send(200, "text/plain", resp);
+        {% endif %}
+        {% endif %}  
+    }
+}
+
+{% endfor %}
