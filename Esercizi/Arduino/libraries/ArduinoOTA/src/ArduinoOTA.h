@@ -38,6 +38,7 @@ SDStorageClass SDStorage;
 SerialFlashStorageClass SerialFlashStorage;
 #endif
 
+const uint16_t OTA_PORT = 65280;
 
 template <class NetServer, class NetClient>
 class ArduinoOTAClass : public WiFiOTAClass {
@@ -46,11 +47,25 @@ private:
   NetServer server;
 
 public:
-  ArduinoOTAClass() : server(65280) {};
+  ArduinoOTAClass() : server(OTA_PORT) {};
 
   void begin(IPAddress localIP, const char* name, const char* password, OTAStorage& storage) {
     WiFiOTAClass::begin(localIP, name, password, storage);
     server.begin();
+#ifdef _WIFI_ESP_AT_H_
+    WiFi.startMDNS(name, "arduino", OTA_PORT);
+#endif
+  }
+
+  void end() {
+#if defined(ESP8266) || defined(ESP32)
+    server.stop();
+#elif defined(_WIFI_ESP_AT_H_)
+    server.end();
+    //TODO WiFi.stopMDNS();
+#else
+//#warning "The networking library doesn't have a function to stop the server"
+#endif
   }
 
   void poll() {
@@ -82,6 +97,11 @@ public:
 #endif
   }
 
+  void end() {
+    ArduinoOTAClass<NetServer, NetClient>::end();
+    mdnsSocket.stop();
+  }
+
   void poll() {
     ArduinoOTAClass<NetServer, NetClient>::poll();
     WiFiOTAClass::pollMdns(mdnsSocket);
@@ -99,7 +119,8 @@ ArduinoOTAClass  <EthernetServer, EthernetClient>   ArduinoOTA;
 #include <WiFiUdp.h>
 ArduinoOTAMdnsClass <WiFiServer, WiFiClient, WiFiUDP> ArduinoOTA;
 
-#elif defined(WiFi_h) // WiFi and WiFiLink lib (no UDP multicast), for WiFiLink firmware handles mdns
+#elif defined(WiFi_h) || defined(_WIFI_ESP_AT_H_) // WiFi, WiFiLink and WiFiEspAT lib (no UDP multicast)
+// for WiFiLink and WiFiEspAT the firmware handles mdns
 ArduinoOTAClass  <WiFiServer, WiFiClient> ArduinoOTA;
 
 #elif defined(_WIFISPI_H_INCLUDED) // no UDP multicast implementation
