@@ -233,30 +233,6 @@
                         "type": "string"
                     }
                 },
-                "items" :
-                {
-                    "oneOf":
-                    [
-                        {
-                            "type": "object",
-                            "additionalProperties":
-                            {
-                                "$ref": "#/definitions/dataSchema"
-                            }
-                        },
-                        {
-                            "type": "array",
-                            "items":
-                            {
-                                "type": "object",
-                                "additionalProperties":
-                                {
-                                    "$ref": "#/definitions/dataSchema"
-                                }
-                            }
-                        }
-                    ]
-                },
                 "minItems":
                 {
                     "type": "number"
@@ -355,30 +331,6 @@
                     {
                         "type": "string"
                     }
-                },
-                "items" :
-                {
-                    "oneOf":
-                    [
-                        {
-                            "type": "object",
-                            "additionalProperties":
-                            {
-                                "$ref": "#/definitions/dataSchema"
-                            }
-                        },
-                        {
-                            "type": "array",
-                            "items":
-                            {
-                                "type": "object",
-                                "additionalProperties":
-                                {
-                                    "$ref": "#/definitions/dataSchema"
-                                }
-                            }
-                        }
-                    ]
                 },
                 "minItems":
                 {

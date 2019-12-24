@@ -104,18 +104,21 @@ class DateTimeParamType(click.ParamType):
             self.fail('Element format is incorrect\n', param, ctx)     
 
 
-def MultipleInputString(inputList, ValidateInputList):
+def MultipleInputString(inputList, validateInputList):
     try:
         if((len(inputList) == 1) and (int(inputList) == 0)):
             return [0]
         else:    
             inputIndexes = inputList.split(' ')
             inputIndexes = [int(i) for i in inputIndexes]
-            validateInputIndexes = [i for i in range(1, len(ValidateInputList)+1)]
-            if(all(x in max(validateInputIndexes, inputIndexes, key=len) for x in min(inputIndexes, validateInputIndexes, key=len))):
-                return inputIndexes
+            if(len(inputIndexes) <= len(validateInputList)):
+                validateInputIndexes = [i for i in range(1, len(validateInputList)+1)]
+                if(all(x in max(validateInputIndexes, inputIndexes, key=len) for x in min(inputIndexes, validateInputIndexes, key=len))):
+                    return inputIndexes
+                else:
+                    raise Exception
             else:
-                return []    
+                raise Exception      
     except Exception:
         return []  
 
@@ -251,74 +254,124 @@ def addDescription(ctx, interactionTypeS, interactionTypeTD='', interactionName=
             ctx.obj['td'][interactionTypeTD][interactionName]['description'] = inp   
 
 
-def handleThingTypes(ctx, inpType, interactionTypeTD, interactionName, dataType='', termName='', actionIndex=(-1, -1), array=False):
+def handleThingTypes(ctx, inpType, interactionTypeTD, interactionName, dataType='', termName='', actionIndex=(-1, -1), array=False, obj=False, pName=''):
     # INTEGER/NUMBER
     if(inpType == 'integer' or inpType == 'number'):
         if(click.confirm('\nInsert Minimum Value?', default=False)):   
             inp = click.prompt('Minimum Value', type=int)
             if(interactionTypeTD == 'properties'):
-                if(array):
-                    ctx.obj['td'][interactionTypeTD][interactionName]['items']['type']['minimum'] = inp
+                if(array and obj):
+                    ctx.obj['td'][interactionTypeTD][interactionName]['properties'][pName]['items']['minimum'] = inp
+                elif(array):
+                    ctx.obj['td'][interactionTypeTD][interactionName]['items']['minimum'] = inp 
+                elif(obj):
+                    ctx.obj['td'][interactionTypeTD][interactionName]['properties'][pName]['minimum'] = inp
                 else:
                     ctx.obj['td'][interactionTypeTD][interactionName]['minimum'] = inp    
             else:
-                if(array):
-                    ctx.obj['td'][interactionTypeTD][interactionName][dataType][termName]['items']['type']['minimum'] = inp 
+                if(array and obj):
+                    ctx.obj['td'][interactionTypeTD][interactionName][dataType][termName]['properties'][pName]['items']['minimum'] = inp 
                     if(interactionTypeTD == 'actions'):
-                        actionFunctions[actionIndex[0]][dataType][actionIndex[1]].setdefault('items', {})
-                        actionFunctions[actionIndex[0]][dataType][actionIndex[1]]['items'].setdefault('type', {})
-                        actionFunctions[actionIndex[0]][dataType][actionIndex[1]]['items']['type']['minimum'] = inp 
+                        actionFunctions[actionIndex[0]][dataType][actionIndex[1]]['properties'][pName]['items']['minimum'] = inp 
+                elif(array):
+                    ctx.obj['td'][interactionTypeTD][interactionName][dataType][termName]['items']['minimum'] = inp 
+                    if(interactionTypeTD == 'actions'):
+                        actionFunctions[actionIndex[0]][dataType][actionIndex[1]]['items']['minimum'] = inp 
+                elif(obj):
+                    ctx.obj['td'][interactionTypeTD][interactionName][dataType][termName]['properties'][pName]['minimum'] = inp 
+                    if(interactionTypeTD == 'actions'):
+                        actionFunctions[actionIndex[0]][dataType][actionIndex[1]]['properties'][pName]['minimum'] = inp
                 else:
                     ctx.obj['td'][interactionTypeTD][interactionName][dataType][termName]['minimum'] = inp  
                     if(interactionTypeTD == 'actions'):
-                        actionFunctions[actionIndex[0]][dataType][actionIndex[1]]['minimum'] = inp   
+                       actionFunctions[actionIndex[0]][dataType][actionIndex[1]]['minimum'] = inp   
         if(click.confirm('Insert Maximum Value?', default=False)):
             inp = click.prompt('Maximum Value', type=int)
             if(interactionTypeTD == 'properties'):
-                if(array):
-                    ctx.obj['td'][interactionTypeTD][interactionName]['items']['type']['maximum'] = inp
+                if(array and obj):
+                    ctx.obj['td'][interactionTypeTD][interactionName]['properties'][pName]['items']['maximum'] = inp
+                elif(array):
+                    ctx.obj['td'][interactionTypeTD][interactionName]['items']['maximum'] = inp 
+                elif(obj):
+                    ctx.obj['td'][interactionTypeTD][interactionName]['properties'][pName]['maximum'] = inp
                 else:
                     ctx.obj['td'][interactionTypeTD][interactionName]['maximum'] = inp    
             else:
-                if(array):
-                    ctx.obj['td'][interactionTypeTD][interactionName][dataType][termName]['items']['type']['maximum'] = inp  
+                if(array and obj):
+                    ctx.obj['td'][interactionTypeTD][interactionName][dataType][termName]['properties'][pName]['items']['maximum'] = inp 
                     if(interactionTypeTD == 'actions'):
-                        actionFunctions[actionIndex[0]][dataType][actionIndex[1]].setdefault('items', {})
-                        actionFunctions[actionIndex[0]][dataType][actionIndex[1]]['items'].setdefault('type', {})
-                        actionFunctions[actionIndex[0]][dataType][actionIndex[1]]['items']['type']['maximum'] = inp  
+                        actionFunctions[actionIndex[0]][dataType][actionIndex[1]]['properties'][pName]['items']['maximum'] = inp 
+                elif(array):
+                    ctx.obj['td'][interactionTypeTD][interactionName][dataType][termName]['items']['maximum'] = inp 
+                    if(interactionTypeTD == 'actions'):
+                        actionFunctions[actionIndex[0]][dataType][actionIndex[1]]['items']['maximum'] = inp 
+                elif(obj):
+                    ctx.obj['td'][interactionTypeTD][interactionName][dataType][termName]['properties'][pName]['maximum'] = inp 
+                    if(interactionTypeTD == 'actions'):
+                        actionFunctions[actionIndex[0]][dataType][actionIndex[1]]['properties'][pName]['maximum'] = inp
                 else:
-                    ctx.obj['td'][interactionTypeTD][interactionName][dataType][termName]['maximum'] = inp   
+                    ctx.obj['td'][interactionTypeTD][interactionName][dataType][termName]['maximum'] = inp  
                     if(interactionTypeTD == 'actions'):
-                        actionFunctions[actionIndex[0]][dataType][actionIndex[1]]['maximum'] = inp  
+                       actionFunctions[actionIndex[0]][dataType][actionIndex[1]]['maximum'] = inp   
     # ARRAY
     elif(inpType == 'array'):
         itemsType = click.prompt('\nArray Items Type', type=click.Choice(['boolean', 'integer', 'number', 'string', 'object', 'null']), show_default=True)
         if(interactionTypeTD == 'properties'):
-            ctx.obj['td'][interactionTypeTD][interactionName].setdefault('items', {})   
-            ctx.obj['td'][interactionTypeTD][interactionName]['items']['type'] = itemsType
-            handleThingTypes(ctx, itemsType, interactionTypeTD, interactionName, 'items', 'type', array=True)
+            if(obj):
+                ctx.obj['td'][interactionTypeTD][interactionName]['properties'][pName].setdefault('items', {})
+                ctx.obj['td'][interactionTypeTD][interactionName]['properties'][pName]['items']['type'] = itemsType
+                handleThingTypes(ctx, itemsType, interactionTypeTD, interactionName, array=True, obj=True, pName=pName)
+            else:    
+                ctx.obj['td'][interactionTypeTD][interactionName].setdefault('items', {})   
+                ctx.obj['td'][interactionTypeTD][interactionName]['items']['type'] = itemsType
+                handleThingTypes(ctx, itemsType, interactionTypeTD, interactionName, array=True)
         else:
-            ctx.obj['td'][interactionTypeTD][interactionName][dataType][termName].setdefault('items', {})
-            ctx.obj['td'][interactionTypeTD][interactionName][dataType][termName]['items']['type'] = itemsType
-            if(interactionTypeTD == 'actions'):
-                actionFunctions[actionIndex[0]][dataType][actionIndex[1]].setdefault('items', {})
-                actionFunctions[actionIndex[0]][dataType][actionIndex[1]]['items']['type'] = itemsType 
+            if(obj):
+                ctx.obj['td'][interactionTypeTD][interactionName][dataType][termName]['properties'][pName].setdefault('items', {})
+                ctx.obj['td'][interactionTypeTD][interactionName][dataType][termName]['properties'][pName]['items'] = itemsType
+                if(interactionTypeTD == 'actions'):
+                    actionFunctions[actionIndex[0]][dataType][actionIndex[1]]['properties'][pName].setdefault('items', {})
+                    actionFunctions[actionIndex[0]][dataType][actionIndex[1]]['properties'][pName]['items'] = itemsType
+                handleThingTypes(ctx, itemsType, interactionTypeTD, interactionName, dataType, termName, actionIndex, True, True, pName)
+            else:    
+                ctx.obj['td'][interactionTypeTD][interactionName][dataType][termName].setdefault('items', {})
+                ctx.obj['td'][interactionTypeTD][interactionName][dataType][termName]['items']['type'] = itemsType
+                if(interactionTypeTD == 'actions'):
+                    actionFunctions[actionIndex[0]][dataType][actionIndex[1]].setdefault('items', {})
+                    actionFunctions[actionIndex[0]][dataType][actionIndex[1]]['items']['type'] = itemsType
+                handleThingTypes(ctx, itemsType, interactionTypeTD, interactionName, dataType, termName, actionIndex, array=True)         
         if(click.confirm('\nInsert Array minIntems?', default=None)):
             inp = click.prompt('Array minIntems', type=NN_INT)
             if(interactionTypeTD == 'properties'):
-                ctx.obj['td'][interactionTypeTD][interactionName]['minItems'] = inp
+                if(obj):
+                    ctx.obj['td'][interactionTypeTD][interactionName]['properties'][pName]['minItems'] = inp
+                else:    
+                    ctx.obj['td'][interactionTypeTD][interactionName]['minItems'] = inp
             else:
-                ctx.obj['td'][interactionTypeTD][interactionName][dataType][termName]['minItems'] = inp
-                if(interactionTypeTD == 'actions'):
-                    actionFunctions[actionIndex[0]][dataType][actionIndex[1]]['minItems'] = inp 
-        if(click.confirm('Insert Array maxIntems?', default=None)):
-            inp = click.prompt('Array maxIntems', type=NN_INT)
+                if(obj):
+                    ctx.obj['td'][interactionTypeTD][interactionName][dataType][termName]['properties'][pName]['minItems'] = inp
+                    if(interactionTypeTD == 'actions'):
+                        actionFunctions[actionIndex[0]][dataType][actionIndex[1]]['properties'][pName]['minItems'] = inp
+                else:        
+                    ctx.obj['td'][interactionTypeTD][interactionName][dataType][termName]['minItems'] = inp
+                    if(interactionTypeTD == 'actions'):
+                        actionFunctions[actionIndex[0]][dataType][actionIndex[1]]['minItems'] = inp 
+        if(click.confirm('Insert Array maxItems?', default=None)):
+            inp = click.prompt('Array maxItems', type=NN_INT)
             if(interactionTypeTD == 'properties'):
-                ctx.obj['td'][interactionTypeTD][interactionName]['maxItems'] = inp  
+                if(obj):
+                    ctx.obj['td'][interactionTypeTD][interactionName]['properties'][pName]['maxItems'] = inp
+                else:    
+                    ctx.obj['td'][interactionTypeTD][interactionName]['maxItems'] = inp
             else:
-                ctx.obj['td'][interactionTypeTD][interactionName][dataType][termName]['maxItems'] = inp  
-                if(interactionTypeTD == 'actions'):
-                    actionFunctions[actionIndex[0]][dataType][actionIndex[1]]['maxItems'] = inp                
+                if(obj):
+                    ctx.obj['td'][interactionTypeTD][interactionName][dataType][termName]['properties'][pName]['maxItems'] = inp
+                    if(interactionTypeTD == 'actions'):
+                        actionFunctions[actionIndex[0]][dataType][actionIndex[1]]['properties'][pName]['maxItems'] = inp
+                else:        
+                    ctx.obj['td'][interactionTypeTD][interactionName][dataType][termName]['maxItems'] = inp
+                    if(interactionTypeTD == 'actions'):
+                        actionFunctions[actionIndex[0]][dataType][actionIndex[1]]['maxItems'] = inp               
     # OBJECT
     elif(inpType == 'object'):
         if(click.confirm('\nInsert Object Properties?', default=False)):
@@ -326,97 +379,65 @@ def handleThingTypes(ctx, inpType, interactionTypeTD, interactionName, dataType=
             if(propertyNumber != 0):
                 if(interactionTypeTD == 'properties'):
                     if(array):
-                        ctx.obj['td'][interactionTypeTD][interactionName]['items']['type'].setdefault('properties', {})
+                        ctx.obj['td'][interactionTypeTD][interactionName]['items'].setdefault('properties', {})
                     else:
                         ctx.obj['td'][interactionTypeTD][interactionName].setdefault('properties', {})
                 else:
                     if(array):
-                        ctx.obj['td'][interactionTypeTD][interactionName][dataType][termName]['items']['type'].setdefault('properties', {})
+                        ctx.obj['td'][interactionTypeTD][interactionName][dataType][termName]['items'].setdefault('properties', {})
                         if(interactionTypeTD == 'actions'):
-                            actionFunctions[actionIndex[0]][dataType][actionIndex[1]].setdefault('items', {})
-                            actionFunctions[actionIndex[0]][dataType][actionIndex[1]]['items'].setdefault('type', {})
-                            actionFunctions[actionIndex[0]][dataType][actionIndex[1]]['items']['type'].setdefault('properties', {})
+                            actionFunctions[actionIndex[0]][dataType][actionIndex[1]]['items'].setdefault('properties', [])
                     else:
                         ctx.obj['td'][interactionTypeTD][interactionName][dataType][termName].setdefault('properties', {}) 
                         if(interactionTypeTD == 'actions'):
-                            actionFunctions[actionIndex[0]][dataType][actionIndex[1]].setdefault('properties', {})
+                            actionFunctions[actionIndex[0]][dataType][actionIndex[1]].setdefault('properties', [])
                 properties = []
                 for i in range(1, propertyNumber+1):
-                    name = ''
+                    propertyName = ''
                     nameAlreadyExists = True
                     while(nameAlreadyExists):
-                        name = click.prompt('Object Property %d Name' % i, type=SWN_STRING)
-                        if(name.lower() in properties):
+                        propertyName = click.prompt('\nObject Property %d Name' % i, type=SWN_STRING)
+                        if(propertyName.lower() in properties):
                             click.echo('Error: Object Property already exists\n')
                         else:
                             nameAlreadyExists = False
-                    properties.append(name.lower())     
+                    properties.append(propertyName.lower())   
+                    objProperty = {}  
                     if(interactionTypeTD == 'properties'):
                         if(array):
-                            ctx.obj['td'][interactionTypeTD][interactionName]['items']['type']['properties'].setdefault(name, {})    
+                            ctx.obj['td'][interactionTypeTD][interactionName]['items']['properties'].setdefault(propertyName, {})  
                         else:
-                            ctx.obj['td'][interactionTypeTD][interactionName]['properties'].setdefault(name, {})      
+                            ctx.obj['td'][interactionTypeTD][interactionName]['properties'].setdefault(propertyName, {})         
                     else:
+                        objProperty.setdefault(propertyName, {})  
                         if(array):
-                            ctx.obj['td'][interactionTypeTD][interactionName][dataType][termName]['items']['type']['properties'].setdefault(name, {}) 
+                            ctx.obj['td'][interactionTypeTD][interactionName][dataType][termName]['items']['properties'].setdefault(propertyName, {})
                             if(interactionTypeTD == 'actions'):
-                                actionFunctions[actionIndex[0]][dataType][actionIndex[1]]['items']['type']['properties'].setdefault(name, {}) 
+                                actionFunctions[actionIndex[0]][dataType][actionIndex[1]]['items']['properties'].setdefault(propertyName, {})  
                         else:
-                            ctx.obj['td'][interactionTypeTD][interactionName][dataType][termName]['properties'].setdefault(name, {}) 
+                            ctx.obj['td'][interactionTypeTD][interactionName][dataType][termName]['properties'].setdefault(propertyName, {})  
                             if(interactionTypeTD == 'actions'):
-                                actionFunctions[actionIndex[0]][dataType][actionIndex[1]]['properties'].setdefault(name, {})             
-                    numTerms = click.prompt('Object Property %d number of Terms' % i, type=NZ_INT)
-                    for j in range(1, numTerms+1):
-                        tName = click.prompt('Object Property %d Term %d name' % (i,j), type=SWN_STRING)
-                        numElements = click.prompt('Object Property %d Term %d number of elements' % (i,j), type=NZ_INT)
-                        click.echo('\nHint: Term elements MUST have primitive type or be JSON OBJECTs')
-                        if(numElements == 1):    
-                            tElement = click.prompt('Object Property %d Term %d element' % (i,j), type=OBJ_STRING)
-                            if(interactionTypeTD == 'properties'):
-                                if(array):
-                                    ctx.obj['td'][interactionTypeTD][interactionName]['items']['type']['properties'][name][tName] = tElement
-                                else: 
-                                    ctx.obj['td'][interactionTypeTD][interactionName]['properties'][name][tName] = tElement
-                            else:
-                                if(array):
-                                    ctx.obj['td'][interactionTypeTD][interactionName][dataType][termName]['items']['type']['properties'][name][tName] = tElement 
-                                    if(interactionTypeTD == 'actions'):
-                                        actionFunctions[actionIndex[0]][dataType][actionIndex[1]]['items']['type']['properties'][name][tName] = tElement
-                                else:
-                                    ctx.obj['td'][interactionTypeTD][interactionName][dataType][termName]['properties'][name][tName] = tElement  
-                                    if(interactionTypeTD == 'actions'):
-                                        actionFunctions[actionIndex[0]][dataType][actionIndex[1]]['properties'][name][tName] = tElement      
-                        elif(numElements > 1):
-                            if(interactionTypeTD == 'properties'):
-                                if(array):
-                                    ctx.obj['td'][interactionTypeTD][interactionName]['items']['type']['properties'][name].setdefault(tName, [])
-                                else:
-                                    ctx.obj['td'][interactionTypeTD][interactionName]['properties'][name].setdefault(tName, [])    
-                            else:
-                                if(array):
-                                    ctx.obj['td'][interactionTypeTD][interactionName][dataType][termName]['items']['type']['properties'][name].setdefault(tName, [])
-                                    if(interactionTypeTD == 'actions'):
-                                       actionFunctions[actionIndex[0]][dataType][actionIndex[1]]['items']['type']['properties'][name].setdefault(tName, [])
-                                else:
-                                    ctx.obj['td'][interactionTypeTD][interactionName][dataType][termName]['properties'][name].setdefault(tName, [])    
-                                    if(interactionTypeTD == 'actions'):
-                                       actionFunctions[actionIndex[0]][dataType][actionIndex[1]]['properties'][name].setdefault(tName, [])
-                            for z in range(1, numElements+1):
-                                value = click.prompt('Object Property %d Term %d element %d' % (i, j, z), type=OBJ_STRING)
-                                if(interactionTypeTD == 'properties'):
-                                    if(array):
-                                        ctx.obj['td'][interactionTypeTD][interactionName]['items']['type']['properties'][name][tName].append(value)
-                                    else:
-                                        ctx.obj['td'][interactionTypeTD][interactionName]['properties'][name][tName].append(value)    
-                                else:
-                                    if(array):
-                                        ctx.obj['td'][interactionTypeTD][interactionName][dataType][termName]['items']['type']['properties'][name][tName].append(value)  
-                                        if(interactionTypeTD == 'actions'):
-                                            actionFunctions[actionIndex[0]][dataType][actionIndex[1]]['items']['type']['properties'][name][tName].append(value)
-                                    else:
-                                        ctx.obj['td'][interactionTypeTD][interactionName][dataType][termName]['properties'][name][tName].append(value)  
-                                        if(interactionTypeTD == 'actions'):
-                                            actionFunctions[actionIndex[0]][dataType][actionIndex[1]]['properties'][name][tName].append(value)    
+                                actionFunctions[actionIndex[0]][dataType][actionIndex[1]]['properties'].setdefault(propertyName, {}) 
+                    propertyType = click.prompt('Object Property %d Type' % i, type=click.Choice(['boolean', 'integer', 'number', 'string', 'array', 'null']))
+                    if(interactionTypeTD == 'properties'):
+                        if(array):
+                            ctx.obj['td'][interactionTypeTD][interactionName]['items']['properties'][propertyName]['type'] = propertyType   
+                            handleThingTypes(ctx, propertyType, interactionTypeTD, interactionName, array=True, obj=True, pName=propertyName) 
+                        else:
+                            ctx.obj['td'][interactionTypeTD][interactionName]['properties'][propertyName]['type'] = propertyType
+                            handleThingTypes(ctx, propertyType, interactionTypeTD, interactionName, obj=True, pName=propertyName)        
+                    else:
+                        objProperty[propertyName]['type'] = propertyType 
+                        if(array):
+                            ctx.obj['td'][interactionTypeTD][interactionName][dataType][termName]['items']['properties'][propertyName]['type'] = propertyType
+                            if(interactionTypeTD == 'actions'):
+                                actionFunctions[actionIndex[0]][dataType][actionIndex[1]]['items']['properties'][propertyName]['type'] = propertyType
+                            handleThingTypes(ctx, propertyType, interactionTypeTD, interactionName, dataType, termName, actionIndex, True, True, propertyName)
+                        else:
+                            ctx.obj['td'][interactionTypeTD][interactionName][dataType][termName]['properties'][propertyName]['type'] = propertyType
+                            if(interactionTypeTD == 'actions'):
+                                actionFunctions[actionIndex[0]][dataType][actionIndex[1]]['properties'][propertyName]['type'] = propertyType
+                            handleThingTypes(ctx, propertyType, interactionTypeTD, interactionName, dataType, termName, actionIndex, False, True, propertyName)
             if(click.confirm('\nInsert which Object Proprerty are required?', default=False)):
                 click.echo('\nHint: Insert the indexes divided by one space of the required Object Properties within the previously registered')
                 click.echo('Consider index 0 for no required Object Property, 1 as Object Property one, index 2 as Object Property two etc...')
@@ -427,18 +448,18 @@ def handleThingTypes(ctx, inpType, interactionTypeTD, interactionName, dataType=
                     if((len(inputIndexes) > 0) and (inputIndexes[0] != 0)):
                         if(interactionTypeTD == 'properties'):
                             if(array):
-                                ctx.obj['td'][interactionTypeTD][interactionName]['items']['type'].setdefault('required', [])
-                                ctx.obj['td'][interactionTypeTD][interactionName]['items']['type']['required'] = [properties[i-1] for i in inputIndexes]
+                                ctx.obj['td'][interactionTypeTD][interactionName]['items'].setdefault('required', [])
+                                ctx.obj['td'][interactionTypeTD][interactionName]['items']['required'] = [properties[i-1] for i in inputIndexes]
                             else: 
                                 ctx.obj['td'][interactionTypeTD][interactionName].setdefault('required', [])
                                 ctx.obj['td'][interactionTypeTD][interactionName]['required'] = [properties[i-1] for i in inputIndexes]   
                         else:
                             if(array):
-                                ctx.obj['td'][interactionTypeTD][interactionName][dataType][termName]['items']['type'].setdefault('required', [])    
-                                ctx.obj['td'][interactionTypeTD][interactionName][dataType][termName]['items']['type']['required'] = [properties[i-1] for i in inputIndexes]
+                                ctx.obj['td'][interactionTypeTD][interactionName][dataType][termName]['items'].setdefault('required', [])    
+                                ctx.obj['td'][interactionTypeTD][interactionName][dataType][termName]['items']['required'] = [properties[i-1] for i in inputIndexes]
                                 if(interactionTypeTD == 'actions'):
-                                    actionFunctions[actionIndex[0]][dataType][actionIndex[1]]['items']['type'].setdefault('required', [])
-                                    actionFunctions[actionIndex[0]][dataType][actionIndex[1]]['items']['type']['required'] = [properties[i-1] for i in inputIndexes]
+                                    actionFunctions[actionIndex[0]][dataType][actionIndex[1]]['items'].setdefault('required', [])
+                                    actionFunctions[actionIndex[0]][dataType][actionIndex[1]]['items']['required'] = [properties[i-1] for i in inputIndexes]
                             else:
                                 ctx.obj['td'][interactionTypeTD][interactionName][dataType][termName].setdefault('required', [])    
                                 ctx.obj['td'][interactionTypeTD][interactionName][dataType][termName]['required'] = [properties[i-1] for i in inputIndexes]
@@ -511,19 +532,39 @@ def handleTemplateTypes(ctx, termName, interactionTypeTD, interactionName='', da
     elif(termType == 'array'):
         if(interactionTypeTD == 'properties'):
             t['items'] = ctx.obj['td'][interactionTypeTD][termName]['items']
+            if('minItems' in ctx.obj['td'][interactionTypeTD][termName]):
+                t['minItems'] = ctx.obj['td'][interactionTypeTD][termName]['minItems']
+            if('maxItems' in ctx.obj['td'][interactionTypeTD][termName]):
+                t['maxItems'] = ctx.obj['td'][interactionTypeTD][termName]['maxItems'] 
         else:
-            t['items'] = ctx.obj['td']['actions'][interactionName][dataType][termName]['items']
+            t['items'] = ctx.obj['td'][interactionTypeTD][interactionName][dataType][termName]['items']
+            if('minItems' in ctx.obj['td'][interactionTypeTD][interactionName][dataType][termName]):
+                t['minItems'] = ctx.obj['td'][interactionTypeTD][interactionName][dataType][termName]['minItems']
+            if('maxItems' in ctx.obj['td'][interactionTypeTD][interactionName][dataType][termName]):
+                t['maxItems'] = ctx.obj['td'][interactionTypeTD][interactionName][dataType][termName]['maxItems']  
     elif(termType == 'object'):
         if(interactionTypeTD == 'properties'):
             if('properties' in ctx.obj['td'][interactionTypeTD][termName]):
-                t['properties'] = ctx.obj['td'][interactionTypeTD][termName]['properties']
+                objProp = list(ctx.obj['td'][interactionTypeTD][termName]['properties'].keys())
+                t.setdefault('properties', [])
+                for propName in objProp:
+                    p = {}
+                    p = ctx.obj['td'][interactionTypeTD][termName]['properties'][propName]
+                    p['name'] = propName
+                    t['properties'].append(p)
             if('required' in ctx.obj['td'][interactionTypeTD][termName]):
                 t['required'] = ctx.obj['td'][interactionTypeTD][termName]['required']
         else:
             if('properties' in ctx.obj['td'][interactionTypeTD][interactionName][dataType][termName]):
-                t['properties'] = ctx.obj['td'][interactionTypeTD][interactionName][dataType][termName]['properties']
+                objProp = list(ctx.obj['td'][interactionTypeTD][interactionName][dataType][termName]['properties'].keys())
+                t.setdefault('properties', [])
+                for propName in objProp:
+                    p = {}
+                    p = ctx.obj['td'][interactionTypeTD][interactionName][dataType][termName]['properties'][propName]
+                    p['name'] = propName
+                    t['properties'].append(p)
             if('required' in ctx.obj['td'][interactionTypeTD][interactionName][dataType][termName]):
-                t['required'] = ctx.obj['td'][interactionTypeTD][interactionName][dataType][termName]['required']  
+                t['required'] = ctx.obj['td'][interactionTypeTD][interactionName][dataType][termName]['required']        
     return t    
 
 
@@ -690,7 +731,7 @@ def start(ctx, **kwargs):
             # PROPERTY FORM ADDITIONAL TERMS 
             addTerm(ctx, True, 'Property', 'properties', propertyName) 
             # PROPERTY TYPE
-            inpType = click.prompt('Property %d Type' % p, type=click.Choice(['boolean', 'integer', 'number', 'string', 'object', 'array', 'null']), show_default=True) 
+            inpType = click.prompt('\nProperty %d Type' % p, type=click.Choice(['boolean', 'integer', 'number', 'string', 'object', 'array', 'null']), show_default=True) 
             ctx.obj['td']['properties'][propertyName]['type'] = inpType
             handleThingTypes(ctx, inpType, 'properties', propertyName)       
             # PROPERTY FORMAT
@@ -853,9 +894,12 @@ def build(ctx):
         ctx.ensure_object(dict)
         ctx.obj.setdefault('td', {})
         ctx.obj['td'] = json.load(open(fileName))
-        thingProperties = list(ctx.obj['td']['properties'].keys())
-        thingActions = list(ctx.obj['td']['actions'].keys())
-        thingEvents = list(ctx.obj['td']['events'].keys())
+        if('properties' in ctx.obj['td']):
+            thingProperties = list(ctx.obj['td']['properties'].keys())
+        if('actions' in ctx.obj['td']):    
+            thingActions = list(ctx.obj['td']['actions'].keys())
+        if('events' in ctx.obj['td']):    
+            thingEvents = list(ctx.obj['td']['events'].keys())
         for i in range(0, len(thingActions)):
             action = {}
             action['name'] = thingActions[i]
@@ -879,11 +923,14 @@ def build(ctx):
         for i in range(0, len(thingEvents)):
             if(i == 0):
                 Hint = ('\nHint: The Event Condition that, when it is True, will trigger the asynchronous data pushing to Consumers,'
-                    '\ncan include every relational and logic operator like standard conditions in programming languages but no brackets or punctuation marks')
+                    '\ncan include every relational and logic operator like standard conditions in programming languages.'
+                    '\nTo send messages through WebSocket it is necessarly to use sendTXT() method of WebSocketServer library.')
                 click.echo(Hint)
-                click.echo('Example: if (property1_name <= 0)')
-            condition = click.prompt('\nEvent %s Condition' % thingEvents[i], type=str)  
-            eventConditions.append(condition)
+                click.echo('Example: if (property1_name <= 0) { if-body }')
+            event = {}
+            event['condition'] = click.prompt('\nEvent %s Condition' % thingEvents[i], type=str)
+            event['action'] = click.prompt('Event %s Action name' % thingEvents[i], type=click.Choice(thingActions), show_default=True)  
+            eventConditions.append(event) 
         try:
             js.validate(ctx.obj['td'], schema)
         except Exception as e:
@@ -914,7 +961,7 @@ def build(ctx):
     ctx.obj['template'].setdefault('properties', [])
     for i in range(0, ctx.obj['template']['numproperties']):
         p = handleTemplateTypes(ctx, thingProperties[i], 'properties')
-        ctx.obj['template']['properties'].append(p) 
+        ctx.obj['template']['properties'].append(p)   
     # THING ACTIONS
     ctx.obj['template'].setdefault('actions', []) 
     ctx.obj['template']['actions'] = actionFunctions
@@ -923,7 +970,8 @@ def build(ctx):
     for i in range(0, ctx.obj['template']['numevents']):
         e = {}
         e['name'] = thingEvents[i]
-        e['condition'] = eventConditions[i]
+        e['condition'] = eventConditions[i]['condition']
+        e['action'] = eventConditions[i]['action']
         ctx.obj['template']['events'].append(e)
     output = template.render(td=ctx.obj['td'], template=ctx.obj['template'])    
     filePath = ctx.obj['td']['title'].lower() + '/' + ctx.obj['td']['title'].lower() + '.ino'

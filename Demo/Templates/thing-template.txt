@@ -27,48 +27,50 @@
 {%- endmacro %}
 
 {% macro defineVariable(typeV, name, value) -%}
-    {%- if value is iterable and value is not string %}
+{%- if value is iterable and value is not string %}
 {{ typeV }} {{ name }} = 
-        {%- for elem in value -%}
-            {%- if loop.last -%} 
-                {{ ' ' + elem }};
-            {%- else -%}
-                {{ ' ' + elem }}
-            {%- endif -%}
-        {%- endfor -%}     
-    {%- elif (typeV == 'const char*') or (typeV == 'String' and value != 'NULL') %}
+    {%- for elem in value -%}
+        {%- if loop.last -%} 
+            {{ ' ' + elem }};
+        {%- else -%}
+            {{ ' ' + elem }}
+        {%- endif -%}
+    {%- endfor -%}    
+{%- elif (typeV == 'const char*') or (typeV == 'String' and value != 'NULL') %}
 {{ typeV }} {{ name }} = "{{ value }}";
-    {%- elif typeV == 'string' or (typeV == 'null' and (value != '' or value != 'NULL' )) -%}
-String {{ name }} = "{{ value }}";
-    {%- elif typeV == 'null' and (value == 'iv' or value == 'NULL') %}
-String {{ name }} = NULL;    
-    {%- elif typeV == 'integer' %}
-    {%- if value == '' -%}
+{%- elif typeV == 'null' and (value == 'iv' or value == 'NULL') %}
+String {{ name }} = NULL; 
+{%- elif typeV == 'string' or (typeV == 'null' and (value != '' or value != 'NULL' )) -%}
+String {{ name }} = "{{ value }}";   
+{%- elif typeV == 'integer' %}
+{%- if value == '' -%}
 int {{ name }};
-    {%- elif value == 'iv' -%}
+{%- elif value == 'iv' -%}
 int {{ name }} = 0;    
-    {%- else -%}    
+{%- else -%}    
 int {{ name }} = {{ value }};
-    {%- endif -%}
-    {%- elif typeV == 'number' %}
-    {%- if value == '' -%}
+{%- endif -%}
+{%- elif typeV == 'number' %}
+{%- if value == '' -%}
 double {{ name }};
-    {%- elif value == 'iv' -%}
+{%- elif value == 'iv' -%}
 double {{ name }} = 0.0;
-    {%- else -%}    
+{%- elif '.' in value -%}    
 double {{ name }} = {{ value }};
-    {%- endif -%}
-    {% elif typeV == 'boolean' %}
-    {%- if value == '' -%}
+{%- else -%}
+double {{ name }} = {{ value }}.0;
+{%- endif -%}
+{% elif typeV == 'boolean' %}
+{%- if value == '' -%}
 bool {{ name }};
-    {%- elif value == 'iv' -%}
+{%- elif value == 'iv' -%}
 bool {{ name }} = false;    
-    {%- else -%}    
+{%- else -%}    
 bool {{ name }} = {{ value }};
-    {%- endif -%}
-    {% else %}
+{%- endif -%}
+{% else %}
 {{ typeV }} {{ name }} = {{ value }};    
-    {%- endif %}    
+{%- endif %}    
 {%- endmacro %}
 
 {% macro setVariable(ifString, name, value='') -%}
@@ -118,6 +120,56 @@ bool
 {%- endif -%}
 {%- endmacro %}
 
+{% macro handleType(interaction, interactionName, array=False) -%}
+{% if interaction['type'] == 'array' %}
+{{ defineVariable('JsonArray', interactionName + '_value', 'doc.createNestedArray()') }}
+{% if 'minItems' in property %}
+{{ defineVariable('int', interactionName + '_minItems', interaction['minItems']) }}
+{% endif %}
+{% if 'maxItems' in interaction %}
+{{ defineVariable('int', interactionName + '_minItems', interaction['maxItems']) }}
+{% endif %}
+{{ handleType(interaction['items'], interactionName, True) }}
+{% elif interaction['type'] == 'object' %}
+{{ defineVariable('JsonObject', interactionName + '_value', 'doc.createNestedObject()') }}
+{% if 'properties' in interaction %}
+{{ defineVariable('JsonArray', interactionName + '_object', 'doc.createNestedArray()') }}
+{% for property in interaction['properties'] %}
+{{ setVariable(False, interactionName + '_object.add("' + property | replace("'", '\\"') + '")') }}
+{% endfor %}
+{% endif %}
+{% if 'required' in interaction %}
+String {{ interactionName }}_objectRequired[{{ interaction['required'] | length }}] = {
+    {%- for p in interaction['required'] -%}
+    {%- if loop.last -%}
+    "{{ p }}"
+    {%- else -%}
+    "{{ p }}",
+    {%- endif -%}
+    {%- endfor -%}
+};
+{% endif %}
+{% elif interaction['type'] == 'integer' or interaction['type'] == 'number' %}
+{% if array %}
+{% if 'minimum' in interaction %}
+{{ defineVariable(interaction['type'], interactionName + '_itemsMinimum', interaction['minimum']) }}
+{% endif %}
+{% if 'maximum' in property %}
+{{ defineVariable(interaction['type'], interactionName + '_itemsMaximum', interaction['maximum']) }}
+{% endif %}
+{% else %}
+{% if 'minimum' in interaction %}
+{{ defineVariable(interaction['type'], interactionName + '_minimum', interaction['minimum']) }}
+{% endif %}
+{% if 'maximum' in property %}
+{{ defineVariable(interaction['type'], interactionName + '_maximum', interaction['maximum']) }}
+{% endif %}
+{% endif %}
+{% else %}
+{{ defineVariable(interaction['type'], interactionName + '_value', 'iv') }}
+{% endif %}
+{%- endmacro %}
+
 {{ updateEndPoints() }}
 
 {% set ssid = template['ssid'] %}
@@ -163,7 +215,7 @@ JsonArray arr;
 //properties
 {% for property in template['properties'] %}
 {{ defineVariable('const char*', 'property' + loop.index | string + '_name', property['name']) }}
-{{ defineVariable(property['type'], 'property' + loop.index | string + '_value', 'iv') }}
+{{ handleType(property, 'property' + loop.index | string) }}
 {% endfor %}
 
 //actions
@@ -177,6 +229,7 @@ JsonArray arr;
 {% for event in template['events'] %}
 {{ defineVariable('const char*', 'event' + loop.index | string + '_name', event['name']) }}
 {% endfor %}
+{% if template['numevents'] > 0 %}
 String events_list[{{ template['numevents'] }}] = {
     {%- for i in range(1, template['numevents']+1) -%}
     {%- if i == template['numevents'] -%}
@@ -186,6 +239,7 @@ String events_list[{{ template['numevents'] }}] = {
     {%- endif -%}
     {%- endfor -%}
 };
+{% endif %}
 
 //requests
 {{ defineVariable('String', 'req1', '/') }}
