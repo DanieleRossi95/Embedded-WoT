@@ -36,12 +36,18 @@
             {{ ' ' + elem }}
         {%- endif -%}
     {%- endfor -%}    
-{%- elif (typeV == 'const char*') or (typeV == 'String' and value != 'NULL') %}
+{%- elif typeV == 'const char*' %}
+{%- if value == 'iv' -%}
+{{ typeV }} {{ name }} = "";
+{%- else -%}
 {{ typeV }} {{ name }} = "{{ value }}";
-{%- elif typeV == 'null' and (value == 'iv' or value == 'NULL') %}
-String {{ name }} = NULL; 
-{%- elif typeV == 'string' or (typeV == 'null' and (value != '' or value != 'NULL' )) -%}
-String {{ name }} = "{{ value }}";   
+{%- endif -%}
+{%- elif typeV.lower() == 'string' or typeV == 'null' %}
+{%- if value == 'iv' -%}
+{{ castType(typeV) }} {{ name }} = "";
+{%- else -%}
+{{ castType(typeV) }} {{ name }} = "{{ value }}";
+{%- endif -%}
 {%- elif typeV == 'integer' %}
 {%- if value == '' -%}
 int {{ name }};
@@ -67,6 +73,18 @@ bool {{ name }};
 bool {{ name }} = false;    
 {%- else -%}    
 bool {{ name }} = {{ value }};
+{%- endif -%}
+{% elif typeV == 'array' or typeV == 'JsonArray' %}
+{%- if value == 'iv' -%}
+JsonArray {{ name }} = doc.createNestedArray();
+{%- else -%}
+JsonArray {{ name }} = {{ value }};
+{%- endif -%}
+{% elif typeV == 'object' or typeV == 'JsonObject' %}
+{%- if value == 'iv' -%}
+JsonObject {{ name }} = doc.createNestedObject();
+{%- else -%}
+JsonObject {{ name }} = {{ value }};
 {%- endif -%}
 {% else %}
 {{ typeV }} {{ name }} = {{ value }};    
@@ -111,12 +129,14 @@ void
 int
 {%- elif type == 'number' -%}
 double
-{%- elif type == 'string' or type == 'null' -%}
+{%- elif type.lower() == 'string' or type == 'null' -%}
 String
 {%- elif type == 'boolean' -%}
 bool
-{%- else -%}
-{{ type }}
+{%- elif type == 'array' -%}
+JsonArray
+{%- elif type == 'object' -%}
+JsonObject 
 {%- endif -%}
 {%- endmacro %}
 
@@ -133,13 +153,10 @@ bool
 {% elif interaction['type'] == 'object' %}
 {{ defineVariable('JsonObject', interactionName + '_value', 'doc.createNestedObject()') }}
 {% if 'properties' in interaction %}
-{{ defineVariable('JsonArray', interactionName + '_object', 'doc.createNestedArray()') }}
-{% for property in interaction['properties'] %}
-{{ setVariable(False, interactionName + '_object.add("' + property | replace("'", '\\"') + '")') }}
-{% endfor %}
+{{ defineVariable('String', interactionName + '_schema', interaction['properties'] | replace("'", '\\"') | replace(' ', '')) }}
 {% endif %}
 {% if 'required' in interaction %}
-String {{ interactionName }}_objectRequired[{{ interaction['required'] | length }}] = {
+String {{ interactionName }}_opRequired[{{ interaction['required'] | length }}] = {
     {%- for p in interaction['required'] -%}
     {%- if loop.last -%}
     "{{ p }}"
@@ -148,7 +165,7 @@ String {{ interactionName }}_objectRequired[{{ interaction['required'] | length 
     {%- endif -%}
     {%- endfor -%}
 };
-{% endif %}
+{%- endif -%}
 {% elif interaction['type'] == 'integer' or interaction['type'] == 'number' %}
 {% if array %}
 {% if 'minimum' in interaction %}
@@ -167,8 +184,8 @@ String {{ interactionName }}_objectRequired[{{ interaction['required'] | length 
 {% endif %}
 {% else %}
 {{ defineVariable(interaction['type'], interactionName + '_value', 'iv') }}
-{% endif %}
-{%- endmacro %}
+{%- endif -%}
+{%- endmacro -%}
 
 {{ updateEndPoints() }}
 
@@ -212,24 +229,40 @@ JsonArray arr;
 {{ defineVariable('int', 'actions_number', template['numactions']) }}
 {{ defineVariable('int', 'events_number', template['numevents']) }}
 
-//properties
+{% if template['numproperties'] > 0 %}
+// properties
 {% for property in template['properties'] %}
 {{ defineVariable('const char*', 'property' + loop.index | string + '_name', property['name']) }}
 {{ handleType(property, 'property' + loop.index | string) }}
 {% endfor %}
+{% endif %}
 
+{% if template['numactions'] > 0 %}
 //actions
 {% for action in template['actions'] %}
-{%- set actionIndex = 'action' + loop.index | string -%}
+{% set actionIndex = 'action' + loop.index | string -%}
 {{ defineVariable('const char*', actionIndex + '_name', action['name']) }}
 {{ defineVariable('int', actionIndex + '_inputsNumber', action['input'] | length) }}
+String {{ actionIndex + '_schema' }}[{{ action['input'] | length }}] = {
+    {%- for item in action['input'] -%}
+    {%- if loop.last -%}
+    "{{ item | replace("'", '\\"') | replace(' ', '') }}"
+    {%- else -%}
+    "{{ item | replace("'", '\\"') | replace(' ', '') }}",
+    {%- endif -%}
+    {%- endfor -%}
+};
+{% if 'name' in action['output']  %}
+{{ defineVariable('String', actionIndex + '_output', action['output'] | string ) }}
+{% endif %}
 {% endfor %}
+{% endif %}
 
+{% if template['numevents'] > 0 %}
 //events
 {% for event in template['events'] %}
 {{ defineVariable('const char*', 'event' + loop.index | string + '_name', event['name']) }}
 {% endfor %}
-{% if template['numevents'] > 0 %}
 String events_list[{{ template['numevents'] }}] = {
     {%- for i in range(1, template['numevents']+1) -%}
     {%- if i == template['numevents'] -%}
@@ -272,6 +305,18 @@ String resp;
 int i, j;
 
 void setup() {
+    // properties data 
+    {% for property in template['properties'] %}
+    {% if property['type'] == 'object' %}
+    {{ setVariable(False, 'serializeJson(property' + loop.index | string + '_op, arr)') }}
+    {% if 'properties' in property %}
+    for(i=0; i<arr.size(); i++) {
+        {{ setVariable(True, 'property' + loop.index | string + '_value[(char*) arr[i]["name"]]', '') }}
+    }
+    {% endif %}
+    {% endif %}
+    {% endfor %}
+
     Serial.begin(115200);
     Serial.println();
   
@@ -286,7 +331,7 @@ void setup() {
 
     server.begin();
     
-    {% if template['numevents'] != 0 %}
+    {%- if template['numevents'] != 0 -%}
     webSocket.begin();
     webSocket.onEvent(webSocketEvent);
     {% endif %}
@@ -312,7 +357,6 @@ void connection(const char* ssid, const char* password) {
     while (WiFi.status() != WL_CONNECTED) {
         delay(1000);
         Serial.print(".");
- 
     }
 
     Serial.println("\nConnected");
@@ -321,14 +365,44 @@ void connection(const char* ssid, const char* password) {
     Serial.println(ipS);
 
     urlServer = protocolServer + "://" + ipS.toString() + ":" + portServer + "/" + thingName;
+    {% if template['numevents'] != 0 %}
     urlSocket = protocolSocket + "://" + ipS.toString() + ":" + portSocket + "/" + thingName;
+    {% endif %}
 }
 
-// action functions
 {% for action in template['actions'] %}
+// action functions
 {{ defineFunction(action['name'], action['input'], action['output'], action['body']) }}
-
 {% endfor %}
+
+// handle action input types
+bool handleType(String type, String value, String schema) {
+    {{ defineVariable('bool', 'validInput', 'true') }}
+    if(type.equals("integer")) {
+        for(i=0; i<tmp.length(); i++) {
+            if(!isDigit(tmp[i])) {
+                {{ setVariable(False, 'validInput', 'false') }}
+                break;
+            } 
+        }   
+    }
+    else if(type.equals("boolean")) {
+        if(!tmp.equalsIgnoreCase("true") && !tmp.equalsIgnoreCase("false"))
+            {{ setVariable(False, 'validInput', 'false') }}
+    }
+    else if(type.equals("string")) {
+        if(tmp.equalsIgnoreCase("null")) 
+            {{ setVariable(False, 'validInput', 'false') }}
+    }
+    else if(type.equals("array")) {
+         if(arr.isNull()) 
+            {{ setVariable(False, 'validInput', 'false') }}
+        else {
+            
+        }
+    }
+    {{ setVariable(False, 'return validInput') }}
+}
 
 // request functions
 void handleReq1() {
@@ -392,7 +466,7 @@ void handleReq{{ loop.index+3+template['numproperties'] }}() {
             {{ defineVariable('bool', 'validInput', 'true') }}
 
             {% for item in action['input'] %}
-            {{ defineVariable(item['type'], 'action' + a | string + '_input' + loop.index | string + '_value', '') }}
+            {{ defineVariable(item['type'], 'action' + a | string + '_input' + loop.index | string + '_value', 'iv') }}
             {% endfor %}
 
             {{ defineVariable('String', 'tmp', '') }}
@@ -400,51 +474,49 @@ void handleReq{{ loop.index+3+template['numproperties'] }}() {
             while(validInput && i<{{ 'action' + a | string + '_inputsNumber'}}) {
                 switch(i) {
                     {% for item in action['input'] %}
-                    case({{ loop.index }}): {
-                        {% if item['type'] == 'integer' or item['type'] == 'number' %}
-                        serializeJson(respDoc["{{ item['name'] }}"], tmp);
-                        for(i=0; i<tmp.length(); i++) {
-                            if(!isDigit(tmp[i])) {
-                                {{ setVariable(False, 'validInput', 'false') }}
-                                break;
-                            } 
-                        }   
-                        {% elif item['type'] == 'boolean' %}
-                        {{ setVariable(False, 'serializeJson(respDoc["' + item['name'] + '"], tmp') }}
-                        if(!tmp.equalsIgnoreCase("true") && !tmp.equalsIgnoreCase("false")) {
-                            {{ setVariable(False, 'validInput', 'false') }}
-                        } 
-                        {% elif item['type'] == 'string' %}
-                        {{ setVariable(False, 'serializeJson(respDoc["' + item['name'] + '"], tmp') }}
-                        if(tmp.equalsIgnoreCase("null")) {
-                            {{ setVariable(False, 'validInput', 'false') }}
-                        }
-                        {% endif %}
-                        {%- if item['type'] == 'integer' %}
-                        {{ setVariable(False, 'action' + a | string + '_input' + loop.index | string + '_value', 'tmp.toInt()') }}
-                        {% elif item['type'] == 'number' %}
-                        {{ setVariable(False, 'action' + a | string + '_input' + loop.index | string + '_value', 'tmp.toDouble()') }}
-                        {% elif item['type'] == 'boolean' %}
-                        else if(tmp.equals("true")) {
-                            {{ setVariable(False, 'action' + a | string + '_input' + loop.index | string + '_value', 'true') }}
-                        }
-                        else { 
-                            {{ setVariable(False, 'action' + a | string + '_input' + loop.index | string + '_value', 'false') }}
-                        }
-                        {% elif item['type'] == 'string' %}
-                        else { 
-                            {{ setVariable(False, 'action' + a | string + '_input' + loop.index | string + '_value', 'tmp') }}
-                        }
-                        {% elif item['type'] == 'null' %}
-                        {{ setVariable(False, 'serializeJson(respDoc["' + item['name'] + '"], action' + a | string +'_input' + loop.index | string +'_value)') }}
+                    case({{ loop.index0 }}) {
+                        {% if item['type'] == 'array' %}
+                        {{ setVariable(False, 'serializeJson(respDoc["' + item['name'] + '"], arr)') }}
+                        {{ setVariable(False, 'validInput', 'handleType("' + item['type'] + '", arr, actions_schema[' + loop.index0 | string + '])') }}
+                        {% elif item['type'] == 'object' %}
+                        {{ setVariable(False, 'serializeJson(respDoc["' + item['name'] + '"], obj)') }}
+                        {{ setVariable(False, 'validInput', 'handleType("' + item['type'] + '", obj, actions_schema[' + loop.index0 | string + '])') }}
+                        {% else %}
+                        {{ setVariable(False, 'serializeJson(respDoc["' + item['name'] + '"], tmp)') }}
+                        {{ setVariable(False, 'validInput', 'handleType("' + item['type'] + '", tmp, actions_schema[' + loop.index0 | string + '])') }}
                         {% endif %}
                         break;
                     }
                     {% endfor %}
                 }
-            }
-            
+                {{ setVariable(False, 'i++') }}
+            }    
+
             if(validInput) {
+                {% for item in action['input'] %}
+                {% if item['type'] == 'integer' %}
+                {{ setVariable(False, 'action' + a | string + '_input' + loop.index | string + '_value', 'tmp.toInt()') }}
+                {% elif item['type'] == 'number' %}
+                {{ setVariable(False, 'action' + a | string + '_input' + loop.index | string + '_value', 'tmp.toDouble()') }}
+                {% elif item['type'] == 'boolean' %}
+                if(tmp.equals("true")) {
+                    {{ setVariable(False, 'action' + a | string + '_input' + loop.index | string + '_value', 'true') }}
+                }
+                else { 
+                    {{ setVariable(False, 'action' + a | string + '_input' + loop.index | string + '_value', 'false') }}
+                }
+                {% elif item['type'] == 'string'%}
+                {{ setVariable(False, 'action' + a | string + '_input' + loop.index | string + '_value', 'tmp') }}
+                }
+                {% elif item['type'] == 'null' %}
+                {{ setVariable(False, 'serializeJson(respDoc["' + item['name'] + '"], action' + a | string +'_input' + loop.index | string +'_value)') }}
+                {% elif item['type'] == 'array' %}
+                {{ setVariable(False, 'deserializeJson(action' + a | string + '_input' + loop.index | string + '_value, arr)') }}
+                {% elif item['type'] == 'object' %}
+                {{ setVariable(False, 'deserializeJson(action' + a | string + '_input' + loop.index | string + '_value, obj)') }}
+                {% endif %}
+                {% endfor %}
+
                 {% if 'type' in action['output'] %}
                 {{ castType(action['output']['type']) }} output = {{ action['name'] }}(
                 {%- for item in action['input'] -%}
@@ -467,10 +539,13 @@ void handleReq{{ loop.index+3+template['numproperties'] }}() {
                 ); 
                 {% endif %}
                 {% if 'type' in action['output'] %}    
-                server.send(200, "text/plain", output);
+                {% if action['output']['type'] != 'string' or action['output']['type'] != 'null' %}
+                server.send(200, "text/plain", (char*) output);
                 {% else %}
-                {{ setVariable(False, 'resp', 'action' + a | string + '_name + " invoked"') }}
-                server.send(200, "text/plain", resp);
+                server.send(200, "text/plain", output);
+                {% endif %}
+                {% else %}
+                server.send(200, "text/plain", "");
                 {% endif %}
             }
             else {
@@ -485,10 +560,13 @@ void handleReq{{ loop.index+3+template['numproperties'] }}() {
         {{ action['name'] }}(); 
         {% endif %}
         {% if 'type' in action['output'] %}    
-        server.send(200, "text/plain", output);
+        {% if action['output']['type'] != 'string' or action['output']['type'] != 'null' %}
+        server.send(200, "text/plain", (char*) output);
         {% else %}
-        {{ setVariable(False, 'resp', 'action' + a | string + '_name + " invoked"') }}
-        server.send(200, "text/plain", resp);
+        server.send(200, "text/plain", output);
+        {% endif %}
+        {% else %}
+        server.send(200, "text/plain", "");
         {% endif %}
         {% endif %}  
     }
