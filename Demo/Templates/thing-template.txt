@@ -370,39 +370,362 @@ void connection(const char* ssid, const char* password) {
     {% endif %}
 }
 
-{% for action in template['actions'] %}
+{% if template['numactions'] > 0 %}
 // action functions
+{% for action in template['actions'] %}
 {{ defineFunction(action['name'], action['input'], action['output'], action['body']) }}
 {% endfor %}
 
 // handle action input types
-bool handleType(String type, String value, String schema) {
+bool handleInputType(String value, String schema, bool array) {
     {{ defineVariable('bool', 'validInput', 'true') }}
-    if(type.equals("integer")) {
-        for(i=0; i<tmp.length(); i++) {
-            if(!isDigit(tmp[i])) {
+    {{ defineVariable('JsonObject', 'obj_schema', 'doc.createNestedObject()') }}
+    {{ setVariable(False, 'deserializeJson(obj_schema, schema)') }}
+    {% set isString = False %}
+    {% set isBoolean = False %}
+    {% set isInteger = False %}
+    {% set isNumber = False %}
+    {% set isMin = False %}
+    {% set isMax = False %}
+    {% set isArray = False %}
+    {% set isMinItems = False %}
+    {% set isMaxItems = False %}
+    {% set isArrayObject = False %}
+    {% set isArrayString = False %}
+    {% set isArrayBoolean = False %}
+    {% set isArrayInteger = False %}
+    {% set isArrayMin = False %}
+    {% set isArrayMax = False %}
+    {% set isObject = False %}
+    {% set isProperty = False %}
+    {% set isPropertyString = False %}
+    {% set isPropertyBoolean = False %}
+    {% set isPropertyInteger = False %}
+    {% set isPropertyMin = False %}
+    {% set isPropertyMax = False %}
+    {% set isRequired = False %}
+    {% for action in template['actions'] %}
+    {% for item in action['input'] %}
+    {% if item['type'] == 'string' and not(isString) %}
+    {% set isString = True %}
+    {% elif item['type'] == 'boolean' and not(isBoolean) %}
+    {% set isBoolean = True %}
+    {% elif item['type'] == 'integer' or item['type'] == 'number' %}
+    {% if not(isInteger) %}
+    {% set isInteger = True %}
+    {% endif %}
+    {% if 'minimum' in item and not(isMin) %}
+    {% set isMin = True %}
+    {% endif %}
+    {% if 'maximum' in item and not(isMax) %}
+    {% set isMax = True %}
+    {% endif %}
+    {% elif item['type'] == 'array' %}
+    {% if not(isArray) %}
+    {% set isArray = True %}
+    {{ defineVariable('JsonArray', 'array_value', 'doc.createNestedArray()') }}
+    {% endif %}
+    {% if 'minItems' in item and not(isMinItems) %}
+    {% set isMinItems = True %}
+    {% endif %}
+    {% if 'maxItems' in item and not(isMaxItems) %}
+    {% set isMaxItems = True %}
+    {% endif %}
+    {% if item['items']['type'] == 'object' and not(isArrayObject) %}
+    {% set isArrayObject = True %}
+    {% elif item['items']['type'] == 'string' and not(isArrayString) %}
+    {% set isArrayString = True %}
+    {% elif item['items']['type'] == 'booelan' and not(isArrayBoolean) %}
+    {% set isArrayBoolean = True %}
+    {% elif item['items']['type'] == 'integer' or item['items']['type'] == 'number' %}
+    {% if not(isArrayInteger) %}
+    {% set isArrayInteger = True %}
+    {% endif %}
+    {% if 'minimum' in item['items'] and not(isMin) %}
+    {% set isArrayMin = True %}
+    {% endif %}
+    {% if 'maximum' in item['items'] and not(isMax) %}
+    {% set isArrayMax = True %}
+    {% endif %}
+    {% endif %}
+    {% elif item['type'] == 'object' %}
+    {% if not(isObject) %}
+    {% set isObject = True %}
+    {{ defineVariable('JsonObject', 'obj_value', 'doc.createNestedObject()') }}
+    {% endif %}
+    {% if 'properties' in item %}
+    {% set isProperty = True %}
+    {% for property in item['properties'] %}
+    {% if property['type'] == 'string' and not(isPropertyString) %}
+    {% set isPropertyString = True %}
+    {% elif property['type'] == 'boolean' and not(isPropertyBoolean) %}
+    {% set isPropertyBoolean = True %}
+    {% elif property['type'] == 'integer' or property['type'] == 'number' %}
+    {% if not(isPropertyInteger) %}
+    {% set isPropertyInteger = True %}
+    {% endif %}
+    {% if 'minimum' in property and not(isPropertyMin) %}
+    {% set isPropertyMin = True %}
+    {% endif %}
+    {% if 'maximum' in property and not(isPropertyMax) %}
+    {% set isPropertyMax = True %}
+    {% endif %}
+    {% endif %}
+    {% if 'required' in item and not(isRequired) %}
+    {% set isRequired = True%}
+    {% endif %}
+    {% endfor %}
+    {% endif %}
+    {% endif %}
+    {% endfor %}
+    {% endfor %}
+    {{ isArray }}
+    {{ isObject }}
+    {% if isString %}
+    if(obj_schema["type"].equals("string")) {
+        {% if isArrayString %}
+        if(array) {
+            {{ setVariable(False, 'deserializeJson(array_value, value)') }}
+            for(i=0; i<array_value.size(); i++) 
+                if(array_value[i].equalsIgnoreCase("null")) {
+                    {{ setVariable(False, 'validInput', 'false') }}
+                    break;
+                }
+        }
+        else if(value.equalsIgnoreCase("null")) 
+            {{ setVariable(False, 'validInput', 'false') }}
+        {% else %}
+        if(value.equalsIgnoreCase("null")) 
+            {{ setVariable(False, 'validInput', 'false') }}
+        {% endif %}    
+    }
+    {% endif %}
+    {% if isBoolean %}
+    else if(obj_schema["type"].equals("boolean")) {
+        {% if isArrayBoolean %}
+        if(array) {
+            {{ setVariable(False, 'deserializeJson(array_value, value)') }}
+            for(i=0; i<array_value.size(); i++) 
+                if(!array_value[i].equalsIgnoreCase("true") and !array_value[i].equalsIgnoreCase("false")) {
+                    {{ setVariable(False, 'validInput', 'false') }}
+                    break;
+                }
+        }
+        else if(!value.equalsIgnoreCase("true") and !value.equalsIgnoreCase("false"))
+            {{ setVariable(False, 'validInput', 'false') }}
+        {% else %}   
+        if(!value.equalsIgnoreCase("true") and !value.equalsIgnoreCase("false"))
+            {{ setVariable(False, 'validInput', 'false') }}
+        {% endif %} 
+    }
+    {% endif %}
+    {% if isInteger %}
+    else if(obj_schema["type"].equals("integer")) {
+        {% if isArrayInteger %}
+        if(array) {
+            {{ setVariable(False, 'deserializeJson(array_value, value)') }}
+            for(i=0; i<array_value.size(); i++) {
+                for(j=0; i<array_value[i].length(); j++) 
+                    if(!isDigit(array_value[i][j])) {
+                        {{ setVariable(False, 'validInput', 'false') }}
+                        break;
+                    }
+                if(!validInput)   
+                    break; 
+            }
+            {% if isArrayMin or isArrayMax %}
+            if(validInput) {
+                {{ defineVariable('int', 'input[array_value.size()]', '{}') }}
+                for(i=0; i<array_value.size(); i++) 
+                    {{ setVariable(False, 'input[i]', 'array_value[i].toInt()') }}
+                {% if isArrayMin %}
+                if(!obj_schema["minimum"].isNull()) 
+                    for(i=0; i<array_value.size(); i++)
+                        if(input[i] < obj_schema["minimum"]) {
+                            {{ setVariable(False, 'validInput', 'false') }}
+                            break;
+                        }
+                {% endif %}
+                {% if isArrayMax %}        
+                if(!obj_schema["maximum"].isNull())  
+                    for(i=0; i<array_value.size(); i++)
+                        if(input[i] > obj_schema["maximum"]) {
+                            {{ setVariable(False, 'validInput', 'false') }}
+                            break;
+                        }   
+                {% endif %}          
+            }
+            {% endif %}       
+        }
+        else {
+            for(i=0; i<value.length(); i++) 
+                if(!isDigit(value[i])) {
+                    {{ setVariable(False, 'validInput', 'false') }}
+                    break;
+                }
+            {% if isMin or isMax %}
+            if(validInput) {
+                {{ defineVariable('int', 'input', 'value.toInt()') }}
+                {% if isMin %}
+                if(!obj_schema["minimum"].isNull()) 
+                    if(input < obj_schema["minimum"])
+                        {{ setVariable(False, 'validInput', 'false') }}
+                {% endif %}
+                {% if isMax %}        
+                if(!obj_schema["maximum"].isNull())  
+                    if(input > obj_schema["maximum"])
+                        {{ setVariable(False, 'validInput', 'false') }}     
+                {% endif %}          
+            }
+            {% endif %}
+        }
+        {% else %}
+        for(i=0; i<value.length(); i++) 
+            if(!isDigit(value[i])) {
                 {{ setVariable(False, 'validInput', 'false') }}
                 break;
-            } 
-        }   
+            }
+        {% if isMin or isMax %}
+        if(validInput) {
+            {{ defineVariable('int', 'input', 'value.toInt()') }}
+            {% if isMin %}
+            if(!obj_schema["minimum"].isNull()) 
+                if(input < obj_schema["minimum"])
+                    {{ setVariable(False, 'validInput', 'false') }}
+            {% endif %}
+            {% if isMax %}        
+            if(!obj_schema["maximum"].isNull())  
+                if(input > obj_schema["maximum"])
+                    {{ setVariable(False, 'validInput', 'false') }}     
+            {% endif %}          
+        }
+        {% endif %}
+        {% endif %}
     }
-    else if(type.equals("boolean")) {
-        if(!tmp.equalsIgnoreCase("true") && !tmp.equalsIgnoreCase("false"))
-            {{ setVariable(False, 'validInput', 'false') }}
-    }
-    else if(type.equals("string")) {
-        if(tmp.equalsIgnoreCase("null")) 
-            {{ setVariable(False, 'validInput', 'false') }}
-    }
-    else if(type.equals("array")) {
-         if(arr.isNull()) 
+    {% endif %}
+    {% if isArray %}
+    else if(obj_schema["type"].equals("array")) {
+        {{ setVariable(False, 'deserializeJson(array_value, value)') }}
+        if(array_value.isNull()) 
             {{ setVariable(False, 'validInput', 'false') }}
         else {
-            
+            {% if isMinItems %}
+            if(!obj.schema["minItems"].isNull())
+                if(array_value.size() < obj.schema["minItems"])    
+                    {{ setVariable(False, 'validInput', 'false') }}
+            {% endif %}
+            {% if isMaxItems %}
+            if(!obj.schema["maxItems"].isNull())
+                if(array_value.size() > obj.schema["maxItems"])    
+                    {{ setVariable(False, 'validInput', 'false') }}
+            {% endif %}
+            {% if isMinItems or isMaxItems %}
+            if(validInput) {
+                {{ setVariable(False, 'serializeJson(obj_schema["items"], schema)') }}
+                {{ setVariable(False, 'handleInputType(value, schema, true)') }}
+            }
+            {% else %}
+            {{ setVariable(False, 'serializeJson(obj_schema["items"], schema)') }}
+            {{ setVariable(False, 'handleInputType(value, schema, true)') }}
+            {% endif %}
         }
     }
+    {% endif %}
+    {% if isObject %}
+    else if (obj_schema["type"].equals("object")) {
+        {% if isArrayObject %}
+        if(array) {
+            {{ setVariable(False, 'deserializeJson(array_value, value)') }}
+            for(i=0; i<array_value.size(); i++) {
+                {% if isRequired %}
+                for(j=0; i<obj_schema["required"].size(); j++)
+                    if(array_value[i][(String) obj_schema["required"][j]].isNull()) {
+                        {{ setVariable(False, 'validInput', 'false') }}
+                        break;
+                    }
+                if(validInput) {
+                    for(i=0; i<obj_schema["properties"].size(); i++)
+                        if(!array_value[i][(String) obj_schema["properties"][j]].isNull()) {
+                            {{ setVariable(False, 'serializeJson(obj_schema["properties"][j], schema)') }}
+                            {{ setVariable(False, 'serializeJson(array_value[i][(String) obj_schema["properties"][j]], value)') }}
+                            {{ setVariable(False, 'handleInputType(value, schema, false)') }} 
+                        }
+                }
+                else
+                    break;    
+                {% else %}
+                for(j=0; i<obj_schema["properties"].size(); i++) 
+                    if(!array_value[i][(String) obj_schema["properties"][j]].isNull()) {
+                        {{ setVariable(False, 'serializeJson(obj_schema["properties"][j], schema)') }}
+                        {{ setVariable(False, 'serializeJson(array_value[i][(String) obj_schema["properties"][j]], value)') }}
+                        {{ setVariable(False, 'handleInputType(value, schema, false)') }} 
+                    }
+                {% endif %}
+            }
+        }
+        else {
+            {{ setVariable(False, 'deserializeJson(obj_value, value)') }}
+            if(obj_value.isNull())
+                {{ setVariable(False, 'validInput', 'false') }}
+            else {
+                {% if isRequired %}
+                for(i=0; i<obj_schema["required"].size(); i++)
+                    if(obj_value[(String) obj_schema["required"][i]].isNull()) {
+                        {{ setVariable(False, 'validInput', 'false') }}
+                        break;
+                    }
+                if(validInput) {
+                    for(i=0; i<obj_schema["properties"].size(); i++)
+                        if(!obj_value[(String) obj_schema["properties"][i]].isNull()) {
+                            {{ setVariable(False, 'serializeJson(obj_schema["properties"][i], schema)') }}
+                            {{ setVariable(False, 'serializeJson(obj_value[(String) obj_schema["properties"][i]], value)') }}
+                            {{ setVariable(False, 'handleInputType(value, schema, false)') }} 
+                        }
+                }
+                {% else %}
+                for(i=0; i<obj_schema["properties"].size(); i++) 
+                    if(!obj_value[(String) obj_schema["properties"][i]].isNull()) {
+                        {{ setVariable(False, 'serializeJson(obj_schema["properties"][i], schema)') }}
+                        {{ setVariable(False, 'serializeJson(obj_value[(String) obj_schema["properties"][i]], value)') }}
+                        {{ setVariable(False, 'handleInputType(value, schema, false)') }} 
+                    }
+                {% endif %}
+            }
+        }
+        {% else %}
+        {{ setVariable(False, 'deserializeJson(obj_value, value)') }}
+        if(obj_value.isNull())
+            {{ setVariable(False, 'validInput', 'false') }}
+        else {
+            {% if isRequired %}
+            for(i=0; i<obj_schema["required"].size(); i++)
+                if(obj_value[(String) obj_schema["required"][i]].isNull()) {
+                    {{ setVariable(False, 'validInput', 'false') }}
+                    break;
+                }
+            if(validInput) {
+                for(i=0; i<obj_schema["properties"].size(); i++)
+                    if(!obj_value[(String) obj_schema["properties"][i]].isNull()) {
+                        {{ setVariable(False, 'serializeJson(obj_schema["properties"][i], schema)') }}
+                        {{ setVariable(False, 'serializeJson(obj_value[(String) obj_schema["properties"][i]], value)') }}
+                        {{ setVariable(False, 'handleInputType(value, schema, false)') }} 
+                    }
+            }
+            {% else %}
+            for(i=0; i<obj_schema["properties"].size(); i++) 
+                if(!obj_value[(String) obj_schema["properties"][i]].isNull()) {
+                    {{ setVariable(False, 'serializeJson(obj_schema["properties"][i], schema)') }}
+                    {{ setVariable(False, 'serializeJson(obj_value[(String) obj_schema["properties"][i]], value)') }}
+                    {{ setVariable(False, 'handleInputType(value, schema, false)') }} 
+                }
+            {% endif %}
+        }
+        {% endif %}    
+    }
+    {% endif %}
     {{ setVariable(False, 'return validInput') }}
 }
+{% endif %}
 
 // request functions
 void handleReq1() {
@@ -471,20 +794,12 @@ void handleReq{{ loop.index+3+template['numproperties'] }}() {
 
             {{ defineVariable('String', 'tmp', '') }}
             {{ setVariable(False, 'i', 0) }}
-            while(validInput && i<{{ 'action' + a | string + '_inputsNumber'}}) {
+            while(validInput and i<{{ 'action' + a | string + '_inputsNumber'}}) {
                 switch(i) {
                     {% for item in action['input'] %}
                     case({{ loop.index0 }}) {
-                        {% if item['type'] == 'array' %}
-                        {{ setVariable(False, 'serializeJson(respDoc["' + item['name'] + '"], arr)') }}
-                        {{ setVariable(False, 'validInput', 'handleType("' + item['type'] + '", arr, actions_schema[' + loop.index0 | string + '])') }}
-                        {% elif item['type'] == 'object' %}
-                        {{ setVariable(False, 'serializeJson(respDoc["' + item['name'] + '"], obj)') }}
-                        {{ setVariable(False, 'validInput', 'handleType("' + item['type'] + '", obj, actions_schema[' + loop.index0 | string + '])') }}
-                        {% else %}
                         {{ setVariable(False, 'serializeJson(respDoc["' + item['name'] + '"], tmp)') }}
-                        {{ setVariable(False, 'validInput', 'handleType("' + item['type'] + '", tmp, actions_schema[' + loop.index0 | string + '])') }}
-                        {% endif %}
+                        {{ setVariable(False, 'validInput', 'handleInputType(tmp,actions_schema[' + loop.index0 | string + '],false)') }}
                         break;
                     }
                     {% endfor %}
