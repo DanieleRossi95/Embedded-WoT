@@ -549,7 +549,7 @@ def handleTemplateTypes(ctx, termName, interactionTypeTD, interactionName='', da
                 t.setdefault('properties', [])
                 for propName in objProp:
                     p = {}
-                    p = ctx.obj['td'][interactionTypeTD][termName]['properties'][propName]
+                    p = dict(ctx.obj['td'][interactionTypeTD][termName]['properties'][propName])
                     p['name'] = propName
                     t['properties'].append(p)
             if('required' in ctx.obj['td'][interactionTypeTD][termName]):
@@ -560,7 +560,7 @@ def handleTemplateTypes(ctx, termName, interactionTypeTD, interactionName='', da
                 t.setdefault('properties', [])
                 for propName in objProp:
                     p = {}
-                    p = ctx.obj['td'][interactionTypeTD][interactionName][dataType][termName]['properties'][propName]
+                    p = dict(ctx.obj['td'][interactionTypeTD][interactionName][dataType][termName]['properties'][propName])
                     p['name'] = propName
                     t['properties'].append(p)
             if('required' in ctx.obj['td'][interactionTypeTD][interactionName][dataType][termName]):
@@ -890,7 +890,13 @@ def build(ctx):
     global thingActions
     global thingEvents
     if((ctx.obj is None) or ('td' not in ctx.obj)):
-        fileName = click.prompt('Upload Thing Description as Json File', type=click.Path(exists=True, readable=True, resolve_path=True))
+        correctJsonFile = False
+        while(not(correctJsonFile)):
+            fileName = click.prompt('Upload Thing Description as Json File', type=click.Path(exists=True, readable=True, resolve_path=True))
+            if(fileName.rpartition('.')[-1] == 'json'):
+                correctJsonFile = True
+            else:
+                click.echo("Error: Non-Json File provided")    
         ctx.ensure_object(dict)
         ctx.obj.setdefault('td', {})
         ctx.obj['td'] = json.load(open(fileName))
@@ -935,17 +941,20 @@ def build(ctx):
             js.validate(ctx.obj['td'], schema)
         except Exception as e:
             click.echo(str(e))
-        click.echo()    
+        click.echo()        
     ctx.obj.setdefault('template', {})   
     # NETWORK SSID
-    inp = click.prompt('Network SSID to which the Embedded-System will connect', type=str)
-    ctx.obj['template']['ssid'] = inp
+    #inp = click.prompt('Network SSID to which the Embedded-System will connect', type=str)
+    #ctx.obj['template']['ssid'] = inp
+    ctx.obj['template']['ssid'] = 'TIM-31734817'
     # NETWORK PASSWORD
-    if(click.confirm('\nNetwork has password?', default=True)):
+    '''if(click.confirm('\nNetwork has password?', default=True)):
         inp = click.prompt('Network Password (hide_input)', type=str, hide_input=True)
         ctx.obj['template']['password'] = inp
     else:
         ctx.obj['template']['password'] = ''   
+    '''    
+    ctx.obj['template']['password'] = '7dZ7sh43mfBiibn5'
     # WEBSERVER PORT
     inp = click.prompt('\nWebServer Port', type=NN_INT, default=80, show_default=True)
     ctx.obj['template']['portserver'] = str(inp)
@@ -961,7 +970,12 @@ def build(ctx):
     ctx.obj['template'].setdefault('properties', [])
     for i in range(0, ctx.obj['template']['numproperties']):
         p = handleTemplateTypes(ctx, thingProperties[i], 'properties')
-        ctx.obj['template']['properties'].append(p)   
+        ctx.obj['template']['properties'].append(p)         
+    o = 0 
+    for i in range(0, len(thingProperties)):    
+        if(ctx.obj['td']['properties'][thingProperties[i]]['type'] == 'object'):
+            o = o+1    
+    ctx.obj['template']['numop'] = o
     # THING ACTIONS
     ctx.obj['template'].setdefault('actions', []) 
     ctx.obj['template']['actions'] = actionFunctions
@@ -972,7 +986,7 @@ def build(ctx):
         e['name'] = thingEvents[i]
         e['condition'] = eventConditions[i]['condition']
         e['action'] = eventConditions[i]['action']
-        ctx.obj['template']['events'].append(e)
+        ctx.obj['template']['events'].append(e)  
     output = template.render(td=ctx.obj['td'], template=ctx.obj['template'])    
     filePath = ctx.obj['td']['title'].lower() + '/' + ctx.obj['td']['title'].lower() + '.ino'
     writeFile(filePath, output)
@@ -984,4 +998,4 @@ if __name__ == "__main__":
     # che poi verranno visualizzati nella documentazione (help) 
     # se si inserisce un'opzione prima del comando, allora viene gestita dalla cli, 
     # se viene inserita dopo, viene gestita dal comando stesso
-    cli() 
+    cli()

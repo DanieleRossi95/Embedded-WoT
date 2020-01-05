@@ -1,5 +1,4 @@
-{% macro updateEndPoints() -%}
-{#- EndPoint Thing #}
+{% macro updateTD() -%}
 {%- for item in td['forms'] if 'href' in item %}
     {%- do item.update(href='" + urlServer + "/all/properties') -%}
 {%- endfor %}    
@@ -10,14 +9,14 @@
         {%- do item.update(href='" + urlServer + "/properties/" + property' + i | string + '_name + "' ) -%}
     {%- endfor -%}
 {%- endfor %}
-{#- EndPoint Actions  #}    
+{#- EndPoint Actions #}    
 {%- for action in template['actions'] %}
     {%- set i = loop.index -%}
     {%- for item in td['actions'][action['name']]['forms'] if 'href' in item -%}
         {%- do item.update(href='" + urlServer + "/actions/" + action' + i | string + '_name + "' ) -%}
     {%- endfor -%}
 {%- endfor %}     
-{#- EndPoint Events  #}    
+{#- EndPoint Events #}    
 {%- for event in template['events'] %}
     {%- set i = loop.index -%}
     {%- for item in td['events'][event['name']]['forms'] if 'href' in item -%}
@@ -25,7 +24,107 @@
     {%- endfor -%}
 {%- endfor %}   
 {%- endmacro %}
-
+{%- macro updateGlobal() -%}
+{%- do global.update({'isString':False}) -%}
+{%- do global.update({'isBoolean':False}) -%}
+{%- do global.update({'isInteger':False}) -%}
+{%- do global.update({'isNumber':False}) -%}
+{%- do global.update({'isMin':False}) -%}
+{%- do global.update({'isMax':False}) -%}
+{%- do global.update({'isArray':False}) -%}
+{%- do global.update({'isMinItems':False}) -%}
+{%- do global.update({'isMaxItems':False}) -%}
+{%- do global.update({'isArrayObject':False}) -%}
+{%- do global.update({'isArrayString':False}) -%}
+{%- do global.update({'isArrayBoolean':False}) -%}
+{%- do global.update({'isArrayMin':False}) -%}
+{%- do global.update({'isArrayMax':False}) -%}
+{%- do global.update({'isObject':False}) -%}
+{%- do global.update({'isProperty':False}) -%}
+{%- do global.update({'isPropertyString':False}) -%}
+{%- do global.update({'isPropertyBoolean':False}) -%}
+{%- do global.update({'isPropertyInteger':False}) -%}
+{%- do global.update({'isPropertyArray':False}) -%}
+{%- do global.update({'isRequired':False}) -%}
+{%- for property in template['properties'] -%}
+{%- if property['type'] == 'object' -%}
+{%- if 'properties' in property -%}
+{%- for p in property['properties'] -%}
+{%- if (p['type'] == 'string' or p['type'] == 'null') and (not(global['isPropertyString'])) -%}
+{%- do global.update({'isPropertyString':True}) -%}
+{%- endif -%}
+{%- if p['type'] == 'booelan' and not(global['isPropertyBoolean']) -%}
+{%- do global.update({'isPropertyBoolean':True}) -%}
+{%- endif -%}
+{% if (p['type'] == 'integer' or p['type'] == 'number') and not(global['isPropertyInteger']) -%}
+{%- do global.update({'isPropertyInteger':True}) -%}
+{%- endif -%}
+{%- if p['type'] == 'array' and not(global['isPropertyArray']) -%}
+{%- do global.update({'isPropertyArray':True}) -%}
+{%- endif -%}
+{%- endfor -%}
+{%- endif -%}
+{%- endif -%}
+{%- endfor -%}
+{%- for action in template['actions'] -%}
+{%- for item in action['input'] -%}
+{%- if item['type'] == 'string' and not(global['isString']) -%}
+{%- do global.update({'isString':True}) -%}
+{%- elif item['type'] == 'boolean' and not(global['isBoolean']) -%}
+{%- do global.update({'isBoolean':True}) -%}
+{%- elif item['type'] == 'integer' or item['type'] == 'number' -%}
+{%- if not(global['isInteger']) -%}
+{%- do global.update({'isInteger':True}) -%}
+{%- endif -%}
+{%- if 'minimum' in item and not(global['isMin']) -%}
+{%- do global.update({'isMin':True}) -%}
+{% endif -%}
+{%- if 'maximum' in item and not(global['isMax']) -%}
+{%- do global.update({'isMax':True}) -%}
+{%- endif -%}
+{%- elif item['type'] == 'array' -%}
+{%- if not(global['isArray']) -%}
+{%- do global.update({'isArray':True}) -%}
+{%- endif -%}
+{%- if 'minItems' in item and not(global['isMinItems']) -%}
+{%- do global.update({'isMinItems':True}) -%}
+{%- endif -%}
+{%- if 'maxItems' in item and not(global['isMaxItems']) -%}
+{%- do global.update({'isMaxItems':True}) -%}
+{%- endif -%}
+{%- if item['items']['type'] == 'object' and not(global['isArrayObject']) -%}
+{%- do global.update({'isArrayObject':True}) -%}
+{%- elif item['items']['type'] == 'string' and not(global['isArrayString']) -%}
+{%- do global.update({'isArrayString':True}) -%}
+{%- elif item['items']['type'] == 'boolean' and not(global['isArrayBoolean']) -%}
+{%- do global.update({'isArrayBoolean':True}) -%}
+{%- elif item['items']['type'] == 'integer' or item['items']['type'] == 'number' -%}
+{%- if not(global['isArrayInteger']) -%}
+{%- do global.update({'isArrayInteger':True}) -%}
+{%- endif -%}
+{%- if 'minimum' in item['items'] and not(global['isArrayMin']) -%}
+{%- do global.update({'isArrayMin':True}) -%}
+{%- endif -%}
+{%- if 'maximum' in item['items'] and not(global['isArrayMax']) -%}
+{%- do global.update({'isArrayMax':True}) -%}
+{%- endif -%}
+{%- endif -%}
+{%- elif item['type'] == 'object' -%}
+{%- if not(global['isObject']) -%}
+{%- do global.update({'isObject':True}) -%}
+{%- endif -%}
+{%- if 'properties' in item -%}
+{%- if not(global['isProperty']) -%}
+{%- do global.update({'isProperty':True}) -%}
+{%- endif -%}
+{%- if 'required' in item and not(global['isRequired']) -%}
+{%- do global.update({'isRequired':True}) -%}
+{%- endif -%}
+{%- endif -%}
+{%- endif -%}
+{%- endfor -%}
+{%- endfor -%}
+{%- endmacro -%}
 {% macro defineVariable(typeV, name, value) -%}
 {%- if value is iterable and value is not string %}
 {{ typeV }} {{ name }} = 
@@ -48,6 +147,10 @@
 {%- else -%}
 {{ castType(typeV) }} {{ name }} = "{{ value }}";
 {%- endif -%}
+{%- elif typeV == 'string_nq' -%}
+String {{ name }} = {{ value }};
+{%- elif typeV == 'char_nq' -%}
+const char* {{ name }} = {{ value }};
 {%- elif typeV == 'integer' %}
 {%- if value == '' -%}
 int {{ name }};
@@ -76,13 +179,13 @@ bool {{ name }} = {{ value }};
 {%- endif -%}
 {% elif typeV == 'array' or typeV == 'JsonArray' %}
 {%- if value == 'iv' -%}
-JsonArray {{ name }} = doc.createNestedArray();
+JsonArray {{ name }};
 {%- else -%}
 JsonArray {{ name }} = {{ value }};
 {%- endif -%}
 {% elif typeV == 'object' or typeV == 'JsonObject' %}
 {%- if value == 'iv' -%}
-JsonObject {{ name }} = doc.createNestedObject();
+JsonObject {{ name }};
 {%- else -%}
 JsonObject {{ name }} = {{ value }};
 {%- endif -%}
@@ -90,7 +193,6 @@ JsonObject {{ name }} = {{ value }};
 {{ typeV }} {{ name }} = {{ value }};    
 {%- endif %}    
 {%- endmacro %}
-
 {% macro setVariable(ifString, name, value='') -%}
 {%- if ifString -%}
 {{ name }} = "{{ value }}";
@@ -100,7 +202,6 @@ JsonObject {{ name }} = {{ value }};
 {{ name }} = {{ value }};
 {%- endif -%}
 {%- endmacro %}
-
 {% macro defineFunction(name, input, output, body) -%}
 {%- if 'type' in output -%}
 {{ castType(output['type']) }}
@@ -123,7 +224,6 @@ void
     {% endif %}
 }    
 {%- endmacro %}
-
 {% macro castType(type) -%}
 {%- if type == 'integer' -%}
 int
@@ -139,10 +239,9 @@ JsonArray
 JsonObject 
 {%- endif -%}
 {%- endmacro %}
-
 {% macro handleType(interaction, interactionName, array=False) -%}
 {% if interaction['type'] == 'array' %}
-{{ defineVariable('JsonArray', interactionName + '_value', 'doc.createNestedArray()') }}
+{{ defineVariable('JsonArray', interactionName + '_value', 'iv') }}
 {% if 'minItems' in property %}
 {{ defineVariable('int', interactionName + '_minItems', interaction['minItems']) }}
 {% endif %}
@@ -151,7 +250,7 @@ JsonObject
 {% endif %}
 {{ handleType(interaction['items'], interactionName, True) }}
 {% elif interaction['type'] == 'object' %}
-{{ defineVariable('JsonObject', interactionName + '_value', 'doc.createNestedObject()') }}
+{{ defineVariable('JsonObject', interactionName + '_value', 'iv') }}
 {% if 'properties' in interaction %}
 {{ defineVariable('String', interactionName + '_schema', interaction['properties'] | replace("'", '\\"') | replace(' ', '')) }}
 {% endif %}
@@ -167,40 +266,40 @@ String {{ interactionName }}_opRequired[{{ interaction['required'] | length }}] 
 };
 {%- endif -%}
 {% elif interaction['type'] == 'integer' or interaction['type'] == 'number' %}
+{{ defineVariable(interaction['type'], interactionName + '_value', 'iv') }}
 {% if array %}
 {% if 'minimum' in interaction %}
 {{ defineVariable(interaction['type'], interactionName + '_itemsMinimum', interaction['minimum']) }}
 {% endif %}
-{% if 'maximum' in property %}
+{% if 'maximum' in interaction %}
 {{ defineVariable(interaction['type'], interactionName + '_itemsMaximum', interaction['maximum']) }}
 {% endif %}
 {% else %}
 {% if 'minimum' in interaction %}
 {{ defineVariable(interaction['type'], interactionName + '_minimum', interaction['minimum']) }}
 {% endif %}
-{% if 'maximum' in property %}
+{% if 'maximum' in interaction %}
 {{ defineVariable(interaction['type'], interactionName + '_maximum', interaction['maximum']) }}
-{% endif %}
+{%- endif %}
 {% endif %}
 {% else %}
 {{ defineVariable(interaction['type'], interactionName + '_value', 'iv') }}
-{%- endif -%}
-{%- endmacro -%}
-
-{{ updateEndPoints() }}
-
-{% set ssid = template['ssid'] %}
-{% set password = template['password'] %}
-{% set protocolServer = 'http' %}
-{% set protocolSocket = 'ws' %}
-{% set portServer = template['portserver'] %}
-{% set portSocket = template['portsocket'] %}
-{% set ipServer = '192.168.1.5' %}
-{% set thingName = td['title'].lower() %}
-{% set urlServer = protocolServer + "://" + ipServer + ":" + portServer + "/" + thingName %}
-{% set thingD = td | replace("'", '\\"') | replace(' ', '') %}
-{% set req = [] %}
-
+{% endif %}
+{% endmacro -%}
+{{ updateTD() }}
+{%- set global = {} -%}
+{{ updateGlobal() }}
+{%- set ssid = template['ssid'] -%}
+{%- set password = template['password'] -%}
+{%- set protocolServer = 'http' -%}
+{%- set protocolSocket = 'ws' -%}
+{%- set portServer = template['portserver'] -%}
+{%- set portSocket = template['portsocket'] -%}
+{%- set ipServer = '192.168.1.5' -%}
+{%- set thingName = td['title'].lower() %}
+{%- set urlServer = protocolServer + "://" + ipServer + ":" + portServer + "/" + thingName -%}
+{%- set thingD = td | replace("'", '\\"') | replace('True', 'true') | replace('False', 'false') | replace(' ', '') -%}
+{%- set req = [] -%}
 #include <ESP8266WebServer.h>
 #include <WebSocketsServer.h>
 #include <ArduinoJson.h>
@@ -220,12 +319,10 @@ String {{ interactionName }}_opRequired[{{ interaction['required'] | length }}] 
 {{ defineVariable('String', 'td', '') }}
 
 DynamicJsonDocument doc(1024);
-DynamicJsonDocument respDoc(1024);
 DeserializationError err;
-JsonObject obj;
-JsonArray arr;
 
 {{ defineVariable('int', 'properties_number', template['numproperties']) }}
+{{ defineVariable('int', 'objectProperties_number', template['numop']) }}
 {{ defineVariable('int', 'actions_number', template['numactions']) }}
 {{ defineVariable('int', 'events_number', template['numevents']) }}
 
@@ -300,22 +397,49 @@ WebSocketsServer webSocket = WebSocketsServer(portSocket);
 IPAddress ipS;
 
 String header;
-String resp;
 
 int i, j;
 
 void setup() {
     // properties data 
+    {% if template['numop'] > 0 %}
     {% for property in template['properties'] %}
     {% if property['type'] == 'object' %}
-    {{ setVariable(False, 'serializeJson(property' + loop.index | string + '_op, arr)') }}
+    DynamicJsonDocument op{{ loop.index }}_doc(1024);
+    JsonArray arr{{ loop.index }};
+    {% endif %}
+    {% endfor %}
+
+    {% for property in template['properties'] %}
+    {% if property['type'] == 'object' %}
+    {{ setVariable(False, 'deserializeJson(op' + loop.index | string + '_doc, property' + loop.index | string + '_schema)') }}
+    {{ setVariable(False, 'arr' + loop.index | string, 'op' + loop.index | string + '_doc.as<JsonArray>()') }}
+    {{ setVariable(False, 'property' + loop.index | string + '_value', 'doc.createNestedObject()') }}
     {% if 'properties' in property %}
-    for(i=0; i<arr.size(); i++) {
-        {{ setVariable(True, 'property' + loop.index | string + '_value[(char*) arr[i]["name"]]', '') }}
-    }
+    for(i=0; i<arr{{ loop.index }}.size(); i++) {
+        {{ defineVariable('char_nq', 'op' + loop.index | string + '_name', 'arr' + loop.index | string + '[i]["name"]') }}
+        {{ defineVariable('string_nq', 'op' + loop.index | string + '_type', 'arr' + loop.index | string + '[i]["type"]') }}
+        {% if global['isPropertyString'] %}
+                if(op{{ loop.index }}_type.equals("string") || op{{ loop.index }}_type.equals("null"))
+            {{ setVariable(True, 'property' + loop.index | string + '_value[op' + loop.index | string + '_name]', '') }}
+        {% endif -%}
+        {% if global['isPropertyBooelan'] %}
+        {% if global['isPropertyString'] %}{{ '\t\t\t\telse if' }}{% else %}{{ '\t\t\t\tif' }}{% endif %}(op{{ loop.index }}_type.equals("booelan"))
+            {{ setVariable(False, 'property' + loop.index | string + '_value[op' + loop.index | string + '_name]', 'false') }}
+        {% endif -%}
+        {% if global['isPropertyInteger'] %}
+        {% if global['isPropertyString'] or global['isPropertyBooelan'] %}{{ '\t\t\t\telse if' }}{% else %}{{ '\t\t\t\tif' }}{% endif %}(op{{ loop.index }}_type.equals("integer") || op{{ loop.index }}_type.equals("number"))
+            {{ setVariable(False, 'property' + loop.index | string + '_value[op' + loop.index | string + '_name]', '0') }}
+        {% endif -%}   
+        {% if global['isPropertyArray'] %}
+        {% if global['isPropertyString'] or global['isPropertyBooelan'] or global['isPropertyInteger'] %}{{ '\t\t\t\telse if' }}{% else %}{{ '\t\t\t\tif' }}{% endif %}(op{{ loop.index }}_type.equals("array"))
+            {{ setVariable(False, 'property' + loop.index | string + '_value[op' + loop.index | string + '_name]', 'doc.createNestedArray()') }}
+        {% endif -%}   
+    {{ '\t\t}' }}
     {% endif %}
     {% endif %}
     {% endfor %}
+    {% endif %}
 
     Serial.begin(115200);
     Serial.println();
@@ -377,120 +501,37 @@ void connection(const char* ssid, const char* password) {
 {% endfor %}
 
 // handle action input types
+{% if global['isArray'] -%}
 bool handleInputType(String value, String schema, bool array) {
+{% else %}
+bool handleInputType(String value, String schema) {   
+{% endif -%}     
+    {{ '\t\t' }}DynamicJsonDocument schema_doc(1024);
+    DynamicJsonDocument value_doc(1024);
+    {% if global['isArray'] %}
+    {{ defineVariable('JsonArray', 'array_value', 'iv') }}
+    {% endif %}
+    {% if global['isObject'] %}
+    {{ defineVariable('JsonObject', 'obj_value', 'iv') }}
+    {% endif %}
     {{ defineVariable('bool', 'validInput', 'true') }}
-    {{ defineVariable('JsonObject', 'obj_schema', 'doc.createNestedObject()') }}
-    {{ setVariable(False, 'deserializeJson(obj_schema, schema)') }}
-    {% set isString = False %}
-    {% set isBoolean = False %}
-    {% set isInteger = False %}
-    {% set isNumber = False %}
-    {% set isMin = False %}
-    {% set isMax = False %}
-    {% set isArray = False %}
-    {% set isMinItems = False %}
-    {% set isMaxItems = False %}
-    {% set isArrayObject = False %}
-    {% set isArrayString = False %}
-    {% set isArrayBoolean = False %}
-    {% set isArrayInteger = False %}
-    {% set isArrayMin = False %}
-    {% set isArrayMax = False %}
-    {% set isObject = False %}
-    {% set isProperty = False %}
-    {% set isPropertyString = False %}
-    {% set isPropertyBoolean = False %}
-    {% set isPropertyInteger = False %}
-    {% set isPropertyMin = False %}
-    {% set isPropertyMax = False %}
-    {% set isRequired = False %}
-    {% for action in template['actions'] %}
-    {% for item in action['input'] %}
-    {% if item['type'] == 'string' and not(isString) %}
-    {% set isString = True %}
-    {% elif item['type'] == 'boolean' and not(isBoolean) %}
-    {% set isBoolean = True %}
-    {% elif item['type'] == 'integer' or item['type'] == 'number' %}
-    {% if not(isInteger) %}
-    {% set isInteger = True %}
-    {% endif %}
-    {% if 'minimum' in item and not(isMin) %}
-    {% set isMin = True %}
-    {% endif %}
-    {% if 'maximum' in item and not(isMax) %}
-    {% set isMax = True %}
-    {% endif %}
-    {% elif item['type'] == 'array' %}
-    {% if not(isArray) %}
-    {% set isArray = True %}
-    {{ defineVariable('JsonArray', 'array_value', 'doc.createNestedArray()') }}
-    {% endif %}
-    {% if 'minItems' in item and not(isMinItems) %}
-    {% set isMinItems = True %}
-    {% endif %}
-    {% if 'maxItems' in item and not(isMaxItems) %}
-    {% set isMaxItems = True %}
-    {% endif %}
-    {% if item['items']['type'] == 'object' and not(isArrayObject) %}
-    {% set isArrayObject = True %}
-    {% elif item['items']['type'] == 'string' and not(isArrayString) %}
-    {% set isArrayString = True %}
-    {% elif item['items']['type'] == 'booelan' and not(isArrayBoolean) %}
-    {% set isArrayBoolean = True %}
-    {% elif item['items']['type'] == 'integer' or item['items']['type'] == 'number' %}
-    {% if not(isArrayInteger) %}
-    {% set isArrayInteger = True %}
-    {% endif %}
-    {% if 'minimum' in item['items'] and not(isMin) %}
-    {% set isArrayMin = True %}
-    {% endif %}
-    {% if 'maximum' in item['items'] and not(isMax) %}
-    {% set isArrayMax = True %}
-    {% endif %}
-    {% endif %}
-    {% elif item['type'] == 'object' %}
-    {% if not(isObject) %}
-    {% set isObject = True %}
-    {{ defineVariable('JsonObject', 'obj_value', 'doc.createNestedObject()') }}
-    {% endif %}
-    {% if 'properties' in item %}
-    {% set isProperty = True %}
-    {% for property in item['properties'] %}
-    {% if property['type'] == 'string' and not(isPropertyString) %}
-    {% set isPropertyString = True %}
-    {% elif property['type'] == 'boolean' and not(isPropertyBoolean) %}
-    {% set isPropertyBoolean = True %}
-    {% elif property['type'] == 'integer' or property['type'] == 'number' %}
-    {% if not(isPropertyInteger) %}
-    {% set isPropertyInteger = True %}
-    {% endif %}
-    {% if 'minimum' in property and not(isPropertyMin) %}
-    {% set isPropertyMin = True %}
-    {% endif %}
-    {% if 'maximum' in property and not(isPropertyMax) %}
-    {% set isPropertyMax = True %}
-    {% endif %}
-    {% endif %}
-    {% if 'required' in item and not(isRequired) %}
-    {% set isRequired = True%}
-    {% endif %}
-    {% endfor %}
-    {% endif %}
-    {% endif %}
-    {% endfor %}
-    {% endfor %}
-    {{ isArray }}
-    {{ isObject }}
-    {% if isString %}
-    if(obj_schema["type"].equals("string")) {
-        {% if isArrayString %}
+
+    {{ setVariable(False, 'deserializeJson(schema_doc, schema)') }}
+    {{ defineVariable('JsonObject', 'obj_schema', 'schema_doc.as<JsonObject>()') }}
+    {{ defineVariable('string_nq', 'type', 'obj_schema["type"]') }}
+    {% if global['isString'] or global['isArrayString'] %}
+    if(type.equals("string")) {
+        {% if global['isArrayString'] %}
         if(array) {
-            {{ setVariable(False, 'deserializeJson(array_value, value)') }}
-            for(i=0; i<array_value.size(); i++) 
-                if(array_value[i].equalsIgnoreCase("null")) {
+            {{ setVariable(False, 'deserializeJson(value_doc, value)') }}
+            {{ setVariable(False, 'array_value', 'value_doc.as<JsonArray>()') }}
+            for(i=0; i<array_value.size(); i++) {
+                {{ defineVariable('string_nq', 'ae', 'array_value[i]') }}
+                if(ae.equalsIgnoreCase("null")) {
                     {{ setVariable(False, 'validInput', 'false') }}
                     break;
                 }
+            }   
         }
         else if(value.equalsIgnoreCase("null")) 
             {{ setVariable(False, 'validInput', 'false') }}
@@ -500,45 +541,50 @@ bool handleInputType(String value, String schema, bool array) {
         {% endif %}    
     }
     {% endif %}
-    {% if isBoolean %}
-    else if(obj_schema["type"].equals("boolean")) {
-        {% if isArrayBoolean %}
+    {% if global['isBoolean'] or global['isArrayBoolean'] %}
+    {% if global['isString'] or global['isArrayString'] %}{{ '\t\telse if' }}{% else %}{{ '\t\tif' }}{% endif %}(type.equals("boolean")) {
+        {% if global['isArrayBoolean'] %}
         if(array) {
-            {{ setVariable(False, 'deserializeJson(array_value, value)') }}
-            for(i=0; i<array_value.size(); i++) 
-                if(!array_value[i].equalsIgnoreCase("true") and !array_value[i].equalsIgnoreCase("false")) {
+            {{ setVariable(False, 'deserializeJson(value_doc, value)') }}
+            {{ setVariable(False, 'array_value', 'value_doc.as<JsonArray>()') }}
+            for(i=0; i<array_value.size(); i++) {
+                {{ defineVariable('string_nq', 'ae', 'array_value[i]') }}
+                if(!ae.equals("true") && !ae.equals("false")) {
                     {{ setVariable(False, 'validInput', 'false') }}
                     break;
                 }
+            }
         }
-        else if(!value.equalsIgnoreCase("true") and !value.equalsIgnoreCase("false"))
+        else if(!value.equals("true") && !value.equals("false"))
             {{ setVariable(False, 'validInput', 'false') }}
         {% else %}   
-        if(!value.equalsIgnoreCase("true") and !value.equalsIgnoreCase("false"))
-            {{ setVariable(False, 'validInput', 'false') }}
-        {% endif %} 
+    if(!value.equals("true") && !value.equals("false"))
+        {{ setVariable(False, 'validInput', 'false') }}
+        {%- endif %} 
     }
     {% endif %}
-    {% if isInteger %}
-    else if(obj_schema["type"].equals("integer")) {
-        {% if isArrayInteger %}
+    {% if global['isInteger'] or global['isArrayInteger'] %}
+    {% if global['isString'] or global['isArrayString'] or global['isBoolean'] or global['isArrayBoolean']%}{{ '\t\telse if' }}{% else %}{{ '\t\tif' }}{% endif %}(type.equals("integer")) {
+        {% if global['isArrayInteger'] %}
         if(array) {
-            {{ setVariable(False, 'deserializeJson(array_value, value)') }}
+            {{ setVariable(False, 'deserializeJson(value_doc, value)') }}
+            {{ setVariable(False, 'array_value', 'value_doc.as<JsonArray>()') }}
             for(i=0; i<array_value.size(); i++) {
-                for(j=0; i<array_value[i].length(); j++) 
-                    if(!isDigit(array_value[i][j])) {
+                {{ defineVariable('string_nq', 'ae', 'array_value[i]') }}
+                for(j=0; i<ae.length(); j++) 
+                    if(!isDigit(ae[j])) {
                         {{ setVariable(False, 'validInput', 'false') }}
                         break;
                     }
                 if(!validInput)   
                     break; 
             }
-            {% if isArrayMin or isArrayMax %}
+            {% if global['isArrayMin'] or global['isArrayMax'] %}
             if(validInput) {
                 {{ defineVariable('int', 'input[array_value.size()]', '{}') }}
                 for(i=0; i<array_value.size(); i++) 
                     {{ setVariable(False, 'input[i]', 'array_value[i].toInt()') }}
-                {% if isArrayMin %}
+                {% if global['isArrayMin'] %}
                 if(!obj_schema["minimum"].isNull()) 
                     for(i=0; i<array_value.size(); i++)
                         if(input[i] < obj_schema["minimum"]) {
@@ -546,7 +592,7 @@ bool handleInputType(String value, String schema, bool array) {
                             break;
                         }
                 {% endif %}
-                {% if isArrayMax %}        
+                {% if global['isArrayMax'] %}        
                 if(!obj_schema["maximum"].isNull())  
                     for(i=0; i<array_value.size(); i++)
                         if(input[i] > obj_schema["maximum"]) {
@@ -563,15 +609,15 @@ bool handleInputType(String value, String schema, bool array) {
                     {{ setVariable(False, 'validInput', 'false') }}
                     break;
                 }
-            {% if isMin or isMax %}
+            {% if global['isMin'] or global['isMax'] %}
             if(validInput) {
                 {{ defineVariable('int', 'input', 'value.toInt()') }}
-                {% if isMin %}
+                {% if global['isMin'] %}
                 if(!obj_schema["minimum"].isNull()) 
                     if(input < obj_schema["minimum"])
                         {{ setVariable(False, 'validInput', 'false') }}
                 {% endif %}
-                {% if isMax %}        
+                {% if global['isMax'] %}        
                 if(!obj_schema["maximum"].isNull())  
                     if(input > obj_schema["maximum"])
                         {{ setVariable(False, 'validInput', 'false') }}     
@@ -585,15 +631,15 @@ bool handleInputType(String value, String schema, bool array) {
                 {{ setVariable(False, 'validInput', 'false') }}
                 break;
             }
-        {% if isMin or isMax %}
+        {% if global['isMin'] or global['isMax'] %}
         if(validInput) {
             {{ defineVariable('int', 'input', 'value.toInt()') }}
-            {% if isMin %}
+            {% if global['isMin'] %}
             if(!obj_schema["minimum"].isNull()) 
                 if(input < obj_schema["minimum"])
                     {{ setVariable(False, 'validInput', 'false') }}
             {% endif %}
-            {% if isMax %}        
+            {% if global['isMax'] %}        
             if(!obj_schema["maximum"].isNull())  
                 if(input > obj_schema["maximum"])
                     {{ setVariable(False, 'validInput', 'false') }}     
@@ -603,41 +649,45 @@ bool handleInputType(String value, String schema, bool array) {
         {% endif %}
     }
     {% endif %}
-    {% if isArray %}
-    else if(obj_schema["type"].equals("array")) {
-        {{ setVariable(False, 'deserializeJson(array_value, value)') }}
+    {% if global['isArray'] %}
+    {% if global['isString'] or global['isArrayString'] or global['isBoolean'] or global['isArrayBoolean'] or global['isInteger'] or global['isArrayInteger'] %}{{ '\t\telse if' }}{% else %}{{ '\t\tif' }}{% endif %}(type.equals("array")) {
+        {{ setVariable(False, 'deserializeJson(value_doc, value)') }}
+        {{ setVariable(False, 'array_value', 'value_doc.as<JsonArray>()') }}
         if(array_value.isNull()) 
             {{ setVariable(False, 'validInput', 'false') }}
         else {
-            {% if isMinItems %}
+            {% if global['isMinItems'] %}
             if(!obj.schema["minItems"].isNull())
                 if(array_value.size() < obj.schema["minItems"])    
                     {{ setVariable(False, 'validInput', 'false') }}
             {% endif %}
-            {% if isMaxItems %}
+            {% if global['isMaxItems'] %}
             if(!obj.schema["maxItems"].isNull())
                 if(array_value.size() > obj.schema["maxItems"])    
                     {{ setVariable(False, 'validInput', 'false') }}
             {% endif %}
-            {% if isMinItems or isMaxItems %}
+            {% if global['isMinItems'] or global['isMaxItems'] %}
             if(validInput) {
+                {{ setVariable(True, 'schema', '') }}
                 {{ setVariable(False, 'serializeJson(obj_schema["items"], schema)') }}
-                {{ setVariable(False, 'handleInputType(value, schema, true)') }}
+                {{ setVariable(False, 'validInput', 'handleInputType(value, schema, true)') }}
             }
             {% else %}
+            {{ setVariable(True, 'schema', '') }}
             {{ setVariable(False, 'serializeJson(obj_schema["items"], schema)') }}
-            {{ setVariable(False, 'handleInputType(value, schema, true)') }}
+            {{ setVariable(False, 'validInput', 'handleInputType(value, schema, true)') }}
             {% endif %}
         }
     }
     {% endif %}
-    {% if isObject %}
-    else if (obj_schema["type"].equals("object")) {
-        {% if isArrayObject %}
+    {% if global['isObject'] or global['isArrayObject'] %}
+    {% if global['isArrayObject'] and global['isProperty'] %}
+    {% if global['isString'] or global['isArrayString'] or global['isBoolean'] or global['isArrayBoolean'] or global['isInteger'] or global['isArrayInteger'] or global['isArray'] %}{{ '\t\telse if' }}{% else %}{{ '\t\tif' }}{% endif %}(type.equals("object")) {
         if(array) {
-            {{ setVariable(False, 'deserializeJson(array_value, value)') }}
+            {{ setVariable(False, 'deserializeJson(value_doc, value)') }}
+            {{ setVariable(False, 'array_value', 'value_doc.as<JsonArray>()') }}
             for(i=0; i<array_value.size(); i++) {
-                {% if isRequired %}
+                {% if global['isRequired'] %}
                 for(j=0; i<obj_schema["required"].size(); j++)
                     if(array_value[i][(String) obj_schema["required"][j]].isNull()) {
                         {{ setVariable(False, 'validInput', 'false') }}
@@ -648,7 +698,11 @@ bool handleInputType(String value, String schema, bool array) {
                         if(!array_value[i][(String) obj_schema["properties"][j]].isNull()) {
                             {{ setVariable(False, 'serializeJson(obj_schema["properties"][j], schema)') }}
                             {{ setVariable(False, 'serializeJson(array_value[i][(String) obj_schema["properties"][j]], value)') }}
+                            {% if isArray %}
                             {{ setVariable(False, 'handleInputType(value, schema, false)') }} 
+                            {% else %}
+                            {{ setVariable(False, 'handleInputType(value, schema)') }} 
+                            {% endif %}
                         }
                 }
                 else
@@ -658,17 +712,23 @@ bool handleInputType(String value, String schema, bool array) {
                     if(!array_value[i][(String) obj_schema["properties"][j]].isNull()) {
                         {{ setVariable(False, 'serializeJson(obj_schema["properties"][j], schema)') }}
                         {{ setVariable(False, 'serializeJson(array_value[i][(String) obj_schema["properties"][j]], value)') }}
+                        {% if isArray %}
                         {{ setVariable(False, 'handleInputType(value, schema, false)') }} 
+                        {% else %}
+                        {{ setVariable(False, 'handleInputType(value, schema)') }} 
+                        {% endif %}
                     }
                 {% endif %}
             }
         }
         else {
-            {{ setVariable(False, 'deserializeJson(obj_value, value)') }}
+            {{ setVariable(False, 'deserializeJson(value_doc, value)') }}
+            {{ setVariable(False, 'obj_value', 'value_doc.as<JsonObject>()') }}
             if(obj_value.isNull())
                 {{ setVariable(False, 'validInput', 'false') }}
+            {% if global['isProperty'] %}
             else {
-                {% if isRequired %}
+                {% if global['isRequired'] %}
                 for(i=0; i<obj_schema["required"].size(); i++)
                     if(obj_value[(String) obj_schema["required"][i]].isNull()) {
                         {{ setVariable(False, 'validInput', 'false') }}
@@ -679,7 +739,11 @@ bool handleInputType(String value, String schema, bool array) {
                         if(!obj_value[(String) obj_schema["properties"][i]].isNull()) {
                             {{ setVariable(False, 'serializeJson(obj_schema["properties"][i], schema)') }}
                             {{ setVariable(False, 'serializeJson(obj_value[(String) obj_schema["properties"][i]], value)') }}
+                            {% if isArray %}
                             {{ setVariable(False, 'handleInputType(value, schema, false)') }} 
+                            {% else %}
+                            {{ setVariable(False, 'handleInputType(value, schema)') }} 
+                            {% endif %}
                         }
                 }
                 {% else %}
@@ -687,17 +751,26 @@ bool handleInputType(String value, String schema, bool array) {
                     if(!obj_value[(String) obj_schema["properties"][i]].isNull()) {
                         {{ setVariable(False, 'serializeJson(obj_schema["properties"][i], schema)') }}
                         {{ setVariable(False, 'serializeJson(obj_value[(String) obj_schema["properties"][i]], value)') }}
+                        {% if isArray %}
                         {{ setVariable(False, 'handleInputType(value, schema, false)') }} 
+                        {% else %}
+                        {{ setVariable(False, 'handleInputType(value, schema)') }} 
+                        {% endif %}
                     }
                 {% endif %}
             }
+            {% endif %}
         }
-        {% else %}
-        {{ setVariable(False, 'deserializeJson(obj_value, value)') }}
+    }
+    {% elif not(global['isArrayObject']) %}
+    else if (type.equals("object")) {
+        {{ setVariable(False, 'deserializeJson(value_doc, value)') }}
+        {{ setVariable(False, 'obj_value', 'value_doc.as<JsonObject>()') }}
         if(obj_value.isNull())
             {{ setVariable(False, 'validInput', 'false') }}
+        {% if global['isProperty'] %}
         else {
-            {% if isRequired %}
+            {% if global['isRequired'] %}
             for(i=0; i<obj_schema["required"].size(); i++)
                 if(obj_value[(String) obj_schema["required"][i]].isNull()) {
                     {{ setVariable(False, 'validInput', 'false') }}
@@ -708,7 +781,11 @@ bool handleInputType(String value, String schema, bool array) {
                     if(!obj_value[(String) obj_schema["properties"][i]].isNull()) {
                         {{ setVariable(False, 'serializeJson(obj_schema["properties"][i], schema)') }}
                         {{ setVariable(False, 'serializeJson(obj_value[(String) obj_schema["properties"][i]], value)') }}
+                        {% if isArray %}
                         {{ setVariable(False, 'handleInputType(value, schema, false)') }} 
+                        {% else %}
+                        {{ setVariable(False, 'handleInputType(value, schema)') }} 
+                        {% endif %}
                     }
             }
             {% else %}
@@ -716,12 +793,17 @@ bool handleInputType(String value, String schema, bool array) {
                 if(!obj_value[(String) obj_schema["properties"][i]].isNull()) {
                     {{ setVariable(False, 'serializeJson(obj_schema["properties"][i], schema)') }}
                     {{ setVariable(False, 'serializeJson(obj_value[(String) obj_schema["properties"][i]], value)') }}
+                    {% if isArray %}
                     {{ setVariable(False, 'handleInputType(value, schema, false)') }} 
+                    {% else %}
+                    {{ setVariable(False, 'handleInputType(value, schema)') }} 
+                    {% endif %}
                 }
             {% endif %}
         }
-        {% endif %}    
+        {% endif %}  
     }
+    {% endif %}
     {% endif %}
     {{ setVariable(False, 'return validInput') }}
 }
@@ -729,6 +811,8 @@ bool handleInputType(String value, String schema, bool array) {
 
 // request functions
 void handleReq1() {
+    {{ defineVariable('String', 'resp', 'iv') }}
+
     Serial.println("\nGET thing url");
     {{ setVariable(True, 'resp', '[\\"" + urlServer + "\\"]') }}
     server.send(200, "application/ld+json", resp);
@@ -740,20 +824,34 @@ void handleReq2() {
 }
 
 void handleReq3() {
+    DynamicJsonDocument tmp(1024);
+    {{ defineVariable('String', 'resp', 'iv') }}
+    {{ defineVariable('JsonObject', 'obj', 'tmp.createNestedObject()') }}
+
     Serial.print("\nGET all properties");
-    JsonObject obj = doc.createNestedObject();
     {% for i in range(1, template['numproperties']+1) %}
     {{ setVariable(False, 'obj[property' + i | string + '_name]', 'property' + i | string + '_value') }}
     {% endfor %}
-    {{ setVariable(False, 'serializeJson(resp, obj)') }}
+    {{ setVariable(False, 'serializeJson(obj, resp)') }}
     server.send(200, "application/ld+json", resp);
 }
 
 {# HandleReq for Properties #}
-{% for i in range(1, template['numproperties']+1) %}
+{% for property in template['properties'] %}
+{% set i = loop.index %}
 void handleReq{{ i+3 }}() {
+    {{ defineVariable('String', 'resp', '') }}
+    {% if property['type'] == 'object' or property['type'] == 'array' %}
+    {{ defineVariable('String', 'tmp', '') }}
+    {% endif %}
+
     Serial.printf("\nGET %s value", property{{ i }}_name);
+    {% if property['type'] == 'object' or property['type'] == 'array' %}
+    {{ setVariable(False, 'serializeJson(property' + i | string + '_value, tmp)') }}
+    {{ setVariable(True, 'resp', '{\\"" + (String) property' + i | string + '_name + "\\":" + tmp + "}') }}
+    {% else %}
     {{ setVariable(True, 'resp', '{\\"" + (String) property' + i | string + '_name + "\\":" + property' + i | string + '_value + "}') }}
+    {% endif %}
     server.send(200, "application/ld+json", resp);
 }
 
@@ -763,10 +861,13 @@ void handleReq{{ i+3 }}() {
 {% for action in template['actions'] %}
 {%- set a = loop.index -%}
 void handleReq{{ loop.index+3+template['numproperties'] }}() {
+    DynamicJsonDocument respDoc(1024);
+    {{ defineVariable('String', 'resp', 'iv') }}
+
     Serial.printf("\nPOST invokeaction %s", action{{ loop.index }}_name);
     String body = server.arg("plain");
     Serial.printf("Body received: %s", body.c_str());
-
+    
     {{ setVariable(False, 'err', 'deserializeJson(respDoc, body)') }}
     if(err) {
         Serial.printf("deserializeJson() failed with code %s", err.c_str());
@@ -787,19 +888,26 @@ void handleReq{{ loop.index+3+template['numproperties'] }}() {
         }
         else {
             {{ defineVariable('bool', 'validInput', 'true') }}
+            {{ defineVariable('String', 'value', 'iv') }}
 
+            {{ defineVariable('string_nq', 'action' + a | string + '_input[' + action['input'] | length | string + ']', '{}') }}    
             {% for item in action['input'] %}
             {{ defineVariable(item['type'], 'action' + a | string + '_input' + loop.index | string + '_value', 'iv') }}
             {% endfor %}
 
-            {{ defineVariable('String', 'tmp', '') }}
             {{ setVariable(False, 'i', 0) }}
             while(validInput and i<{{ 'action' + a | string + '_inputsNumber'}}) {
                 switch(i) {
                     {% for item in action['input'] %}
-                    case({{ loop.index0 }}) {
-                        {{ setVariable(False, 'serializeJson(respDoc["' + item['name'] + '"], tmp)') }}
-                        {{ setVariable(False, 'validInput', 'handleInputType(tmp,actions_schema[' + loop.index0 | string + '],false)') }}
+                    case({{ loop.index0 }}): {
+                        {{ setVariable(True, 'value', '') }}
+                        {{ setVariable(False, 'serializeJson(respDoc["' + item['name'] + '"], value)') }}
+                        {{ setVariable(False, 'action' + a | string + '_input[' + loop.index0 | string + ']', 'value') }}
+                        {% if global['isArray'] %}
+                        {{ setVariable(False, 'validInput', 'handleInputType(value,action' + a | string + '_schema[' + loop.index0 | string + '],false)') }}
+                        {% else %}
+                        {{ setVariable(False, 'validInput', 'handleInputType(value,action' + a | string + '_schema[' + loop.index0 | string + '])') }}
+                        {% endif %}
                         break;
                     }
                     {% endfor %}
@@ -809,26 +917,34 @@ void handleReq{{ loop.index+3+template['numproperties'] }}() {
 
             if(validInput) {
                 {% for item in action['input'] %}
+                {% if item['type'] == 'array' or item['type'] == 'object' %}
+                DynamicJsonDocument input{{ loop.index }}_doc(1024);
+                {% endif %}
+                {% endfor %}
+
+                {% for item in action['input'] %}
                 {% if item['type'] == 'integer' %}
-                {{ setVariable(False, 'action' + a | string + '_input' + loop.index | string + '_value', 'tmp.toInt()') }}
+                {{ setVariable(False, 'action' + a | string + '_input' + loop.index | string + '_value', 'action' + a | string + '_input[' + loop.index0 | string + '].toInt()') }}
                 {% elif item['type'] == 'number' %}
-                {{ setVariable(False, 'action' + a | string + '_input' + loop.index | string + '_value', 'tmp.toDouble()') }}
+                {{ setVariable(False, 'action' + a | string + '_input' + loop.index | string + '_value', 'action' + a | string + '_input[' + loop.index0 | string + '].toDouble()') }}
                 {% elif item['type'] == 'boolean' %}
-                if(tmp.equals("true")) {
+                if(action{{ a }}_input[{{ loop.index0 }}].equals("true")) {
                     {{ setVariable(False, 'action' + a | string + '_input' + loop.index | string + '_value', 'true') }}
                 }
                 else { 
                     {{ setVariable(False, 'action' + a | string + '_input' + loop.index | string + '_value', 'false') }}
                 }
                 {% elif item['type'] == 'string'%}
-                {{ setVariable(False, 'action' + a | string + '_input' + loop.index | string + '_value', 'tmp') }}
+                {{ setVariable(False, 'action' + a | string + '_input' + loop.index | string + '_value', 'action' + a | string + '_input[' + loop.index0 | string + ']') }}
                 }
                 {% elif item['type'] == 'null' %}
                 {{ setVariable(False, 'serializeJson(respDoc["' + item['name'] + '"], action' + a | string +'_input' + loop.index | string +'_value)') }}
                 {% elif item['type'] == 'array' %}
-                {{ setVariable(False, 'deserializeJson(action' + a | string + '_input' + loop.index | string + '_value, arr)') }}
+                {{ setVariable(False, 'deserializeJson(input' + loop.index | string  + '_doc, action' + a | string + '_input[' + loop.index0 | string + '])') }}
+                {{ setVariable(False, 'action' + a | string + '_input' + loop.index | string + '_value', 'input' + loop.index | string  + '_doc.as<JsonArray>()') }}
                 {% elif item['type'] == 'object' %}
-                {{ setVariable(False, 'deserializeJson(action' + a | string + '_input' + loop.index | string + '_value, obj)') }}
+                {{ setVariable(False, 'deserializeJson(input' + loop.index | string  + '_doc, action' + a | string + '_input[' + loop.index0 | string + '])') }}
+                {{ setVariable(False, 'action' + a | string + '_input' + loop.index | string + '_value', 'input' + loop.index | string + '_doc.as<JsonObject>()') }}
                 {% endif %}
                 {% endfor %}
 
