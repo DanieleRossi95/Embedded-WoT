@@ -104,6 +104,16 @@ class DateTimeParamType(click.ParamType):
             self.fail('Element format is incorrect\n', param, ctx)     
 
 
+class ArduinoLibraryParamType(click.ParamType):
+    name = "string"
+
+    def convert(self, value, param, ctx):
+        if(value[-2:] == '.h'):
+            return value
+        else:
+            self.fail('Arduino Library .h extension is missing\n', param, ctx)
+
+
 def MultipleInputString(inputList, validateInputList):
     try:
         if((len(inputList) == 1) and (int(inputList) == 0)):
@@ -486,27 +496,17 @@ def handleEventData(ctx, dataTypeS, eventName, index):
                 while(termAlreadyExists):
                     termName = click.prompt('Insert Term %d Name' % i, type=SWN_STRING)
                     if(termName.lower() in termNames):
-                        click.echo('Error: Subscription Term already exists\n')
+                        click.echo('Error: %s Term already exists\n' % dataTypeS)
                     else:
                         termAlreadyExists = False
                 termNames.append(termName.lower())
                 ctx.obj['td']['events'][eventName][dataTypeTD].setdefault(termName, {}) 
-                if(click.confirm('Insert Term %d Type?' % i, default=True)):
-                    inpType = click.prompt('Term %d Type' % i, type=click.Choice(['boolean', 'integer', 'number', 'string', 'object', 'array', 'null']), show_default=True) 
-                    ctx.obj['td']['events'][eventName][dataTypeTD][termName]['type'] = inpType
-                    handleThingTypes(ctx, inpType, 'events', eventName, dataTypeTD, termName)
-                while(click.confirm('\nAdd additional Term %d element?' % i, default=False)):
-                    termElementName = click.prompt('Insert Element name', type=SWN_STRING)
-                    valuesNumber = click.prompt('Insert Element number of values', type=NZ_INT)
-                    click.echo('\nHint: Element values MUST have primitive types or be a JSON OBJECTs')
-                    if(valuesNumber == 1):
-                        termElementValue = click.prompt('Insert Element value', type=OBJ_STRING)
-                        ctx.obj['td']['events'][eventName][dataTypeTD][termName][termElementName] = termElementValue
-                    elif(valuesNumber > 1): 
-                        ctx.obj['td']['events'][eventName][dataTypeTD][termName].setdefault(termElementName, [])
-                        for j in range(1, valuesNumber+1):
-                            termElementValue = click.prompt('Insert Element value %d' % j, type=OBJ_STRING)
-                            ctx.obj['td']['events'][eventName][dataTypeTD][termName][termElementName].append(termElementValue)     
+                inpType = click.prompt('Term %d Type' % i, type=click.Choice(['boolean', 'integer', 'number', 'string', 'object', 'array', 'null']), show_default=True) 
+                ctx.obj['td']['events'][eventName][dataTypeTD][termName]['type'] = inpType
+                handleThingTypes(ctx, inpType, 'events', eventName, dataTypeTD, termName)
+                click.echo('\nHint: Term value is which that users have to assign to the Term itself to make sure that their messages are compatible with the Schema and consequently be accepted')
+                inpValue = click.prompt('Term %d value' % i, type=str)
+                ctx.obj['td']['events'][eventName][dataTypeTD][termName]['value'] = inpValue
 
 
 def handleTemplateTypes(ctx, termName, interactionTypeTD, interactionName='', dataType=''):
@@ -583,6 +583,7 @@ OBJ_STRING = ObjectStringParamType()
 NZ_INT = NotZeroIntParamType()
 NN_INT = NonNegativeIntParamType() 
 DATETIME_STRING = DateTimeParamType()
+ALIB_STRING = ArduinoLibraryParamType()
 
 # JSON SCHEMA per la TD
 schema = json.load(open('thing-schema.json'))
@@ -942,7 +943,7 @@ def build(ctx):
         except Exception as e:
             click.echo(str(e))
         click.echo()        
-    ctx.obj.setdefault('template', {})   
+    ctx.obj.setdefault('template', {})  
     # NETWORK SSID
     #inp = click.prompt('Network SSID to which the Embedded-System will connect', type=str)
     #ctx.obj['template']['ssid'] = inp
@@ -962,6 +963,40 @@ def build(ctx):
     if('events' in ctx.obj['td']):
         inp = click.prompt('\nWebSocket Port', type=NN_INT, default=81, show_default=True)
         ctx.obj['template']['portsocket'] = str(inp)    
+    # ADDITIONAL LIBRARIES
+    ctx.obj['template'].setdefault('libraries', [])
+    while(click.confirm('\nAdd additional Arduino library?', default=False)):
+        click.echo('\nHint: Arduino Library Name example: library_name.h.\n.h extension MUST be included')
+        inp = click.prompt('Arduino Library Name', type=ALIB_STRING) 
+        ctx.obj['template']['libraries'].append(inp)
+    # ADDITIONAL FUNCTIONS
+    ctx.obj['template'].setdefault('functions', [])
+    while(click.confirm('\nAdd additional function?', default=False)):
+        click.echo('\nHint: Functions Return and Input Types MUST be available in Embedded-C')
+        fun = {}
+        fun['name'] = click.prompt('Function Name', type=SWN_STRING)
+        click.echo('\n%s' % fun['name'].upper())
+        fun.setdefault('output', {})
+        if(click.confirm('Insert Function Return Type?', default=False)):
+            fun['output']['type'] = click.prompt('Function Return Type', type=SWN_STRING)
+        if(click.confirm('\nInsert Function Inputs?', default=False)):
+            inputsNumber = click.prompt('Insert Inputs number', type=NN_INT)
+            if(inputsNumber > 0):
+                fun.setdefault('inputs', [])
+                for i in range(1, inputsNumber+1):
+                    inp = {}
+                    inp['type'] = click.prompt('Input %d Type' % i, type=SWN_STRING)
+                    inp['name'] = click.prompt('Input %d Name' % i, type=SWN_STRING)
+                    fun['inputs'].append(inp)
+        click.echo('\nHint: For the Function Body you have to provide only the code in Embedded-C enclosed by braces on one line')
+        fun['body'] = click.prompt('Function Body', type=str)
+        ctx.obj['template']['functions'].append(fun)                 
+    # ADDITIONAL SETUP CODE
+    if(click.confirm('\nAdd additional code in setup() function?', default=False)):
+        ctx.obj['template']['setup'] = click.prompt('Setup() code', type=str)    
+    # ADDITIONAL LOOP CODE
+    if(click.confirm('\nAdd additional code in loop() function?', default=False)):
+        ctx.obj['template']['loop'] = click.prompt('Loop() code', type=str)   
     # THING INTERACTION AFFORDANCE
     ctx.obj['template']['numproperties'] = len(thingProperties)
     ctx.obj['template']['numactions'] = len(thingActions)
@@ -987,6 +1022,16 @@ def build(ctx):
         e['condition'] = eventConditions[i]['condition']
         e['action'] = eventConditions[i]['action']
         ctx.obj['template']['events'].append(e)  
+        dataType = ['subscription', 'data', 'cancellation']
+        for data in dataType:
+            if(data in ctx.obj['td'][e['name']]):
+                dataTerm = list(ctx.obj['td'][e['name']][data].keys())
+                ctx.obj['template']['events'][i].setdefault(data, [])
+                for key in dataTerm:
+                    t = {}
+                    t = handleTemplateTypes(ctx, key, 'event', e['name'], data)
+                    t['value'] = ctx.obj['td'][e['name']][data]['value']
+                    ctx.obj['template']['events'][i][data].append(t)
     output = template.render(td=ctx.obj['td'], template=ctx.obj['template'])    
     filePath = ctx.obj['td']['title'].lower() + '/' + ctx.obj['td']['title'].lower() + '.ino'
     writeFile(filePath, output)
