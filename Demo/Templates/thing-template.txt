@@ -46,6 +46,8 @@
 {%- do global.update({'isObject':False}) -%}
 {%- do global.update({'isProperty':False}) -%}
 {%- do global.update({'isRequired':False}) -%}
+{%- do global.update({'isSubscription':False}) -%}
+{%- do global.update({'isCancellation':False}) -%}
 {%- for property in template['properties'] -%}
 {%- if property['type'] == 'object' -%}
 {%- if 'properties' in property -%}
@@ -98,8 +100,10 @@
 {%- do global.update({'isArrayString':True}) -%}
 {%- elif item['items']['type'] == 'boolean' and not(global['isArrayBoolean']) -%}
 {%- do global.update({'isArrayBoolean':True}) -%}
-{%- elif (item['items']['type'] == 'integer' or item['items']['type'] == 'number') and (not(global['isArrayInteger'])) -%}
+{%- elif item['items']['type'] == 'integer' or item['items']['type'] == 'number' -%}
+{%- if not(global['isArrayInteger']) -%}
 {%- do global.update({'isArrayInteger':True}) -%}
+{%- endif -%}
 {%- if 'minimum' in item['items'] and not(global['isArrayMin']) -%}
 {%- do global.update({'isArrayMin':True}) -%}
 {%- endif -%}
@@ -120,15 +124,17 @@
 {%- do global.update({'isString':True}) -%}
 {%- elif p['type'] == 'boolean' and not(global['isBoolean']) -%}
 {%- do global.update({'isBoolean':True}) -%}
-{%- elif (p['type'] == 'integer' or p['type'] == 'number') and (not(global['isInteger'])) -%}
+{%- elif p['type'] == 'integer' or p['type'] == 'number' -%}
+{%- if not(global['isInteger']) -%}
 {%- do global.update({'isInteger':True}) -%}
+{%- endif -%}
 {%- if 'minimum' in p and not(global['isMin']) -%}
 {%- do global.update({'isMin':True}) -%}
 {%- endif -%}
 {%- if 'maximum' in p and not(global['isMax']) -%}
 {%- do global.update({'isMax':True}) -%}
 {%- endif -%}
-{%- elif p['type'] == 'array' and not(global['isArray']) -%}
+{%- elif p['type'] == 'array' -%}
 {%- do global.update({'isArray':True}) -%}
 {%- if 'minItems' in p['items'] and not(global['isMinItems']) -%}
 {%- do global.update({'isMinItems':True}) -%}
@@ -140,12 +146,14 @@
 {%- do global.update({'isArrayString':True}) -%}
 {%- elif p['items']['type'] == 'boolean' and not(global['isArrayBoolean']) -%}
 {%- do global.update({'isArrayBoolean':True}) -%}
-{%- elif (p['items']['type'] == 'integer' or p['items']['type'] == 'number') and not(global['isArrayInteger']) -%}
+{%- elif p['items']['type'] == 'integer' or p['items']['type'] == 'number' -%}
+{%- if not(global['isArrayInteger']) -%}
 {%- do global.update({'isArrayInteger':True}) -%}
-{%- if 'minimum' in p['items'] -%}
+{%- endif -%}
+{%- if 'minimum' in p['items'] and not(global['isArrayMin']) -%}
 {%- do global.update({'isArrayMin':True}) -%}
 {%- endif -%}
-{%- if 'maximum' in p['items'] -%}
+{%- if 'maximum' in p['items'] and not(global['isArrayMax']) -%}
 {%- do global.update({'isArrayMax':True}) -%}
 {%- endif -%}
 {%- endif -%}
@@ -155,6 +163,114 @@
 {%- do global.update({'isRequired':True}) -%}
 {%- endif -%}
 {%- endif -%}
+{%- endif -%}
+{%- endfor -%}
+{%- endfor -%}
+{%- for event in template['events'] -%}
+{%- set dataType = ['subscription', 'cancellation'] -%}
+{%- for data in dataType -%}
+{%- if data in event -%}
+{% if data == dataType[0] and not(global['isSubscription']) %}
+{%- do global.update({'isSubscription':True}) -%}
+{% elif data == dataType[1] and not(global['isCancellation']) %}
+{%- do global.update({'isCancellation':True}) -%}
+{%- endif -%}
+{%- for item in event[data] -%}
+{%- if (item['type'] == 'string' or item['type'] == 'null') and not(global['isString']) -%}
+{%- do global.update({'isString':True}) -%}
+{%- elif item['type'] == 'boolean' and not(global['isBoolean']) -%}
+{%- do global.update({'isBoolean':True}) -%}
+{%- elif item['type'] == 'integer' or item['type'] == 'number' -%}
+{%- if not(global['isInteger']) -%}
+{%- do global.update({'isInteger':True}) -%}
+{%- endif -%}
+{%- if 'minimum' in item and not(global['isMin']) -%}
+{%- do global.update({'isMin':True}) -%}
+{%- endif -%}
+{%- if 'maximum' in item and not(global['isMax']) -%}
+{%- do global.update({'isMax':True}) -%}
+{%- endif -%}
+{%- elif item['type'] == 'array' -%}
+{%- if not(global['isArray']) -%}
+{%- do global.update({'isString':Array}) -%}
+{%- endif -%}
+{%- if 'minItems' in item and not(global['isMinItems']) -%}
+{%- do global.update({'isMinItems':True}) -%}
+{%- endif -%}
+{%- if 'maxItems' in item and not(global['isMaxItems']) -%}
+{%- do global.update({'isMaxItems':True}) -%}
+{%- endif -%}
+{%- if item['items']['type'] == 'object' and not(global['isArrayObject']) -%}
+{%- do global.update({'isArrayObject':True}) -%}
+{%- elif (item['items']['type'] == 'string' or item['items']['type'] == 'null') and (not(global['isArrayString'])) -%}
+{%- do global.update({'isArrayString':True}) -%}
+{%- elif item['items']['type'] == 'boolean' and not(global['isArrayBoolean']) -%}
+{%- do global.update({'isArrayBoolean':True}) -%}
+{%- elif item['items']['type'] == 'integer' or item['items']['type'] == 'number' -%}
+{%- if not(global['isArrayInteger']) -%}
+{%- do global.update({'isArrayInteger':True}) -%}
+{%- endif -%}
+{%- if 'minimum' in item['items'] and not(global['isArrayMin']) -%}
+{%- do global.update({'isArrayMin':True}) -%}
+{%- endif -%}
+{%- if 'maximum' in item['items'] and not(global['isArrayMax']) -%}
+{%- do global.update({'isArrayMax':True}) -%}
+{%- endif -%}
+{%- endif -%}
+{%- elif item['type'] == 'object' -%}
+{%- if not(global['isObject']) -%}
+{%- do global.update({'isObject':True}) -%}
+{%- endif -%}
+{%- if 'properties' in item -%}
+{%- if not(global['isProperty']) -%}
+{%- do global.update({'isProperty':True}) -%}
+{%- endif -%}
+{%- for p in item['properties'] -%}
+{%- if (p['type'] == 'string' or p['type'] == 'null') and (not(global['isString'])) -%}
+{%- do global.update({'isString':True}) -%}
+{%- elif p['type'] == 'boolean' and not(global['isBoolean']) -%}
+{%- do global.update({'isBoolean':True}) -%}
+{%- elif p['type'] == 'integer' or p['type'] == 'number' -%}
+{%- if not(global['isInteger']) -%}
+{%- do global.update({'isInteger':True}) -%}
+{%- endif -%}
+{%- if 'minimum' in p and not(global['isMin']) -%}
+{%- do global.update({'isMin':True}) -%}
+{%- endif -%}
+{%- if 'maximum' in p and not(global['isMax']) -%}
+{%- do global.update({'isMax':True}) -%}
+{%- endif -%}
+{%- elif p['type'] == 'array' -%}
+{%- do global.update({'isArray':True}) -%}
+{%- if 'minItems' in p['items'] and not(global['isMinItems']) -%}
+{%- do global.update({'isMinItems':True}) -%}
+{%- endif -%}
+{%- if 'maxItems' in p['items'] and not(global['isMaxItems']) -%}
+{%- do global.update({'isMaxItems':True}) -%}
+{%- endif -%}
+{%- if (p['items']['type'] == 'string' or p['items']['type'] == 'null') and (not(global['isArrayString'])) -%}
+{%- do global.update({'isArrayString':True}) -%}
+{%- elif p['items']['type'] == 'boolean' and not(global['isArrayBoolean']) -%}
+{%- do global.update({'isArrayBoolean':True}) -%}
+{%- elif p['items']['type'] == 'integer' or p['items']['type'] == 'number' -%}
+{%- if not(global['isArrayInteger']) -%}
+{%- do global.update({'isArrayInteger':True}) -%}
+{%- endif -%}
+{%- if 'minimum' in p['items'] and not(global['isArrayMin']) -%}
+{%- do global.update({'isArrayMin':True}) -%}
+{%- endif -%}
+{%- if 'maximum' in p['items'] and not(global['isArrayMax']) -%}
+{%- do global.update({'isArrayMax':True}) -%}
+{%- endif -%}
+{%- endif -%}
+{%- endif -%}
+{%- endfor -%}
+{%- if 'required' in item and not(global['isRequired']) -%}
+{%- do global.update({'isRequired':True}) -%}
+{%- endif -%}
+{%- endif -%}
+{%- endif -%}
+{%- endfor -%}
 {%- endif -%}
 {%- endfor -%}
 {%- endfor -%}
@@ -294,7 +410,7 @@ JsonObject
 {% elif interaction['type'] == 'object' %}
 {{ defineVariable('JsonObject', interactionName + '_value', 'iv') }}
 {% if 'properties' in interaction %}
-{{ defineVariable('String', interactionName + '_schema', interaction['properties'] | replace("'", '\\"') | replace(' ', '')) }}
+{{ defineVariable('String', interactionName + '_schema', interaction['properties'] | replace("'", '\\"') | replace(': ', ':') | replace(', ', ',')) }}
 {% endif %}
 {% if 'required' in interaction %}
 String {{ interactionName }}_opRequired[{{ interaction['required'] | length }}] = {
@@ -340,8 +456,9 @@ String {{ interactionName }}_opRequired[{{ interaction['required'] | length }}] 
 {%- set ipServer = '192.168.1.5' -%}
 {%- set thingName = td['title'].lower() %}
 {%- set urlServer = protocolServer + "://" + ipServer + ":" + portServer + "/" + thingName -%}
-{%- set thingD = td | replace("'", '\\"') | replace('True', 'true') | replace('False', 'false') | replace(' ', '') -%}
+{%- set thingD = td | replace("'", '\\"') | replace('True', 'true') | replace('False', 'false') | replace(': ', ':') | replace(', ', ',') | replace(' + ', '+') -%}
 {%- set req = [] -%}
+{%- set dataType = ['subscription', 'cancellation'] -%}
 #include <ESP8266WebServer.h>
 #include <WebSocketsServer.h>
 #include <ArduinoJson.h>
@@ -368,6 +485,7 @@ String {{ interactionName }}_opRequired[{{ interaction['required'] | length }}] 
 DynamicJsonDocument p_doc(1024);
 {% if template['numevents'] > 0 %}
 DynamicJsonDocument e_doc(1024);
+DynamicJsonDocument es_doc(1024);
 {% endif %}
 DeserializationError err;
 
@@ -393,9 +511,9 @@ DeserializationError err;
 String {{ actionIndex + '_schema' }}[{{ action['input'] | length }}] = {
     {%- for item in action['input'] -%}
     {%- if loop.last -%}
-    "{{ item | replace("'", '\\"') | replace(' ', '') }}"
+    "{{ item | replace("'", '\\"') | replace(': ', ':') | replace(', ', ',') }}"
     {%- else -%}
-    "{{ item | replace("'", '\\"') | replace(' ', '') }}",
+    "{{ item | replace("'", '\\"') | replace(': ', ':') | replace(', ', ',') }}",
     {%- endif -%}
     {%- endfor -%}
 };
@@ -409,16 +527,16 @@ String {{ actionIndex + '_schema' }}[{{ action['input'] | length }}] = {
 // Events
 {% for event in template['events'] %}
 {% set eventIndex = 'event' + loop.index | string -%}
-{{ defineVariable('const char*', 'event' + loop.index | string + '_name', event['name']) }}
+{{ defineVariable('const char*', eventIndex + '_name', event['name']) }}
 {% set dataType = ['subscription', 'data', 'cancellation'] %}
 {% for data in dataType %}
 {% if data in event %}
-String {{ eventIndex + data + 'Schema' }}[{{ event['data'] | length }}] = {
-    {%- for item in event['data'] -%}
+String {{ eventIndex + '_' + data + 'Schema' }}[{{ event[data] | length }}] = {
+    {%- for item in event[data] -%}
     {%- if loop.last -%}
-    "{{ item | replace("'", '\\"') }}"
+    "{{ item | replace("'", '\\"') | replace(': ', ':') | replace(', ', ',') }}"
     {%- else -%}
-    "{{ item | replace("'", '\\"') }}",
+    "{{ item | replace("'", '\\"') | replace(': ', ':') | replace(', ', ',') }}",
     {%- endif -%}
     {%- endfor -%}
 };
@@ -427,10 +545,19 @@ String {{ eventIndex + data + 'Schema' }}[{{ event['data'] | length }}] = {
 {% endfor %}
 String events_list[{{ template['numevents'] }}] = {
     {%- for i in range(1, template['numevents']+1) -%}
-    {%- if i == template['numevents'] -%}
+    {%- if i == loop.last -%}
     {{ 'event' + i | string + '_name' }}
     {%- else -%}
     {{ 'event' + i | string + '_name' }},
+    {%- endif -%}
+    {%- endfor -%}
+};
+String events_endpoint[{{ template['numevents'] }}] = {
+    {%- for i in range(1, template['numevents']+1) -%}
+    {%- if i == loop.last -%}
+    {{ 'thingName + "/events/" + event' + i | string + '_name' }}
+    {%- else -%}
+    {{ 'thingName + "/events/" + event' + i | string + '_name' }},
     {%- endif -%}
     {%- endfor -%}
 };
@@ -466,8 +593,8 @@ String header;
 int i, j;
 
 void setup() {
-    // properties data 
     {% if template['numop'] > 0 %}
+    // properties data 
     {% for property in template['properties'] %}
     {% if property['type'] == 'object' %}
     DynamicJsonDocument op{{ loop.index }}_doc(1024);
@@ -503,6 +630,22 @@ void setup() {
     {{ '\t\t}' }}
     {% endif %}
     {% endif %}
+    {% endfor %}
+    {% endif %}
+    {% if global['isSubscription'] or global['isCancellation'] %}
+    {{ defineVariable('int', 'schema_size', '0') }}
+    JsonArray arr;
+
+    {% for event in template['events'] %}
+    {% set e = loop.index %}
+    {% for data in dataType %}
+    {% if data in event %}
+    {{ setVariable(False, 'arr', 'es_doc.createNestedArray("event' + e | string + '_' + data + '")') }}
+    {{ setVariable(False, 'schema_size', 'sizeof(event' + e | string + '_' + data + 'Schema) / sizeof(String)') }}
+    for(i=0; i<schema_size; i++)
+        {{ setVariable(False, 'arr.add(event' + e | string + '_' + data + 'Schema[i])') }}
+    {% endif %}
+    {% endfor %}
     {% endfor %}
     {% endif %}
 
@@ -1150,8 +1293,10 @@ void handleReq{{ loop.index+3+template['numproperties'] }}() {
 // handle Events
 void webSocketEvent(uint8_t num, WStype_t type, uint8_t* pl, size_t length) {
     IPAddress ip;
-    String nums;
-    char* payload = (char*) pl;
+    {{ defineVariable('String', 'nums', 'iv') }}
+    {{ defineVariable('String', 'message', 'iv') }}
+    {{ defineVariable('char_nq', 'payload', '(char *) pl') }}
+    JsonObject obj;
 
     Serial.println();
 
@@ -1161,43 +1306,64 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t* pl, size_t length) {
             Serial.println(" -> Disconnected");
 
             // remove all client subscriptions
-            nums = (String) num;
-            e_doc.remove(nums);
-            serializeJson(e_doc, Serial);
+            {{ setVariable(False, 'nums', '(String) num') }}
+            {{ setVariable(False, 'e_doc.remove(nums)') }}
+            {{ setVariable(False, 'serializeJson(e_doc, Serial)') }}
             Serial.println();
         }
         break;
 
         case WStype_CONNECTED: {
-            ip = webSocket.remoteIP(num);
+            {{ setVariable(False, 'ip', 'webSocket.remoteIP(num)') }}
             Serial.print(num);
             Serial.print(" -> Connection request from ");
             Serial.println(ip);
             Serial.printf("Payload: %c\n", payload);
-            webSocket.sendTXT(num, "Connection accepted");
 
-            nums = (String) num;
-            if(e_doc[nums].isNull()) {
-                e_doc.createNestedArray(nums);
-                serializeJson(e_doc, Serial);
-                Serial.println();
+            {{ setVariable(False, 'nums', '(String) num') }}
+            for(i=0; i<events_number; i++) {
+                if(events_endpoint[i].equals(payload)) {
+                    if(e_doc[nums].isNull()) 
+                        {{ setVariable(False, 'obj', 'e_doc.createNestedArray(nums).createNestedObject()') }}
+                    else 
+                        {{ setVariable(False, 'obj', 'e_doc[nums].createNestedObject()') }}                    
+
+                    {{ setVariable(False, 'obj[events_list[i]]', 'false') }}
+                    webSocket.sendTXT(num, "Connection accepted");
+                    break;
+                }
             }
+
+            {{ setVariable(False, 'serializeJson(e_doc, Serial)') }}
+            Serial.println();
+            
         }
         break;
 
         case WStype_TEXT:
         { 
-            ip = webSocket.remoteIP(num);
+            DynamicJsonDocument resp_doc(1024);
+            {{ defineVariable('bool', 'validInput', 'true') }}
+            {{ defineVariable('String', 'term', 'iv') }}
+            {{ defineVariable('char*', 'dataType[2]', '{"subscription", "cancellation"}') }}
+
+            {{ setVariable(False, 'ip', 'webSocket.remoteIP(num)') }}
             Serial.print(num);  
             Serial.print(" -> Get Text from ");
             Serial.println(ip);
             Serial.printf("Payload: %c\n", payload);
 
-            String message;
-            int el_size = sizeof(events_list) / sizeof(String);
-            
-            nums = (String) num;
-            for(i=0; i<el_size; i++) {
+            {{ setVariable(False, 'nums', '(String) num') }}
+            {{ setVariable(False, 'err', 'deserializeJson(resp_doc, payload)') }}
+            if(err) {
+                Serial.printf("deserializeJson() failed with code %s", err.c_str());
+                webSocket.sendTXT(num, "deserializeJson failed");
+            }
+            else {
+                
+            }
+
+            for(i=0; i<events_number; i++) {
                 message = "Subscribe " + events_list[i];
                 if(message.equals(payload)) {
                     webSocket.sendTXT(num, "Subscription accepted");
@@ -1209,7 +1375,7 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t* pl, size_t length) {
                         int count = 0;
                         for(j=0; j<e_doc[nums].size(); j++) {
                             if(!e_doc[nums][j][events_list[i]]) {
-                            count++;
+                                count++;
                             }
                         }
                         if(count == e_doc[nums].size()) {

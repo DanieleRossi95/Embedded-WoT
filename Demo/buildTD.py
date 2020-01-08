@@ -505,7 +505,15 @@ def handleEventData(ctx, dataTypeS, eventName, index):
                 ctx.obj['td']['events'][eventName][dataTypeTD][termName]['type'] = inpType
                 handleThingTypes(ctx, inpType, 'events', eventName, dataTypeTD, termName)
                 click.echo('\nHint: Term value is which that users have to assign to the Term itself to make sure that their messages are compatible with the Schema and consequently be accepted')
-                inpValue = click.prompt('Term %d value' % i, type=str)
+                if(inpType == 'boolean'):
+                    inpValue = click.prompt('Term %d value' % i, type=bool)
+                    inpValue = inpValue.lower()
+                elif(inpType == 'integer' or inpType == 'number'):
+                    inpValue = click.prompt('Term %d value' % i, type=int) 
+                elif(inpType == 'string' or inpType == 'null'):
+                    inpValue = click.prompt('Term %d value' % i, type=str)     
+                elif(inpType == 'object' or inpType == 'array'):
+                    inpValue = click.prompt('Term %d value' % i, type=OBJ_STRING)            
                 ctx.obj['td']['events'][eventName][dataTypeTD][termName]['value'] = inpValue
 
 
@@ -1024,14 +1032,14 @@ def build(ctx):
         ctx.obj['template']['events'].append(e)  
         dataType = ['subscription', 'data', 'cancellation']
         for data in dataType:
-            if(data in ctx.obj['td'][e['name']]):
-                dataTerm = list(ctx.obj['td'][e['name']][data].keys())
+            if(data in ctx.obj['td']['events'][e['name']]):
+                dataTerm = list(ctx.obj['td']['events'][e['name']][data].keys())
                 ctx.obj['template']['events'][i].setdefault(data, [])
                 for key in dataTerm:
                     t = {}
-                    t = handleTemplateTypes(ctx, key, 'event', e['name'], data)
-                    t['value'] = ctx.obj['td'][e['name']][data]['value']
-                    ctx.obj['template']['events'][i][data].append(t)
+                    t = handleTemplateTypes(ctx, key, 'events', e['name'], data)
+                    t['value'] = ctx.obj['td']['events'][e['name']][data][key]['value']
+                    ctx.obj['template']['events'][i][data].append(t)              
     output = template.render(td=ctx.obj['td'], template=ctx.obj['template'])    
     filePath = ctx.obj['td']['title'].lower() + '/' + ctx.obj['td']['title'].lower() + '.ino'
     writeFile(filePath, output)
