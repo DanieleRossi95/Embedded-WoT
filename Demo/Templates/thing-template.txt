@@ -528,7 +528,6 @@ String {{ actionIndex + '_schema' }}[{{ action['input'] | length }}] = {
 {% for event in template['events'] %}
 {% set eventIndex = 'event' + loop.index | string -%}
 {{ defineVariable('const char*', eventIndex + '_name', event['name']) }}
-{% set dataType = ['subscription', 'data', 'cancellation'] %}
 {% for data in dataType %}
 {% if data in event %}
 String {{ eventIndex + '_' + data + 'Schema' }}[{{ event[data] | length }}] = {
@@ -543,6 +542,40 @@ String {{ eventIndex + '_' + data + 'Schema' }}[{{ event[data] | length }}] = {
 {% endif %}
 {% endfor %}
 {% endfor %}
+bool events_subscriptionSchema[{{ template['numevents'] }}] = {
+    {%- for event in template['events'] -%}
+    {% if dataType[0] in event %}
+    {%- if loop.last -%}
+    true
+    {%- else -%}
+    true, 
+    {%- endif -%}
+    {%- else -%}
+    {%- if loop.last -%}
+    false
+    {%- else -%}
+    false, 
+    {%- endif -%}
+    {%- endif -%}
+    {%- endfor -%}
+};
+bool events_cancellationSchema[{{ template['numevents'] }}] = {
+    {%- for event in template['events'] -%}
+    {% if dataType[1] in event %}
+    {%- if loop.last -%}
+    true
+    {%- else -%}
+    true, 
+    {%- endif -%}
+    {%- else -%}
+    {%- if loop.last -%}
+    false
+    {%- else -%}
+    false, 
+    {%- endif -%}
+    {%- endif -%}
+    {%- endfor -%}
+};
 String events_list[{{ template['numevents'] }}] = {
     {%- for i in range(1, template['numevents']+1) -%}
     {%- if i == loop.last -%}
@@ -590,7 +623,7 @@ IPAddress ipS;
 
 String header;
 
-int i, j;
+int i, j, k;
 
 void setup() {
     {% if template['numop'] > 0 %}
@@ -632,15 +665,17 @@ void setup() {
     {% endif %}
     {% endfor %}
     {% endif %}
+
     {% if global['isSubscription'] or global['isCancellation'] %}
     {{ defineVariable('int', 'schema_size', '0') }}
     JsonArray arr;
+    JsonObject obj;
 
     {% for event in template['events'] %}
     {% set e = loop.index %}
     {% for data in dataType %}
     {% if data in event %}
-    {{ setVariable(False, 'arr', 'es_doc.createNestedArray("event' + e | string + '_' + data + '")') }}
+    {{ setVariable(False, 'arr', 'es_doc.createNestedObject(event' + e | string + '_name).createNestedArray("' + data + '")') }}
     {{ setVariable(False, 'schema_size', 'sizeof(event' + e | string + '_' + data + 'Schema) / sizeof(String)') }}
     for(i=0; i<schema_size; i++)
         {{ setVariable(False, 'arr.add(event' + e | string + '_' + data + 'Schema[i])') }}
@@ -1329,7 +1364,7 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t* pl, size_t length) {
                         {{ setVariable(False, 'obj', 'e_doc[nums].createNestedObject()') }}                    
 
                     {{ setVariable(False, 'obj[events_list[i]]', 'false') }}
-                    webSocket.sendTXT(num, "Connection accepted");
+                    webSocket.sendTXT(num, "Connection confirmed");
                     break;
                 }
             }
@@ -1344,8 +1379,8 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t* pl, size_t length) {
         { 
             DynamicJsonDocument resp_doc(1024);
             {{ defineVariable('bool', 'validInput', 'true') }}
-            {{ defineVariable('String', 'term', 'iv') }}
-            {{ defineVariable('char*', 'dataType[2]', '{"subscription", "cancellation"}') }}
+            {{ defineVariable('String', 'name', 'iv') }}
+            {{ defineVariable('String', 'value', 'iv') }}
 
             {{ setVariable(False, 'ip', 'webSocket.remoteIP(num)') }}
             Serial.print(num);  
@@ -1360,35 +1395,66 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t* pl, size_t length) {
                 webSocket.sendTXT(num, "deserializeJson failed");
             }
             else {
-                
-            }
-
-            for(i=0; i<events_number; i++) {
-                message = "Subscribe " + events_list[i];
-                if(message.equals(payload)) {
-                    webSocket.sendTXT(num, "Subscription accepted");
-                    if(e_doc[nums].isNull()) {
-                        JsonObject obj = e_doc.createNestedArray(nums).createNestedObject();
-                        obj[events_list[i]] = true;
-                    }
-                    else {
-                        int count = 0;
-                        for(j=0; j<e_doc[nums].size(); j++) {
-                            if(!e_doc[nums][j][events_list[i]]) {
-                                count++;
-                            }
+                {{ setVariable(False, 'i', '0') }}
+                while(validInput && i<e_doc[nums].size()) {
+                    {{ setVariable(False, 'j', '0') }}
+                    while(validInput && j<events_number) {
+                        if(!e_doc[nums][i][events_list[j]].isNull()) {
+                            if(events_subscriptionSchema[j]) {
+                                DynamicJsonDocument tmp_doc(1024);
+                                {{ defineVariable('JsonObject', 'tmp', 'tmp_doc.createNestedObject()') }}
+                                {{ setVariable(False, 'k', '0') }}
+                                while(validInput && k<es_doc[events_list[j]]["subscription"].size()) {
+                                    {{ setVariable(True, 'name', '') }}
+                                    {{ setVariable(False, 'serializeJson(es_doc[events_list[j]]["subscription"][k]["name"], name)') }}
+                                    {{ setVariable(False, 'name.replace("\\"", "")') }}
+                                    if(resp_doc[name].isNull())
+                                        {{ setVariable(False, 'validInput', 'false') }}
+                                    else {
+                                        {{ setVariable(True, 'value', '') }}
+                                        {{ setVariable(False, 'serializeJson(es_doc[events_list[j]]["subscription"][k]["value"], value)') }}
+                                    }
+                                }
+                                {{ setVariable(True, 'message', '') }}
+                                {{ setVariable(False, 'serializeJson(tmp, message)') }}
+                                if(message.equals(payload)) {
+                                    {{ setVariable(False, 'e_doc[nums][i][events_list[j]]', 'true') }}
+                                    webSocket.sendTXT(num, "Subscription confirmed");
+                                }
+                                else {
+                                    webSocket.sendTXT(num, "Subscription Error");
+                                }
+                            } 
                         }
-                        if(count == e_doc[nums].size()) {
-                            JsonObject obj = e_doc[nums].createNestedObject();
-                            obj[events_list[i]] = true;
+                        else {
+                            if(events_cancellationSchema[j]) {
+                                DynamicJsonDocument tmp_doc(1024);
+                                {{ defineVariable('JsonObject', 'tmp', 'tmp_doc.createNestedObject()') }}
+                                {{ setVariable(False, 'k', '0') }}
+                                while(validInput && k<es_doc[events_list[j]]["cancellation"].size()) {
+                                    {{ setVariable(True, 'name', '') }}
+                                    {{ setVariable(False, 'serializeJson(es_doc[events_list[j]]["cancellation"][k]["name"], name)') }}
+                                    {{ setVariable(False, 'name.replace("\\"", "")') }}
+                                    if(resp_doc[name].isNull())
+                                        {{ setVariable(False, 'validInput', 'false') }}
+                                    else {
+                                        {{ setVariable(True, 'value', '') }}
+                                        {{ setVariable(False, 'serializeJson(es_doc[events_list[j]]["cancellation"][k]["value"], value)') }}
+                                    }
+                                }
+                                {{ setVariable(True, 'message', '') }}
+                                {{ setVariable(False, 'serializeJson(tmp, message)') }}
+                                if(message.equals(payload)) {
+                                    {{ setVariable(False, 'e_doc[nums][i].remove(events_list[j])') }}
+                                    webSocket.sendTXT(num, "Cancellation confirmed");
+                                }
+                                else {
+                                    webSocket.sendTXT(num, "Cancellation Error");
+                                }
+                            } 
                         }
                     }
-                    serializeJson(e_doc, Serial);
-                    Serial.println();
-                    break;
                 }
-                else
-                    webSocket.sendTXT(num, "Subscription not accepted"); 
             }
         }
         break;
