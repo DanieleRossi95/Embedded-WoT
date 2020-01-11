@@ -955,7 +955,7 @@ def build(ctx):
     # NETWORK SSID
     #inp = click.prompt('Network SSID to which the Embedded-System will connect', type=str)
     #ctx.obj['template']['ssid'] = inp
-    ctx.obj['template']['ssid'] = 'TIM-31734817'
+    ctx.obj['template']['ssid'] = 'Infostrada-2.4GHz-9454A5'
     # NETWORK PASSWORD
     '''if(click.confirm('\nNetwork has password?', default=True)):
         inp = click.prompt('Network Password (hide_input)', type=str, hide_input=True)
@@ -963,7 +963,7 @@ def build(ctx):
     else:
         ctx.obj['template']['password'] = ''   
     '''    
-    ctx.obj['template']['password'] = '7dZ7sh43mfBiibn5'
+    ctx.obj['template']['password'] = '0525646993722559'
     # WEBSERVER PORT
     inp = click.prompt('\nWebServer Port', type=NN_INT, default=80, show_default=True)
     ctx.obj['template']['portserver'] = str(inp)
@@ -1037,9 +1037,21 @@ def build(ctx):
                 ctx.obj['template']['events'][i].setdefault(data, [])
                 for key in dataTerm:
                     t = {}
-                    t = handleTemplateTypes(ctx, key, 'events', e['name'], data)
+                    t['name'] = key
                     t['value'] = ctx.obj['td']['events'][e['name']][data][key]['value']
-                    ctx.obj['template']['events'][i][data].append(t)              
+                    ctx.obj['template']['events'][i][data].append(t)   
+    # WEBSOCKET MESSAGE TYPES                
+    click.echo('\nHint: This application handle only three WebSocket Types in WebSocketEvent function for messages exchanged on the WebSocket channel: DISCONNECTED, CONNECTED and TEXT')
+    click.echo('You have to insert only types that are allowed by WebSocket library and the relative logic on one line.')
+    click.echo("The code will be insert inside the relative SWITCH-CASE section in WebSocketEvent function. It is not necessary to insert the latter 'break' in the SWITCH-CASE sections")
+    ctx.obj['template'].setdefault('websocket', [])
+    while(click.confirm('Add additional WebSocket Message Type?', default=False)):
+        t = {}
+        t['type'] = click.prompt('WebSocket Message Type', type=str)
+        t['body'] = click.prompt('WebSocket Message Type logic', type=str)
+        ctx.obj['template']['websocket'].append(t)
+        click.echo('\n')
+    # DARE LA POSSIBILITA' ALL'UTENTE DI INSERIRE ULTERIORI CASE NELLO SWITCH DELLA FUNZIONE WEBSOCKETEVENT                           
     output = template.render(td=ctx.obj['td'], template=ctx.obj['template'])    
     filePath = ctx.obj['td']['title'].lower() + '/' + ctx.obj['td']['title'].lower() + '.ino'
     writeFile(filePath, output)
