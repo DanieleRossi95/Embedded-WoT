@@ -376,7 +376,7 @@ void
         {%- endif -%}
     {%- endfor -%}
 ) {
-    {{ '\t' + body | replace('{', '\n\t{\n') | replace('}', '}\n') | replace(';', ';\n') | replace(' ', ' \t') }}
+    {{ '\t' + body | replace('{', '\n\t{\n') | replace('}', '}\n\t') | replace(';', ';\n\t') }}
     {% if 'name' in output %}
     return {{ output['name'] }};
     {% endif %}
@@ -486,6 +486,8 @@ DynamicJsonDocument p_doc(1024);
 {% if template['numevents'] > 0 %}
 DynamicJsonDocument e_doc(1024);
 DynamicJsonDocument es_doc(1024);
+DynamicJsonDocument ip_doc(1024);
+JsonArray ip_arr;
 {% endif %}
 DeserializationError err;
 
@@ -628,7 +630,6 @@ int i, j, k;
 void setup() {
     Serial.begin(115200);
     Serial.println();
-
     {% if template['numop'] > 0 %}
     // properties data 
     {% for property in template['properties'] %}
@@ -637,9 +638,9 @@ void setup() {
     JsonArray arr{{ loop.index }};
     {% endif %}
     {% endfor %}
-
     {% for property in template['properties'] %}
     {% if property['type'] == 'object' %}
+
     {{ setVariable(False, 'deserializeJson(op' + loop.index | string + '_doc, property' + loop.index | string + '_schema)') }}
     {{ setVariable(False, 'arr' + loop.index | string, 'op' + loop.index | string + '_doc.as<JsonArray>()') }}
     {{ setVariable(False, 'property' + loop.index | string + '_value', 'p_doc.createNestedObject()') }}
@@ -668,18 +669,23 @@ void setup() {
     {% endif %}
     {% endfor %}
     {% endif %}
-
     {% if global['isSubscription'] or global['isCancellation'] %}
+
     {{ defineVariable('int', 'schema_size', '0') }}
     JsonArray arr;
     JsonObject obj;
-
     {% for event in template['events'] %}
     {% set e = loop.index %}
     {% for data in dataType %}
     {% if data in event %}
-    {{ setVariable(False, 'arr', 'es_doc.createNestedObject(event' + e | string + '_name).createNestedArray("' + data + '")') }}
+
+    {% if data == dataType[0] %}
     {{ setVariable(False, 'schema_size', 'sizeof(event' + e | string + '_' + data + 'Schema) / sizeof(String)') }}
+    {% endif %}
+    if(es_doc[event{{ e }}_name].isNull())
+        {{ setVariable(False, 'arr', 'es_doc.createNestedObject(event' + e | string + '_name).createNestedArray("' + data + '")') }}
+    else
+        {{ setVariable(False, 'arr', 'es_doc[event' + e | string + '_name].createNestedArray("' + data + '")') }}
     for(i=0; i<schema_size; i++) {
         StaticJsonDocument<1024> tmp_doc;
         {{ setVariable(False, 'deserializeJson(tmp_doc, event' + e | string + '_' + data + 'Schema[i])') }}
@@ -690,6 +696,10 @@ void setup() {
     {% endif %}
     {% endfor %}
     {% endfor %}
+    {% endif %}
+    {% if template['numevents'] > 0 %}
+
+    {{ setVariable(False, 'ip_arr', 'ip_doc.createNestedArray("clients_list")') }}
     {% endif %}
   
     connection(ssid, password);
@@ -750,12 +760,212 @@ void connection(const char* ssid, const char* password) {
     {% endif %}
 }
 
-{% if template['numactions'] > 0 %}
-// Action functions
+// Request functions
+void handleReq1() {
+    {{ defineVariable('String', 'resp', 'iv') }}
+
+    Serial.println("\nGET Thing URL");
+    {{ setVariable(True, 'resp', '[\\"" + urlServer + "\\"]') }}
+    server.send(200, "application/ld+json", resp);
+}
+
+void handleReq2() {
+    Serial.println("\nGET Thing Description"); 
+    server.send(200, "application/ld+json", td);
+}
+
+void handleReq3() {
+    DynamicJsonDocument tmp(1024);
+    {{ defineVariable('String', 'resp', 'iv') }}
+    {{ defineVariable('JsonObject', 'obj', 'tmp.createNestedObject()') }}
+
+    Serial.print("\nGET all properties");
+    {% for i in range(1, template['numproperties']+1) %}
+    {{ setVariable(False, 'obj[property' + i | string + '_name]', 'property' + i | string + '_value') }}
+    {% endfor %}
+    {{ setVariable(False, 'serializeJson(obj, resp)') }}
+    server.send(200, "application/ld+json", resp);
+}
+
+{# HandleReq for Properties #}
+{% for property in template['properties'] %}
+{% set i = loop.index %}
+void handleReq{{ i+3 }}() {
+    {{ defineVariable('String', 'resp', '') }}
+    {% if property['type'] == 'object' or property['type'] == 'array' %}
+    {{ defineVariable('String', 'tmp', '') }}
+    {% endif %}
+
+    Serial.printf("\nGET %s value", property{{ i }}_name);
+    {% if property['type'] == 'object' or property['type'] == 'array' %}
+    {{ setVariable(False, 'serializeJson(property' + i | string + '_value, tmp)') }}
+    {{ setVariable(True, 'resp', '{\\"" + (String) property' + i | string + '_name + "\\":" + tmp + "}') }}
+    {% else %}
+    {{ setVariable(True, 'resp', '{\\"" + (String) property' + i | string + '_name + "\\":" + property' + i | string + '_value + "}') }}
+    {% endif %}
+    server.send(200, "application/ld+json", resp);
+}
+
+{% endfor -%}
+
+{# HandleReq for Actions #}
 {% for action in template['actions'] %}
-{{ defineFunction(action['name'], action['input'], action['output'], action['body'], True) }}
+{%- set a = loop.index -%}
+void handleReq{{ loop.index+3+template['numproperties'] }}() {
+    DynamicJsonDocument resp_doc(1024);
+    {{ defineVariable('String', 'resp', 'iv') }}
+
+    Serial.printf("\nPOST invokeaction %s", action{{ loop.index }}_name);
+    String body = server.arg("plain");
+    Serial.printf("Body received: %s", body.c_str());
+    
+    {{ setVariable(False, 'err', 'deserializeJson(resp_doc, body)') }}
+    if(err) {
+        Serial.printf("deserializeJson() failed with code %s", err.c_str());
+        server.send(400, "text/plain", err.c_str());
+    }
+    else {
+        {% if action['input'] | length > 0 %}
+        if(
+        {%- for item in action['input'] -%}
+        resp_doc["{{ item['name'] }}"].isNull() 
+        {%- if not(loop.last) -%}
+        {{ ' || ' }}
+        {%- endif -%}
+        {%- endfor -%}
+        ) {
+            {{ setVariable(True, 'resp', 'InvalidInput') }}
+            server.send(400, "text/plain", resp);
+        }
+        else {
+            {{ defineVariable('bool', 'validInput', 'true') }}
+            {{ defineVariable('String', 'value', 'iv') }}
+
+            {{ defineVariable('string_nq', 'action' + a | string + '_input[' + action['input'] | length | string + ']', '{}') }}    
+            {% for item in action['input'] %}
+            {{ defineVariable(item['type'], 'action' + a | string + '_input' + loop.index | string + '_value', 'iv') }}
+            {% endfor %}
+
+            {{ setVariable(False, 'i', 0) }}
+            while(validInput and i<{{ 'action' + a | string + '_inputsNumber'}}) {
+                switch(i) {
+                    {% for item in action['input'] %}
+                    case {{ loop.index0 }}: {
+                        {{ setVariable(True, 'value', '') }}
+                        {{ setVariable(False, 'serializeJson(resp_doc["' + item['name'] + '"], value)') }}
+                        {{ setVariable(False, 'action' + a | string + '_input[' + loop.index0 | string + ']', 'value') }}
+                        {% if global['isArray'] %}
+                        {{ setVariable(False, 'validInput', 'handleType(value,action' + a | string + '_schema[' + loop.index0 | string + '],false)') }}
+                        {% else %}
+                        {{ setVariable(False, 'validInput', 'handleType(value,action' + a | string + '_schema[' + loop.index0 | string + '])') }}
+                        {% endif %}
+                    }
+                    break;
+
+                    {% endfor %}
+                }
+                {{ setVariable(False, 'i++') }}
+            }    
+
+            if(validInput) {
+                {% for item in action['input'] %}
+                {% if item['type'] == 'array' or item['type'] == 'object' %}
+                DynamicJsonDocument input{{ loop.index }}_doc(1024);
+                {% endif %}
+                {% endfor %}
+
+                {% for item in action['input'] %}
+                {% if item['type'] == 'integer' %}
+                {{ setVariable(False, 'action' + a | string + '_input' + loop.index | string + '_value', 'action' + a | string + '_input[' + loop.index0 | string + '].toInt()') }}
+                {% elif item['type'] == 'number' %}
+                {{ setVariable(False, 'action' + a | string + '_input' + loop.index | string + '_value', 'action' + a | string + '_input[' + loop.index0 | string + '].toDouble()') }}
+                {% elif item['type'] == 'boolean' %}
+                if(action{{ a }}_input[{{ loop.index0 }}].equals("true")) {
+                    {{ setVariable(False, 'action' + a | string + '_input' + loop.index | string + '_value', 'true') }}
+                }
+                else { 
+                    {{ setVariable(False, 'action' + a | string + '_input' + loop.index | string + '_value', 'false') }}
+                }
+                {% elif item['type'] == 'string'%}
+                {{ setVariable(False, 'action' + a | string + '_input' + loop.index | string + '_value', 'action' + a | string + '_input[' + loop.index0 | string + ']') }}
+                }
+                {% elif item['type'] == 'null' %}
+                {{ setVariable(False, 'serializeJson(resp_doc["' + item['name'] + '"], action' + a | string +'_input' + loop.index | string +'_value)') }}
+                {% elif item['type'] == 'array' %}
+                {{ setVariable(False, 'deserializeJson(input' + loop.index | string  + '_doc, action' + a | string + '_input[' + loop.index0 | string + '])') }}
+                {{ setVariable(False, 'action' + a | string + '_input' + loop.index | string + '_value', 'input' + loop.index | string  + '_doc.as<JsonArray>()') }}
+                {% elif item['type'] == 'object' %}
+                {{ setVariable(False, 'deserializeJson(input' + loop.index | string  + '_doc, action' + a | string + '_input[' + loop.index0 | string + '])') }}
+                {{ setVariable(False, 'action' + a | string + '_input' + loop.index | string + '_value', 'input' + loop.index | string + '_doc.as<JsonObject>()') }}
+                {% endif %}
+                {% endfor %}
+
+                {% if 'type' in action['output'] %}
+                {{ castType(action['output']['type']) }} output = {{ action['name'] }}(
+                {%- for item in action['input'] -%}
+                {%- if loop.last -%}
+                action{{ a }}_input{{ loop.index }}_value
+                {%- else -%}
+                action{{ a }}_input{{ loop.index }}_value,
+                {%- endif -%}
+                {%- endfor -%}
+                );   
+                {%- else %}
+                {{ action['name'] }}(
+                    {%- for item in action['input'] -%}
+                    {%- if loop.last -%}
+                    action{{ a }}_input{{ loop.index }}_value
+                    {%- else -%}
+                    action{{ a }}_input{{ loop.index }}_value,
+                    {%- endif -%}
+                    {%- endfor -%}
+                ); 
+                {% endif %}
+                {% if 'type' in action['output'] %}    
+                {% if action['output']['type'] != 'string' or action['output']['type'] != 'null' %}
+                server.send(200, "text/plain", (char*) output);
+                {% else %}
+                server.send(200, "text/plain", output);
+                {% endif %}
+                {% else %}
+                server.send(200, "text/plain", "");
+                {% endif %}
+            }
+            else {
+                {{ setVariable(True, 'resp', 'InvalidInput') }}
+                server.send(400, "text/plain", resp);
+            }
+        }
+        {% else %}
+        {% if 'type' in action['output'] %}
+            {{ castType(action['output']['type']) }} output = {{ action['name'] }}();
+        {%- else %}
+        {{ action['name'] }}(); 
+        {% endif %}
+        {% if 'type' in action['output'] %}    
+        {% if action['output']['type'] != 'string' or action['output']['type'] != 'null' %}
+        server.send(200, "text/plain", (char*) output);
+        {% else %}
+        server.send(200, "text/plain", output);
+        {% endif %}
+        {% else %}
+        server.send(200, "text/plain", "");
+        {% endif %}
+        {% endif %}  
+        {% if template['numevents'] > 0 %}
+        {% for event in template['events'] %}
+        {% if event['action'] == action['name'] %}
+        
+        // {{ event['name'] }} condition
+        {{ event['condition'] | replace('{', '\n\t{\n') | replace('}', '}\n\t') | replace(';', ';\n\t') }}
+        {% endif %}
+        {% endfor %}
+        {% endif %}
+    }
+}
 {% endfor %}
 
+{% if template['numactions'] > 0 %}
 // handle Types
 {% if global['isArray'] -%}
 bool handleType(String value, String schema, bool array) {
@@ -1121,221 +1331,20 @@ bool handleType(String value, String schema) {
     {% endif %}
     {{ setVariable(False, 'return validInput') }}
 }
-{% endif %}
 
-// Request functions
-void handleReq1() {
-    {{ defineVariable('String', 'resp', 'iv') }}
-
-    Serial.println("\nGET thing url");
-    {{ setVariable(True, 'resp', '[\\"" + urlServer + "\\"]') }}
-    server.send(200, "application/ld+json", resp);
-}
-
-void handleReq2() {
-    Serial.println("\nGET Thing Description"); 
-    server.send(200, "application/ld+json", td);
-}
-
-void handleReq3() {
-    DynamicJsonDocument tmp(1024);
-    {{ defineVariable('String', 'resp', 'iv') }}
-    {{ defineVariable('JsonObject', 'obj', 'tmp.createNestedObject()') }}
-
-    Serial.print("\nGET all properties");
-    {% for i in range(1, template['numproperties']+1) %}
-    {{ setVariable(False, 'obj[property' + i | string + '_name]', 'property' + i | string + '_value') }}
-    {% endfor %}
-    {{ setVariable(False, 'serializeJson(obj, resp)') }}
-    server.send(200, "application/ld+json", resp);
-}
-
-{# HandleReq for Properties #}
-{% for property in template['properties'] %}
-{% set i = loop.index %}
-void handleReq{{ i+3 }}() {
-    {{ defineVariable('String', 'resp', '') }}
-    {% if property['type'] == 'object' or property['type'] == 'array' %}
-    {{ defineVariable('String', 'tmp', '') }}
-    {% endif %}
-
-    Serial.printf("\nGET %s value", property{{ i }}_name);
-    {% if property['type'] == 'object' or property['type'] == 'array' %}
-    {{ setVariable(False, 'serializeJson(property' + i | string + '_value, tmp)') }}
-    {{ setVariable(True, 'resp', '{\\"" + (String) property' + i | string + '_name + "\\":" + tmp + "}') }}
-    {% else %}
-    {{ setVariable(True, 'resp', '{\\"" + (String) property' + i | string + '_name + "\\":" + property' + i | string + '_value + "}') }}
-    {% endif %}
-    server.send(200, "application/ld+json", resp);
-}
-
-{% endfor -%}
-
-{# HandleReq for Actions #}
+// Action functions
 {% for action in template['actions'] %}
-{%- set a = loop.index -%}
-void handleReq{{ loop.index+3+template['numproperties'] }}() {
-    DynamicJsonDocument resp_doc(1024);
-    {{ defineVariable('String', 'resp', 'iv') }}
-
-    Serial.printf("\nPOST invokeaction %s", action{{ loop.index }}_name);
-    String body = server.arg("plain");
-    Serial.printf("Body received: %s", body.c_str());
-    
-    {{ setVariable(False, 'err', 'deserializeJson(resp_doc, body)') }}
-    if(err) {
-        Serial.printf("deserializeJson() failed with code %s", err.c_str());
-        server.send(400, "text/plain", err.c_str());
-    }
-    else {
-        {% if action['input'] | length > 0 %}
-        if(
-        {%- for item in action['input'] -%}
-        resp_doc["{{ item['name'] }}"].isNull() 
-        {%- if not(loop.last) -%}
-        {{ ' || ' }}
-        {%- endif -%}
-        {%- endfor -%}
-        ) {
-            {{ setVariable(True, 'resp', 'InvalidInput') }}
-            server.send(400, "text/plain", resp);
-        }
-        else {
-            {{ defineVariable('bool', 'validInput', 'true') }}
-            {{ defineVariable('String', 'value', 'iv') }}
-
-            {{ defineVariable('string_nq', 'action' + a | string + '_input[' + action['input'] | length | string + ']', '{}') }}    
-            {% for item in action['input'] %}
-            {{ defineVariable(item['type'], 'action' + a | string + '_input' + loop.index | string + '_value', 'iv') }}
-            {% endfor %}
-
-            {{ setVariable(False, 'i', 0) }}
-            while(validInput and i<{{ 'action' + a | string + '_inputsNumber'}}) {
-                switch(i) {
-                    {% for item in action['input'] %}
-                    case {{ loop.index0 }}: {
-                        {{ setVariable(True, 'value', '') }}
-                        {{ setVariable(False, 'serializeJson(resp_doc["' + item['name'] + '"], value)') }}
-                        {{ setVariable(False, 'action' + a | string + '_input[' + loop.index0 | string + ']', 'value') }}
-                        {% if global['isArray'] %}
-                        {{ setVariable(False, 'validInput', 'handleType(value,action' + a | string + '_schema[' + loop.index0 | string + '],false)') }}
-                        {% else %}
-                        {{ setVariable(False, 'validInput', 'handleType(value,action' + a | string + '_schema[' + loop.index0 | string + '])') }}
-                        {% endif %}
-                    }
-                    break;
-
-                    {% endfor %}
-                }
-                {{ setVariable(False, 'i++') }}
-            }    
-
-            if(validInput) {
-                {% for item in action['input'] %}
-                {% if item['type'] == 'array' or item['type'] == 'object' %}
-                DynamicJsonDocument input{{ loop.index }}_doc(1024);
-                {% endif %}
-                {% endfor %}
-
-                {% for item in action['input'] %}
-                {% if item['type'] == 'integer' %}
-                {{ setVariable(False, 'action' + a | string + '_input' + loop.index | string + '_value', 'action' + a | string + '_input[' + loop.index0 | string + '].toInt()') }}
-                {% elif item['type'] == 'number' %}
-                {{ setVariable(False, 'action' + a | string + '_input' + loop.index | string + '_value', 'action' + a | string + '_input[' + loop.index0 | string + '].toDouble()') }}
-                {% elif item['type'] == 'boolean' %}
-                if(action{{ a }}_input[{{ loop.index0 }}].equals("true")) {
-                    {{ setVariable(False, 'action' + a | string + '_input' + loop.index | string + '_value', 'true') }}
-                }
-                else { 
-                    {{ setVariable(False, 'action' + a | string + '_input' + loop.index | string + '_value', 'false') }}
-                }
-                {% elif item['type'] == 'string'%}
-                {{ setVariable(False, 'action' + a | string + '_input' + loop.index | string + '_value', 'action' + a | string + '_input[' + loop.index0 | string + ']') }}
-                }
-                {% elif item['type'] == 'null' %}
-                {{ setVariable(False, 'serializeJson(resp_doc["' + item['name'] + '"], action' + a | string +'_input' + loop.index | string +'_value)') }}
-                {% elif item['type'] == 'array' %}
-                {{ setVariable(False, 'deserializeJson(input' + loop.index | string  + '_doc, action' + a | string + '_input[' + loop.index0 | string + '])') }}
-                {{ setVariable(False, 'action' + a | string + '_input' + loop.index | string + '_value', 'input' + loop.index | string  + '_doc.as<JsonArray>()') }}
-                {% elif item['type'] == 'object' %}
-                {{ setVariable(False, 'deserializeJson(input' + loop.index | string  + '_doc, action' + a | string + '_input[' + loop.index0 | string + '])') }}
-                {{ setVariable(False, 'action' + a | string + '_input' + loop.index | string + '_value', 'input' + loop.index | string + '_doc.as<JsonObject>()') }}
-                {% endif %}
-                {% endfor %}
-
-                {% if 'type' in action['output'] %}
-                {{ castType(action['output']['type']) }} output = {{ action['name'] }}(
-                {%- for item in action['input'] -%}
-                {%- if loop.last -%}
-                action{{ a }}_input{{ loop.index }}_value
-                {%- else -%}
-                action{{ a }}_input{{ loop.index }}_value,
-                {%- endif -%}
-                {%- endfor -%}
-                );   
-                {%- else %}
-                {{ action['name'] }}(
-                    {%- for item in action['input'] -%}
-                    {%- if loop.last -%}
-                    action{{ a }}_input{{ loop.index }}_value
-                    {%- else -%}
-                    action{{ a }}_input{{ loop.index }}_value,
-                    {%- endif -%}
-                    {%- endfor -%}
-                ); 
-                {% endif %}
-                {% if 'type' in action['output'] %}    
-                {% if action['output']['type'] != 'string' or action['output']['type'] != 'null' %}
-                server.send(200, "text/plain", (char*) output);
-                {% else %}
-                server.send(200, "text/plain", output);
-                {% endif %}
-                {% else %}
-                server.send(200, "text/plain", "");
-                {% endif %}
-            }
-            else {
-                {{ setVariable(True, 'resp', 'InvalidInput') }}
-                server.send(400, "text/plain", resp);
-            }
-        }
-        {% else %}
-        {% if 'type' in action['output'] %}
-            {{ castType(action['output']['type']) }} output = {{ action['name'] }}();
-        {%- else %}
-        {{ action['name'] }}(); 
-        {% endif %}
-        {% if 'type' in action['output'] %}    
-        {% if action['output']['type'] != 'string' or action['output']['type'] != 'null' %}
-        server.send(200, "text/plain", (char*) output);
-        {% else %}
-        server.send(200, "text/plain", output);
-        {% endif %}
-        {% else %}
-        server.send(200, "text/plain", "");
-        {% endif %}
-        {% endif %}  
-        {% if template['numevents'] > 0 %}
-        {% for event in template['events'] %}
-        {% if event['action'] == action['name'] %}
-        
-        // {{ event['name'] }} condition
-        {{ event['condition'] | replace('{', '\n\t{\n') | replace('}', '}\n') | replace(';', ';\n') | replace(' ', ' \t') }}
-        {% endif %}
-        {% endfor %}
-        {% endif %}
-    }
-}
+{{ defineFunction(action['name'], action['input'], action['output'], action['body'], True) }}
 {% endfor %}
+{% endif %}
 
 {# Events #}
 {% if template['numevents'] > 0 %}
 // handle Events
 void webSocketEvent(uint8_t num, WStype_t type, uint8_t* pl, size_t length) {
     IPAddress ip;
-    {{ defineVariable('String', 'nums', 'iv') }}
+    {{ defineVariable('String', 'ip_s', '') }}
     {{ defineVariable('char_nq', 'payload', '(char *) pl') }}
-    JsonObject obj;
 
     switch(type) {
         case WStype_DISCONNECTED: {
@@ -1343,35 +1352,76 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t* pl, size_t length) {
             Serial.println(" -> Disconnected");
 
             // remove all client subscriptions
-            {{ setVariable(False, 'nums', '(String) num') }}
-            {{ setVariable(False, 'e_doc.remove(nums)') }}
+            for(i=0; i<ip_arr.size(); i++)
+                if(ip_arr[i]["num"] == num) {
+                    {{ setVariable(False, 'serializeJson(ip_arr[i]["ip"], ip_s)') }}
+                    {{ setVariable(False, 'ip_s.replace("\\"", "")') }}
+                    {{ setVariable(False, 'ip_arr.remove(i)') }}
+                    {{ setVariable(False, 'ip_doc.remove(ip_s)') }}
+                    {{ setVariable(False, 'e_doc.remove(ip_s)') }}
+                    break;
+                }
+
             {{ setVariable(False, 'serializeJson(e_doc, Serial)') }}
+            Serial.println();
+            {{ setVariable(False, 'serializeJson(ip_doc, Serial)') }}
             Serial.println();
         }
         break;
 
         case WStype_CONNECTED: {
+            {{ defineVariable('bool', 'done', 'false') }}
+            {{ defineVariable('bool', 'conn', 'false') }}
+            JsonObject obj_e;
+            JsonObject obj_ip;
+
             {{ setVariable(False, 'ip', 'webSocket.remoteIP(num)') }}
+            {{ setVariable(False, 'ip_s', 'ip.toString()') }}
             Serial.printf("\n%d", num);
             Serial.print(" -> Connection request from ");
             Serial.println(ip);
-            Serial.printf("Payload: %c\n", payload);
+            Serial.printf("Payload: %s\n", payload);
 
-            {{ setVariable(False, 'nums', '(String) num') }}
-            for(i=0; i<events_number; i++) {
+            {{ setVariable(False, 'i', '0') }}
+            while(!done && i<events_number) {
                 if(events_endpoint[i].equals(payload)) {
-                    if(e_doc[nums].isNull()) 
-                        {{ setVariable(False, 'obj', 'e_doc.createNestedArray(nums).createNestedObject()') }}
-                    else 
-                        {{ setVariable(False, 'obj', 'e_doc[nums].createNestedObject()') }}                    
-
-                    {{ setVariable(False, 'obj[events_list[i]]', 'false') }}
-                    webSocket.sendTXT(num, "Connection confirmed");
-                    break;
+                    if(e_doc[ip_s].isNull()) {
+                        {{ setVariable(False, 'obj_e', 'e_doc.createNestedArray(ip_s).createNestedObject()') }}
+                        {{ setVariable(False, 'obj_ip', 'ip_arr.createNestedObject()') }}
+                        {{ setVariable(False, 'obj_ip["ip"]', 'ip_s') }}
+                        {{ setVariable(False, 'obj_ip["num"]', 'num') }}
+                        {{ setVariable(False, 'ip_doc[ip_s]', 'num') }}
+                    }
+                    else {
+                        {{ setVariable(False, 'j', '0') }}
+                        while(!conn && j<e_doc[ip_s].size()) {
+                            if(!e_doc[ip_s][i][events_list[i]].isNull())
+                                {{ setVariable(False, 'conn', 'true') }}
+                            {{ setVariable(False, 'j++') }}    
+                        }
+                        if(!conn)
+                            {{ setVariable(False, 'obj_e', 'e_doc[ip_s].createNestedObject()') }}  
+                    }
+                    
+                    if(conn) {
+                        webSocket.sendTXT(num, "Connection already established");
+                        {{ setVariable(False, 'done', 'true') }}
+                    }
+                    else {
+                        {{ setVariable(False, 'obj_e[events_list[i]]', 'false') }}
+                        webSocket.sendTXT(num, "Connection confirmed");
+                        {{ setVariable(False, 'done', 'true') }}
+                    }
                 }
+                {{ setVariable(False, 'i++') }}
             }
 
+            if(!done)
+                webSocket.sendTXT(num, "Connection refused"); 
+
             {{ setVariable(False, 'serializeJson(e_doc, Serial)') }}
+            Serial.println();
+            {{ setVariable(False, 'serializeJson(ip_doc, Serial)') }}
             Serial.println();
         }
         break;
@@ -1379,19 +1429,19 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t* pl, size_t length) {
         case WStype_TEXT:
         { 
             DynamicJsonDocument resp_doc(1024);
-            {{ defineVariable('bool', 'parsingDone', 'true') }}
+            {{ defineVariable('bool', 'parsingDone', 'false') }}
             {{ defineVariable('int', 'validInput', '0') }}
             {{ defineVariable('String', 'm_name', 'iv') }}
             {{ defineVariable('String', 'validate', 'iv') }}
             {{ defineVariable('String', 'message', 'iv') }}
 
             {{ setVariable(False, 'ip', 'webSocket.remoteIP(num)') }}
+            {{ setVariable(False, 'ip_s', 'ip.toString()') }}
             Serial.printf("\n%d", num);
             Serial.print(" -> Get Text from ");
             Serial.println(ip);
-            Serial.printf("Payload: %c\n", payload);
+            Serial.printf("Payload: %s\n", payload);
 
-            {{ setVariable(False, 'nums', '(String) num') }}
             {{ setVariable(False, 'err', 'deserializeJson(resp_doc, payload)') }}
             if(err) {
                 Serial.printf("deserializeJson() failed with code %s", err.c_str());
@@ -1401,16 +1451,16 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t* pl, size_t length) {
                 {{ defineVariable('String', 'message', 'iv') }}
                 {{ setVariable(False, 'serializeJson(resp_doc, message)') }}
                 {{ setVariable(False, 'i', '0') }}
-                while(parsingDone && i<e_doc[nums].size()) {
+                while(!parsingDone && i<e_doc[ip_s].size()) {
                     {{ setVariable(False, 'j', '0') }}
-                    while(parsingDone && j<events_number) {
-                        if(!e_doc[nums][i][events_list[j]].isNull()) {
-                            if(!e_doc[nums][i][events_list[j]] && events_subscriptionSchema[j]) {
+                    while(!parsingDone && j<events_number) {
+                        if(!e_doc[ip_s][i][events_list[j]].isNull()) {
+                            if(!e_doc[ip_s][i][events_list[j]] && events_subscriptionSchema[j]) {
                                 StaticJsonDocument<1024> tmp_doc;
                                 {{ defineVariable('JsonObject', 'tmp', 'tmp_doc.createNestedObject()') }}
                                 {{ setVariable(False, 'validInput', '0') }}
                                 {{ setVariable(False, 'k', '0') }}
-                                while(parsingDone && k<es_doc[events_list[j]]["subscription"].size()) {
+                                while(!parsingDone && k<es_doc[events_list[j]]["subscription"].size()) {
                                     {{ setVariable(True, 'm_name', '') }}
                                     {{ setVariable(False, 'serializeJson(es_doc[events_list[j]]["subscription"][k]["name"], m_name)') }}
                                     {{ setVariable(False, 'm_name.replace("\\"", "")') }}
@@ -1420,26 +1470,24 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t* pl, size_t length) {
                                     }
                                     {{ setVariable(False, 'k++') }}
                                 }
-                                if(validInput == k-1) {
+                                if(validInput == k) {
                                     {{ setVariable(False, 'parsingDone', 'true') }}
                                     {{ setVariable(True, 'validate', '') }}
                                     {{ setVariable(False, 'serializeJson(tmp, validate)') }}
                                     if(validate.equals(message)) {
-                                        {{ setVariable(False, 'e_doc[nums][i][events_list[j]]', 'true') }}
+                                        {{ setVariable(False, 'e_doc[ip_s][i][events_list[j]]', 'true') }}
                                         webSocket.sendTXT(num, "Subscription confirmed");
                                     }
                                     else 
-                                        webSocket.sendTXT(num, "Subscription Error");
+                                        webSocket.sendTXT(num, "Subscription refused");
                                 }
-                            } 
-                        }
-                        else {
-                            if(e_doc[nums][i][events_list[j]] && events_cancellationSchema[j]) {
+                            }
+                            else if(e_doc[ip_s][i][events_list[j]] && events_cancellationSchema[j]) {
                                 StaticJsonDocument<1024> tmp_doc;
                                 {{ defineVariable('JsonObject', 'tmp', 'tmp_doc.createNestedObject()') }}
                                 {{ setVariable(False, 'validInput', '0') }}
                                 {{ setVariable(False, 'k', '0') }}
-                                while(parsingDone && k<es_doc[events_list[j]]["cancellation"].size()) {
+                                while(!parsingDone && k<es_doc[events_list[j]]["cancellation"].size()) {
                                     {{ setVariable(True, 'm_name', '') }}
                                     {{ setVariable(False, 'serializeJson(es_doc[events_list[j]]["cancellation"][k]["name"], m_name)') }}
                                     {{ setVariable(False, 'm_name.replace("\\"", "")') }}
@@ -1449,18 +1497,18 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t* pl, size_t length) {
                                     }
                                     {{ setVariable(False, 'k++') }}
                                 }
-                                if(validInput == k-1) {
+                                if(validInput == k) {
                                     {{ setVariable(False, 'parsingDone', 'true') }}
                                     {{ setVariable(True, 'validate', '') }}
                                     {{ setVariable(False, 'serializeJson(tmp, validate)') }}
                                     if(validate.equals(message)) {
-                                        {{ setVariable(False, 'e_doc[nums][i].remove(events_list[j])') }}
+                                        {{ setVariable(False, 'e_doc[ip_s][i][events_list[j]]', 'false') }}
                                         webSocket.sendTXT(num, "Cancellation confirmed");
                                     }
                                     else
-                                        webSocket.sendTXT(num, "Cancellation Error");
+                                        webSocket.sendTXT(num, "Cancellation refused");
                                 }
-                            } 
+                            }  
                         }
                         {{ setVariable(False, 'j++') }}
                     }
@@ -1470,7 +1518,9 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t* pl, size_t length) {
                     webSocket.sendTXT(num, "Invalid message");
             }
 
-            serializeJson(e_doc, Serial);
+            {{ setVariable(False, 'serializeJson(e_doc, Serial)') }}
+            Serial.println();
+            {{ setVariable(False, 'serializeJson(ip_doc, Serial)') }}
             Serial.println();
         }
         break;
@@ -1478,17 +1528,16 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t* pl, size_t length) {
         
         case {{ ws['type'] }}:
         {
-            {{ '\t' + ws['body'] | replace('{', '\n\t\t{\n') | replace('}', '}\n') | replace(';', ';\n') | replace(' ', ' \t\t') }}
+            {{ '\t' + ws['body'] | replace('{', '\n\t\t{\n') | replace('}', '}\n\t\t') | replace(';', ';\n\t\t') }}
         }
         break;
         {% endfor %}
     }
 }
 {% endif %}
-
 {% if template['functions'] | length > 0 %}
 {% for fun in template['functions'] %}
-{{ defineFunction(fun['name'], fun['inputs'], fun['output'], fun['body'], False) }}
 
+{{ defineFunction(fun['name'], fun['inputs'], fun['output'], fun['body'], False) }}
 {% endfor %}
 {% endif %}
