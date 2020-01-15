@@ -28,6 +28,7 @@
 {%- do global.update({'isPropertyString':False}) -%}
 {%- do global.update({'isPropertyBoolean':False}) -%}
 {%- do global.update({'isPropertyInteger':False}) -%}
+{%- do global.update({'isPropertyNumber':False}) -%}
 {%- do global.update({'isPropertyArray':False}) -%}
 {%- do global.update({'isString':False}) -%}
 {%- do global.update({'isBoolean':False}) -%}
@@ -41,6 +42,8 @@
 {%- do global.update({'isArrayObject':False}) -%}
 {%- do global.update({'isArrayString':False}) -%}
 {%- do global.update({'isArrayBoolean':False}) -%}
+{%- do global.update({'isArrayInteger': False}) -%}
+{%- do global.update({'isArrayNumber': False}) -%}
 {%- do global.update({'isArrayMin':False}) -%}
 {%- do global.update({'isArrayMax':False}) -%}
 {%- do global.update({'isObject':False}) -%}
@@ -54,14 +57,13 @@
 {%- for p in property['properties'] -%}
 {%- if (p['type'] == 'string' or p['type'] == 'null') and (not(global['isPropertyString'])) -%}
 {%- do global.update({'isPropertyString':True}) -%}
-{%- endif -%}
-{%- if p['type'] == 'booelan' and not(global['isPropertyBoolean']) -%}
+{%- elif p['type'] == 'booelan' and not(global['isPropertyBoolean']) -%}
 {%- do global.update({'isPropertyBoolean':True}) -%}
-{%- endif -%}
-{% if (p['type'] == 'integer' or p['type'] == 'number') and not(global['isPropertyInteger']) -%}
+{% elif p['type'] == 'integer' and not(global['isPropertyInteger']) -%}
 {%- do global.update({'isPropertyInteger':True}) -%}
-{%- endif -%}
-{%- if p['type'] == 'array' and not(global['isPropertyArray']) -%}
+{% elif p['type'] == 'number' and not(global['isPropertynumber']) -%}
+{%- do global.update({'isPropertyNumber':True}) -%}
+{%- elif p['type'] == 'array' and not(global['isPropertyArray']) -%}
 {%- do global.update({'isPropertyArray':True}) -%}
 {%- endif -%}
 {%- endfor -%}
@@ -75,8 +77,10 @@
 {%- elif item['type'] == 'boolean' and not(global['isBoolean']) -%}
 {%- do global.update({'isBoolean':True}) -%}
 {%- elif item['type'] == 'integer' or item['type'] == 'number' -%}
-{%- if not(global['isInteger']) -%}
+{%- if item['type'] == 'integer' and not(global['isInteger']) -%}
 {%- do global.update({'isInteger':True}) -%}
+{%- elif item['type'] == 'number' and not(global['isNumber']) -%}
+{%- do global.update({'isNumber':True}) -%}
 {%- endif -%}
 {%- if 'minimum' in item and not(global['isMin']) -%}
 {%- do global.update({'isMin':True}) -%}
@@ -101,8 +105,10 @@
 {%- elif item['items']['type'] == 'boolean' and not(global['isArrayBoolean']) -%}
 {%- do global.update({'isArrayBoolean':True}) -%}
 {%- elif item['items']['type'] == 'integer' or item['items']['type'] == 'number' -%}
-{%- if not(global['isArrayInteger']) -%}
+{%- if item['items']['type'] == 'integer' and not(global['isArrayInteger']) -%}
 {%- do global.update({'isArrayInteger':True}) -%}
+{%- elif item['items']['type'] == 'number' and not(global['isArrayNumber']) -%}
+{%- do global.update({'isArrayNumber':True}) -%}
 {%- endif -%}
 {%- if 'minimum' in item['items'] and not(global['isArrayMin']) -%}
 {%- do global.update({'isArrayMin':True}) -%}
@@ -125,8 +131,10 @@
 {%- elif p['type'] == 'boolean' and not(global['isBoolean']) -%}
 {%- do global.update({'isBoolean':True}) -%}
 {%- elif p['type'] == 'integer' or p['type'] == 'number' -%}
-{%- if not(global['isInteger']) -%}
+{%- if p['type'] == 'integer' and not(global['isInteger']) -%}
 {%- do global.update({'isInteger':True}) -%}
+{%- elif p['type'] == 'number' and not(global['isNumber']) -%}
+{%- do global.update({'isNumber':True}) -%}
 {%- endif -%}
 {%- if 'minimum' in p and not(global['isMin']) -%}
 {%- do global.update({'isMin':True}) -%}
@@ -147,8 +155,10 @@
 {%- elif p['items']['type'] == 'boolean' and not(global['isArrayBoolean']) -%}
 {%- do global.update({'isArrayBoolean':True}) -%}
 {%- elif p['items']['type'] == 'integer' or p['items']['type'] == 'number' -%}
-{%- if not(global['isArrayInteger']) -%}
+{%- if p['items']['type'] == 'integer' and not(global['isArrayInteger']) -%}
 {%- do global.update({'isArrayInteger':True}) -%}
+{%- elif p['items']['type'] == 'number' and not(global['isArrayNumber']) -%}
+{%- do global.update({'isArrayNumber':True}) -%}
 {%- endif -%}
 {%- if 'minimum' in p['items'] and not(global['isArrayMin']) -%}
 {%- do global.update({'isArrayMin':True}) -%}
@@ -166,6 +176,7 @@
 {%- endif -%}
 {%- endfor -%}
 {%- endfor -%}
+{# comment
 {%- for event in template['events'] -%}
 {%- set dataType = ['subscription', 'cancellation'] -%}
 {%- for data in dataType -%}
@@ -181,8 +192,10 @@
 {%- elif item['type'] == 'boolean' and not(global['isBoolean']) -%}
 {%- do global.update({'isBoolean':True}) -%}
 {%- elif item['type'] == 'integer' or item['type'] == 'number' -%}
-{%- if not(global['isInteger']) -%}
+{%- if item['type'] == 'integer' and not(global['isInteger']) -%}
 {%- do global.update({'isInteger':True}) -%}
+{%- elif item['type'] == 'number' and not(global['isNumber']) -%}
+{%- do global.update({'isNumber':True}) -%}
 {%- endif -%}
 {%- if 'minimum' in item and not(global['isMin']) -%}
 {%- do global.update({'isMin':True}) -%}
@@ -207,8 +220,10 @@
 {%- elif item['items']['type'] == 'boolean' and not(global['isArrayBoolean']) -%}
 {%- do global.update({'isArrayBoolean':True}) -%}
 {%- elif item['items']['type'] == 'integer' or item['items']['type'] == 'number' -%}
-{%- if not(global['isArrayInteger']) -%}
+{%- if item['items']['type'] == 'integer' and not(global['isArrayInteger']) -%}
 {%- do global.update({'isArrayInteger':True}) -%}
+{%- elif item['items']['type'] == 'number' and not(global['isArrayNumber']) -%}
+{%- do global.update({'isArrayNumber':True}) -%}
 {%- endif -%}
 {%- if 'minimum' in item['items'] and not(global['isArrayMin']) -%}
 {%- do global.update({'isArrayMin':True}) -%}
@@ -231,8 +246,10 @@
 {%- elif p['type'] == 'boolean' and not(global['isBoolean']) -%}
 {%- do global.update({'isBoolean':True}) -%}
 {%- elif p['type'] == 'integer' or p['type'] == 'number' -%}
-{%- if not(global['isInteger']) -%}
+{%- if p['type'] == 'integer' and not(global['isInteger']) -%}
 {%- do global.update({'isInteger':True}) -%}
+{%- elif p['type'] == 'number' and not(global['isNumber']) -%}
+{%- do global.update({'isNumber':True}) -%}
 {%- endif -%}
 {%- if 'minimum' in p and not(global['isMin']) -%}
 {%- do global.update({'isMin':True}) -%}
@@ -253,8 +270,10 @@
 {%- elif p['items']['type'] == 'boolean' and not(global['isArrayBoolean']) -%}
 {%- do global.update({'isArrayBoolean':True}) -%}
 {%- elif p['items']['type'] == 'integer' or p['items']['type'] == 'number' -%}
-{%- if not(global['isArrayInteger']) -%}
+{%- if p['items']['type'] == 'integer' and not(global['isArrayInteger']) -%}
 {%- do global.update({'isArrayInteger':True}) -%}
+{%- elif p['items']['type'] == 'number' and not(global['isArrayNumber']) -%}
+{%- do global.update({'isArrayNumber':True}) -%}
 {%- endif -%}
 {%- if 'minimum' in p['items'] and not(global['isArrayMin']) -%}
 {%- do global.update({'isArrayMin':True}) -%}
@@ -274,6 +293,7 @@
 {%- endif -%}
 {%- endfor -%}
 {%- endfor -%}
+#}
 {%- endmacro -%}
 {% macro defineVariable(typeV, name, value) -%}
 {%- if value is iterable and value is not string %}
@@ -314,10 +334,13 @@ int {{ name }} = {{ value }};
 double {{ name }};
 {%- elif value == 'iv' -%}
 double {{ name }} = 0.0;
-{%- elif '.' in value -%}    
+{%- else -%}
+{%- set vs = value | string -%}  
+{%- if '.' in vs -%}  
 double {{ name }} = {{ value }};
 {%- else -%}
 double {{ name }} = {{ value }}.0;
+{%- endif -%}
 {%- endif -%}
 {% elif typeV == 'boolean' %}
 {%- if value == '' -%}
@@ -397,7 +420,7 @@ JsonArray
 JsonObject 
 {%- endif -%}
 {%- endmacro %}
-{% macro handleType(interaction, interactionName, array=False) -%}
+{% macro handleInputType(interaction, interactionName, array=False) -%}
 {% if interaction['type'] == 'array' %}
 {{ defineVariable('JsonArray', interactionName + '_value', 'iv') }}
 {% if 'minItems' in property %}
@@ -406,7 +429,7 @@ JsonObject
 {% if 'maxItems' in interaction %}
 {{ defineVariable('int', interactionName + '_minItems', interaction['maxItems']) }}
 {% endif %}
-{{ handleType(interaction['items'], interactionName, True) }}
+{{ handleInputType(interaction['items'], interactionName, True) }}
 {% elif interaction['type'] == 'object' %}
 {{ defineVariable('JsonObject', interactionName + '_value', 'iv') }}
 {% if 'properties' in interaction %}
@@ -500,7 +523,7 @@ DeserializationError err;
 // Properties
 {% for property in template['properties'] %}
 {{ defineVariable('const char*', 'property' + loop.index | string + '_name', property['name']) }}
-{{ handleType(property, 'property' + loop.index | string) }}
+{{ handleInputType(property, 'property' + loop.index | string) }}
 {% endfor %}
 {% endif %}
 
@@ -779,7 +802,7 @@ void handleReq3() {
     {{ defineVariable('String', 'resp', 'iv') }}
     {{ defineVariable('JsonObject', 'obj', 'tmp.createNestedObject()') }}
 
-    Serial.print("\nGET all properties");
+    Serial.println("\nGET all properties");
     {% for i in range(1, template['numproperties']+1) %}
     {{ setVariable(False, 'obj[property' + i | string + '_name]', 'property' + i | string + '_value') }}
     {% endfor %}
@@ -796,7 +819,7 @@ void handleReq{{ i+3 }}() {
     {{ defineVariable('String', 'tmp', '') }}
     {% endif %}
 
-    Serial.printf("\nGET %s value", property{{ i }}_name);
+    Serial.printf("\nGET %s value\n", property{{ i }}_name);
     {% if property['type'] == 'object' or property['type'] == 'array' %}
     {{ setVariable(False, 'serializeJson(property' + i | string + '_value, tmp)') }}
     {{ setVariable(True, 'resp', '{\\"" + (String) property' + i | string + '_name + "\\":" + tmp + "}') }}
@@ -815,9 +838,9 @@ void handleReq{{ loop.index+3+template['numproperties'] }}() {
     DynamicJsonDocument resp_doc(1024);
     {{ defineVariable('String', 'resp', 'iv') }}
 
-    Serial.printf("\nPOST invokeaction %s", action{{ loop.index }}_name);
+    Serial.printf("\nPOST invokeaction %s\n", action{{ loop.index }}_name);
     String body = server.arg("plain");
-    Serial.printf("Body received: %s", body.c_str());
+    Serial.printf("Body received: %s\n", body.c_str());
     
     {{ setVariable(False, 'err', 'deserializeJson(resp_doc, body)') }}
     if(err) {
@@ -855,9 +878,9 @@ void handleReq{{ loop.index+3+template['numproperties'] }}() {
                         {{ setVariable(False, 'serializeJson(resp_doc["' + item['name'] + '"], value)') }}
                         {{ setVariable(False, 'action' + a | string + '_input[' + loop.index0 | string + ']', 'value') }}
                         {% if global['isArray'] %}
-                        {{ setVariable(False, 'validInput', 'handleType(value,action' + a | string + '_schema[' + loop.index0 | string + '],false)') }}
+                        {{ setVariable(False, 'validInput', 'handleInputType(value,action' + a | string + '_schema[' + loop.index0 | string + '],false)') }}
                         {% else %}
-                        {{ setVariable(False, 'validInput', 'handleType(value,action' + a | string + '_schema[' + loop.index0 | string + '])') }}
+                        {{ setVariable(False, 'validInput', 'handleInputType(value,action' + a | string + '_schema[' + loop.index0 | string + '])') }}
                         {% endif %}
                     }
                     break;
@@ -954,11 +977,12 @@ void handleReq{{ loop.index+3+template['numproperties'] }}() {
         {% endif %}  
         {% if template['numevents'] > 0 %}
         {% for event in template['events'] %}
-        {% if event['action'] == action['name'] %}
-        
+        {% for ae in event['actions'] %}
+        {% if ae == action['name'] %}
         // {{ event['name'] }} condition
         {{ event['condition'] | replace('{', '\n\t{\n') | replace('}', '}\n\t') | replace(';', ';\n\t') }}
         {% endif %}
+        {% endfor %}
         {% endfor %}
         {% endif %}
     }
@@ -966,11 +990,11 @@ void handleReq{{ loop.index+3+template['numproperties'] }}() {
 {% endfor %}
 
 {% if template['numactions'] > 0 %}
-// handle Types
+// handle Input Types
 {% if global['isArray'] -%}
-bool handleType(String value, String schema, bool array) {
+bool handleInputType(String value, String schema, bool array) {
 {% else %}
-bool handleType(String value, String schema) {   
+bool handleInputType(String value, String schema) {   
 {% endif -%}     
     {{ '\t\t' }}DynamicJsonDocument schema_doc(1024);
     DynamicJsonDocument value_doc(1024);
@@ -1036,18 +1060,24 @@ bool handleType(String value, String schema) {
         {%- endif %} 
     }
     {% endif %}
-    {% if global['isInteger'] or global['isArrayInteger'] %}
-    {% if global['isString'] or global['isArrayString'] or global['isBoolean'] or global['isArrayBoolean'] %}{{ '\t\telse if' }}{% else %}{{ '\t\tif' }}{% endif %}(type.equals("integer")) {
-        {% if global['isArrayInteger'] %}
+    {% if global['isInteger'] or global['isNumber'] or global['isArrayInteger'] or global['isArrayNumber'] %}
+    {% if global['isString'] or global['isArrayString'] or global['isBoolean'] or global['isArrayBoolean'] %}{{ '\t\telse if' }}{% else %}{{ '\t\tif' }}{% endif %}(type.equals("integer") || type.equals("number")) {
+        {% if global['isArrayInteger'] or global['isArrayNumber'] %}
         if(array) {
             {{ setVariable(False, 'deserializeJson(value_doc, value)') }}
             {{ setVariable(False, 'array_value', 'value_doc.as<JsonArray>()') }}
             for(i=0; i<array_value.size(); i++) {
                 {{ defineVariable('string_nq', 'ae', 'array_value[i]') }}
+                {{ defineVariable('int', 'dot_count', '0') }}
                 {{ setVariable(False, 'j', 0) }}
                 while(validInput && j<ae.length()) { 
                     if(!isDigit(ae[j])) 
-                        {{ setVariable(False, 'validInput', 'false') }}
+                        {{ setVariable(False, 'validInput', 'false') }}  
+                    else if(ae[j] == '.')
+                        if(j == 0 || j == ae.length()-1 || dot_count > 1)
+                            {{ setVariable(False, 'validInput', 'false') }}
+                        else 
+                            {{ setVariable(False, 'dot_count++') }}    
                     {{ setVariable(False, 'j++') }}    
                 }
                 if(!validInput)   
@@ -1057,7 +1087,10 @@ bool handleType(String value, String schema) {
             if(validInput) {
                 {{ defineVariable('int', 'input[array_value.size()]', '{}') }}
                 for(i=0; i<array_value.size(); i++) 
-                    {{ setVariable(False, 'input[i]', 'array_value[i].toInt()') }}
+                    if(type.equals("integer"))
+                        {{ setVariable(False, 'input[i]', 'array_value[i].toInt()') }}
+                    else 
+                        {{ setVariable(False, 'input[i]', 'array_value[i].toDouble()') }}    
                 {% if global['isArrayMin'] %}
                 if(!obj_schema["minimum"].isNull()) 
                     for(i=0; i<array_value.size(); i++)
@@ -1078,15 +1111,21 @@ bool handleType(String value, String schema) {
             {% endif %}       
         }
         else {
+            {{ defineVariable('int', 'dot_count', '0') }}
             {{ setVariable(False, 'i', 0) }}
             while(validInput && i<value.length()) {
                 if(!isDigit(value[i])) 
                     {{ setVariable(False, 'validInput', 'false') }}
+                else if(value[i] == '.')
+                    if(i == 0 || i == value.length()-1 || (dot_count > 1)
+                        {{ setVariable(False, 'validInput', 'false') }}
+                    else 
+                        {{ setVariable(False, 'dot_count++') }}    
                 {{ setVariable(False, 'i++') }}          
             } 
             {% if global['isMin'] or global['isMax'] %}
             if(validInput) {
-                {{ defineVariable('int', 'input', 'value.toInt()') }}
+                {{ defineVariable('double', 'input', 'value.toDouble()') }} 
                 {% if global['isMin'] %}
                 if(!obj_schema["minimum"].isNull()) 
                     if(input < obj_schema["minimum"])
@@ -1101,15 +1140,21 @@ bool handleType(String value, String schema) {
             {% endif %}
         }
         {% else %}
+        {{ defineVariable('int', 'dot_count', '0') }}
         {{ setVariable(False, 'i', 0) }}
         while(validInput && i<value.length()) {
             if(!isDigit(value[i])) 
                 {{ setVariable(False, 'validInput', 'false') }}
+            else if(value[i] == '.')
+                if(i == 0 || i == value.length()-1 || dot_count > 1)
+                    {{ setVariable(False, 'validInput', 'false') }}
+                else 
+                    {{ setVariable(False, 'dot_count++') }}    
             {{ setVariable(False, 'i++') }}          
         } 
         {% if global['isMin'] or global['isMax'] %}
         if(validInput) {
-            {{ defineVariable('int', 'input', 'value.toInt()') }}
+            {{ defineVariable('double', 'input', 'value.toDouble()') }} 
             {% if global['isMin'] %}
             if(!obj_schema["minimum"].isNull()) 
                 if(input < obj_schema["minimum"])
@@ -1126,7 +1171,7 @@ bool handleType(String value, String schema) {
     }
     {% endif %}
     {% if global['isArray']  %}
-    {% if global['isString'] or global['isArrayString'] or global['isBoolean'] or global['isArrayBoolean'] or global['isInteger'] or global['isArrayInteger'] %}{{ '\t\telse if' }}{% else %}{{ '\t\tif' }}{% endif %}(type.equals("array")) {
+    {% if global['isString'] or global['isArrayString'] or global['isBoolean'] or global['isArrayBoolean'] or global['isInteger'] or global['isArrayInteger'] or global['isNumber'] or global['isArrayNumber'] %}{{ '\t\telse if' }}{% else %}{{ '\t\tif' }}{% endif %}(type.equals("array")) {
         {{ setVariable(False, 'deserializeJson(value_doc, value)') }}
         {{ setVariable(False, 'array_value', 'value_doc.as<JsonArray>()') }}
         if(array_value.isNull()) 
@@ -1146,19 +1191,19 @@ bool handleType(String value, String schema) {
             if(validInput) {
                 {{ setVariable(True, 'schema', '') }}
                 {{ setVariable(False, 'serializeJson(obj_schema["items"], schema)') }}
-                {{ setVariable(False, 'validInput', 'handleType(value, schema, true)') }}
+                {{ setVariable(False, 'validInput', 'handleInputType(value, schema, true)') }}
             }
             {% else %}
             {{ setVariable(True, 'schema', '') }}
             {{ setVariable(False, 'serializeJson(obj_schema["items"], schema)') }}
-            {{ setVariable(False, 'validInput', 'handleType(value, schema, true)') }}
+            {{ setVariable(False, 'validInput', 'handleInputType(value, schema, true)') }}
             {% endif %}
         }
     }
     {% endif %}
     {% if global['isObject'] or global['isArrayObject'] %}
     {% if global['isArrayObject'] and global['isProperty'] %}
-    {% if global['isString'] or global['isArrayString'] or global['isBoolean'] or global['isArrayBoolean'] or global['isInteger'] or global['isArrayInteger'] or global['isArray'] %}{{ '\t\telse if' }}{% else %}{{ '\t\tif' }}{% endif %}(type.equals("object")) {
+    {% if global['isString'] or global['isArrayString'] or global['isBoolean'] or global['isArrayBoolean'] or global['isInteger'] or global['isArrayInteger'] or global['isNumber'] or global['isArrayNumber'] or global['isArray'] %}{{ '\t\telse if' }}{% else %}{{ '\t\tif' }}{% endif %}(type.equals("object")) {
         if(array) {
             {{ setVariable(False, 'deserializeJson(value_doc, value)') }}
             {{ setVariable(False, 'array_value', 'value_doc.as<JsonArray>()') }}
@@ -1184,9 +1229,9 @@ bool handleType(String value, String schema) {
                             {{ setVariable(False, 'serializeJson(obj_schema["properties"][j], schema)') }}
                             {{ setVariable(False, 'serializeJson(array_value[i][p], value)') }}
                             {% if global['isArray'] %}
-                            {{ setVariable(False, 'validInput', 'handleType(value, schema, false)') }} 
+                            {{ setVariable(False, 'validInput', 'handleInputType(value, schema, false)') }} 
                             {% else %}
-                            {{ setVariable(False, 'validInput', 'handleType(value, schema)') }} 
+                            {{ setVariable(False, 'validInput', 'handleInputType(value, schema)') }} 
                             {% endif %}
                         }
                     }
@@ -1204,9 +1249,9 @@ bool handleType(String value, String schema) {
                         {{ setVariable(False, 'serializeJson(obj_schema["properties"][j], schema)') }}
                         {{ setVariable(False, 'serializeJson(array_value[i][p], value)') }}
                         {% if global['isArray'] %}
-                        {{ setVariable(False, 'validInput', 'handleType(value, schema, false)') }} 
+                        {{ setVariable(False, 'validInput', 'handleInputType(value, schema, false)') }} 
                         {% else %}
-                        {{ setVariable(False, 'validInput', 'handleType(value, schema)') }} 
+                        {{ setVariable(False, 'validInput', 'handleInputType(value, schema)') }} 
                         {% endif %}
                     }
                 }
@@ -1241,9 +1286,9 @@ bool handleType(String value, String schema) {
                             {{ setVariable(False, 'serializeJson(obj_schema["properties"][i], schema)') }}
                             {{ setVariable(False, 'serializeJson(obj_value[p], value)') }}
                             {% if global['isArray'] %}
-                            {{ setVariable(False, 'validInput', 'handleType(value, schema, false)') }} 
+                            {{ setVariable(False, 'validInput', 'handleInputType(value, schema, false)') }} 
                             {% else %}
-                            {{ setVariable(False, 'validInput', 'handleType(value, schema)') }} 
+                            {{ setVariable(False, 'validInput', 'handleInputType(value, schema)') }} 
                             {% endif %}
                         }
                     }
@@ -1259,9 +1304,9 @@ bool handleType(String value, String schema) {
                         {{ setVariable(False, 'serializeJson(obj_schema["properties"][i], schema)') }}
                         {{ setVariable(False, 'serializeJson(obj_value[p], value)') }}
                         {% if global['isArray'] %}
-                        {{ setVariable(False, 'validInput', 'handleType(value, schema, false)') }} 
+                        {{ setVariable(False, 'validInput', 'handleInputType(value, schema, false)') }} 
                         {% else %}
-                        {{ setVariable(False, 'validInput', 'handleType(value, schema)') }} 
+                        {{ setVariable(False, 'validInput', 'handleInputType(value, schema)') }} 
                         {% endif %}
                     }
                 }
@@ -1299,9 +1344,9 @@ bool handleType(String value, String schema) {
                         {{ setVariable(False, 'serializeJson(obj_schema["properties"][i], schema)') }}
                         {{ setVariable(False, 'serializeJson(obj_value[p], value)') }}
                         {% if global['isArray'] %}
-                        {{ setVariable(False, 'validInput', 'handleType(value, schema, false)') }} 
+                        {{ setVariable(False, 'validInput', 'handleInputType(value, schema, false)') }} 
                         {% else %}
-                        {{ setVariable(False, 'validInput', 'handleType(value, schema)') }} 
+                        {{ setVariable(False, 'validInput', 'handleInputType(value, schema)') }} 
                         {% endif %}
                     }
                 }
@@ -1317,9 +1362,9 @@ bool handleType(String value, String schema) {
                     {{ setVariable(False, 'serializeJson(obj_schema["properties"][i], schema)') }}
                     {{ setVariable(False, 'serializeJson(obj_value[p], value)') }}
                     {% if global['isArray'] %}
-                    {{ setVariable(False, 'validInput', 'handleType(value, schema, false)') }} 
+                    {{ setVariable(False, 'validInput', 'handleInputType(value, schema, false)') }} 
                     {% else %}
-                    {{ setVariable(False, 'validInput', 'handleType(value, schema)') }} 
+                    {{ setVariable(False, 'validInput', 'handleInputType(value, schema)') }} 
                     {% endif %}
                 }
             }

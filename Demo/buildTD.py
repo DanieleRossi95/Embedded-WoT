@@ -139,7 +139,7 @@ def searchName(namesList, interactionTypeS, index, opType=[]):
     listLower = [name.lower() for name in namesList]
     while(nameAlreadyExists):
         if(interactionTypeS == 'Thing'):
-            name = click.prompt("Insert %s Operation Type %d" % (interactionTypeS, index), type=click.Choice(opType))
+            name = click.prompt("Insert %s Operation Type %d" % (interactionTypeS, index), type=click.Choice(opType), show_choices=False)
         else:    
             name = click.prompt("Insert %s %d Name" % (interactionTypeS, index), type=SWN_STRING)
         if(name.lower() in listLower):
@@ -267,8 +267,12 @@ def addDescription(ctx, interactionTypeS, interactionTypeTD='', interactionName=
 def handleThingTypes(ctx, inpType, interactionTypeTD, interactionName, dataType='', termName='', actionIndex=(-1, -1), array=False, obj=False, pName=''):
     # INTEGER/NUMBER
     if(inpType == 'integer' or inpType == 'number'):
-        if(click.confirm('\nInsert Minimum Value?', default=False)):   
-            inp = click.prompt('Minimum Value', type=int)
+        if(click.confirm('\nInsert Minimum Value?', default=False)):
+            inp = 0
+            if(inpType == 'integer'): 
+                inp = click.prompt('Minimum Value', type=int)
+            elif(inpType == 'number'):
+                inp = click.prompt('Minimum Value', type=float)
             if(interactionTypeTD == 'properties'):
                 if(array and obj):
                     ctx.obj['td'][interactionTypeTD][interactionName]['properties'][pName]['items']['minimum'] = inp
@@ -296,7 +300,11 @@ def handleThingTypes(ctx, inpType, interactionTypeTD, interactionName, dataType=
                     if(interactionTypeTD == 'actions'):
                        actionFunctions[actionIndex[0]][dataType][actionIndex[1]]['minimum'] = inp   
         if(click.confirm('Insert Maximum Value?', default=False)):
-            inp = click.prompt('Maximum Value', type=int)
+            inp = 0
+            if(inpType == 'integer'): 
+                inp = click.prompt('Maximum Value', type=int)
+            elif(inpType == 'number'):
+                inp = click.prompt('Maximum Value', type=float)
             if(interactionTypeTD == 'properties'):
                 if(array and obj):
                     ctx.obj['td'][interactionTypeTD][interactionName]['properties'][pName]['items']['maximum'] = inp
@@ -508,8 +516,10 @@ def handleEventData(ctx, dataTypeS, eventName, index):
                 if(inpType == 'boolean'):
                     inpValue = click.prompt('Term %d value' % i, type=bool)
                     inpValue = inpValue.lower()
-                elif(inpType == 'integer' or inpType == 'number'):
+                elif(inpType == 'integer'):
                     inpValue = click.prompt('Term %d value' % i, type=int) 
+                elif(inpType == 'number'):
+                    inpValue = click.prompt('Term %d value' % i, type=float)     
                 elif(inpType == 'string' or inpType == 'null'):
                     inpValue = click.prompt('Term %d value' % i, type=str)     
                 elif(inpType == 'object' or inpType == 'array'):
@@ -631,7 +641,6 @@ def compute_properties(ctx, param, value):
     return value
 
 @click.group(invoke_without_command=True)
-@common_options
 @click.pass_context
 # cli è una callback del gruppo definito precedentemente
 def cli(ctx, **kwargs):
@@ -648,7 +657,6 @@ def cli(ctx, **kwargs):
 
 # le funzioni che vengono eseguite dai comandi non possono essere chiamate al di fuori del comando stesso
 @cli.command()
-@common_options
 # se si passa il contesto ad una callback, allora come parametro le si deve passare ctx obbligatoriamente
 @click.pass_context
 def start(ctx, **kwargs):
@@ -859,7 +867,11 @@ def start(ctx, **kwargs):
             click.echo('Example: if (property1_name <= 0) { if-body }')
             event = {}
             event['condition'] = click.prompt('Event %d Condition' % e, type=str)
-            event['action'] = click.prompt('Event %d Action name' % e, type=click.Choice(thingActions), show_default=True)
+            an = click.prompt('Number of Actions in which the Event Condition will triggered', type=click.IntRange(1, len(thingActions)))
+            event.setdefault('actions', [])
+            for i in range(1, an+1):
+                inp = click.prompt('Event %d Action %d name' % (e, i), type=click.Choice(thingActions))
+                event['actions'].append(inp)
             eventConditions.append(event)
             # EVENT SUBSCRIPTION
             handleEventData(ctx, 'Subscription', eventName, e)
@@ -879,7 +891,7 @@ def start(ctx, **kwargs):
         js.validate(ctx.obj['td'], schema)
     except Exception as e:
         click.echo(str(e))
-    click.echo('\n{}\n'.format(json.dumps(ctx.obj['td'], indent=4)))
+    # click.echo('\n{}\n'.format(json.dumps(ctx.obj['td'], indent=4)))
     filePath = ctx.obj['td']['title'].lower() + '/' + ctx.obj['td']['title'].lower() + '.json'
     output = json.dumps(ctx.obj['td'], indent=4)
     writeFile(filePath, output)
@@ -944,7 +956,11 @@ def build(ctx):
                 click.echo('Example: if (property1_name <= 0) { if-body }')
             event = {}
             event['condition'] = click.prompt('\nEvent %s Condition' % thingEvents[i], type=str)
-            event['action'] = click.prompt('Event %s Action name' % thingEvents[i], type=click.Choice(thingActions), show_default=True)  
+            an = click.prompt('Number of Actions in which the Event Condition will triggered', type=click.IntRange(1, len(thingActions)))
+            event.setdefault('actions', [])
+            for j in range(1, an+1):
+                inp = click.prompt('Event %s Action %d name' % (thingEvents[i], j), type=click.Choice(thingActions))
+                event['actions'].append(inp)
             eventConditions.append(event) 
         try:
             js.validate(ctx.obj['td'], schema)
@@ -1028,7 +1044,7 @@ def build(ctx):
         e = {}
         e['name'] = thingEvents[i]
         e['condition'] = eventConditions[i]['condition']
-        e['action'] = eventConditions[i]['action']
+        e['actions'] = eventConditions[i]['actions']
         ctx.obj['template']['events'].append(e)  
         dataType = ['subscription', 'data', 'cancellation']
         for data in dataType:
