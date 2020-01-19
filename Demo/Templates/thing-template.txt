@@ -305,11 +305,17 @@
             {{ ' ' + elem }}
         {%- endif -%}
     {%- endfor -%}    
-{%- elif typeV == 'const char*' %}
+{%- elif typeV == 'const char*' or typeV == 'char*' %}
 {%- if value == 'iv' -%}
 {{ typeV }} {{ name }} = "";
 {%- else -%}
 {{ typeV }} {{ name }} = "{{ value }}";
+{%- endif -%}
+{%- elif typeV == 'const char' or typeV == 'char' -%}
+{%- if value == 'iv' -%}
+{{ typeV }} {{ name }};
+{%- else -%}
+{{ typeV }} {{ name }} = '{{ value }}';
 {%- endif -%}
 {%- elif typeV.lower() == 'string' or typeV == 'null' %}
 {%- if value == 'iv' -%}
@@ -363,7 +369,11 @@ JsonObject {{ name }};
 JsonObject {{ name }} = {{ value }};
 {%- endif -%}
 {% else %}
-{{ typeV }} {{ name }} = {{ value }};    
+{%- if value == 'iv' -%}
+{{ typeV }} {{ name }};
+{%- else -%}
+{{ typeV }} {{ name }} = {{ value }};     
+{%- endif -%}
 {%- endif %}    
 {%- endmacro %}
 {% macro setVariable(ifString, name, value='') -%}
@@ -399,7 +409,7 @@ void
         {%- endif -%}
     {%- endfor -%}
 ) {
-    {{ '\t' + body | replace('{', '\n\t{\n') | replace('}', '}\n\t') | replace(';', ';\n\t') }}
+    {{ '\t' + body | replace('{', '\n\t{\n\t') | replace('}', '}\n\t') | replace(';', ';\n\t') }}
     {% if 'name' in output %}
     return {{ output['name'] }};
     {% endif %}
@@ -650,6 +660,43 @@ String header;
 
 int i, j, k;
 
+{% for var in template['globals'] %}
+{% set i = loop.index %}
+{% if not(var['isArray']) %}
+{% if 'value' in var %}
+{{ defineVariable(var['type'], var['name'], var['value']) }}
+{% else %}
+{{ defineVariable(var['type'], var['name'], 'iv') }}
+{% endif %}
+{% else %}
+{% if var['items'] | length > 0 %}
+{{ var['type'] }} {{ var['name'] }}[{{ var['itemsNumber'] }}] = {
+    {%- for item in var['items'] -%}
+    {%- if loop.last -%}
+    {%- if var['type'] == 'String' or var['type'] == 'char*' or var['type'] == 'const char*' -%}
+    "{{ item }}"
+    {%- elif var['type'] == 'char' -%}
+    '{{ item }}'
+    {%- else -%}
+    {{ item }}
+    {%- endif -%}
+    {%- else -%}
+    {%- if var['type'] == 'String' or var['type'] == 'char*' or var['type'] == 'const char*' -%}
+    "{{ item }}",
+    {%- elif var['type'] == 'char' -%}
+    '{{ item }}',
+    {%- else -%}
+    {{ item }},
+    {%- endif -%}
+    {%- endif -%}
+    {%- endfor -%}
+};
+{% else %}
+{{ var['type'] }} {{ var['name'] }}[{{ var['itemsNumber'] }}] = {};
+{% endif %}
+{% endif %}
+
+{% endfor %}
 void setup() {
     Serial.begin(115200);
     Serial.println();
@@ -735,8 +782,7 @@ void setup() {
     {% endfor %}
 
     server.begin();
-    
-    {%- if template['numevents'] != 0 -%}
+    {% if template['numevents'] != 0 %}
     webSocket.begin();
     webSocket.onEvent(webSocketEvent);
     {% endif %}
@@ -745,7 +791,7 @@ void setup() {
     Serial.println(urlServer);
     {% if 'setup' in template %}
 
-    {{ template['setup'] }}
+    {{ template['setup'] | replace('{', '\n\t{\n\t') | replace('}', '}\n\t') | replace(';', ';\n\t') }}
     {% endif %}
 }    
 
@@ -757,7 +803,7 @@ void loop() {
     server.handleClient();
     {% if 'loop' in template %}
 
-    {{ template['loop'] }}
+    {{ template['loop'] | replace('{', '\n\t{\n\t') | replace('}', '}\n\t') | replace(';', ';\n\t') }}
     {% endif %}
 }
 
@@ -1573,7 +1619,7 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t* pl, size_t length) {
         
         case {{ ws['type'] }}:
         {
-            {{ '\t' + ws['body'] | replace('{', '\n\t\t{\n') | replace('}', '}\n\t\t') | replace(';', ';\n\t\t') }}
+            {{ '\t' + ws['body'] | replace('{', '\n\t\t{\n\t\t') | replace('}', '}\n\t\t') | replace(';', ';\n\t\t') }}
         }
         break;
         {% endfor %}
