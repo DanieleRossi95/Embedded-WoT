@@ -50,6 +50,7 @@
 {%- do global.update({'isProperty':False}) -%}
 {%- do global.update({'isRequired':False}) -%}
 {%- do global.update({'isSubscription':False}) -%}
+{%- do global.update({'isData':False}) -%}
 {%- do global.update({'isCancellation':False}) -%}
 {%- for property in template['properties'] -%}
 {%- if property['type'] == 'object' -%}
@@ -176,16 +177,18 @@
 {%- endif -%}
 {%- endfor -%}
 {%- endfor -%}
-{# comment
 {%- for event in template['events'] -%}
-{%- set dataType = ['subscription', 'cancellation'] -%}
+{%- set dataType = ['subscription', 'data', 'cancellation'] -%}
 {%- for data in dataType -%}
 {%- if data in event -%}
 {% if data == dataType[0] and not(global['isSubscription']) %}
 {%- do global.update({'isSubscription':True}) -%}
-{% elif data == dataType[1] and not(global['isCancellation']) %}
+{% elif data == dataType[1] and not(global['isData']) %}
+{%- do global.update({'isData':True}) -%}
+{% elif data == dataType[2] and not(global['isCancellation']) %}
 {%- do global.update({'isCancellation':True}) -%}
 {%- endif -%}
+{#
 {%- for item in event[data] -%}
 {%- if (item['type'] == 'string' or item['type'] == 'null') and not(global['isString']) -%}
 {%- do global.update({'isString':True}) -%}
@@ -290,10 +293,10 @@
 {%- endif -%}
 {%- endif -%}
 {%- endfor -%}
+#}
 {%- endif -%}
 {%- endfor -%}
 {%- endfor -%}
-#}
 {%- endmacro -%}
 {% macro defineVariable(typeV, name, value) -%}
 {%- if value is iterable and value is not string %}
@@ -491,7 +494,7 @@ String {{ interactionName }}_opRequired[{{ interaction['required'] | length }}] 
 {%- set urlServer = protocolServer + "://" + ipServer + ":" + portServer + "/" + thingName -%}
 {%- set thingD = td | replace("'", '\\"') | replace('True', 'true') | replace('False', 'false') | replace(': ', ':') | replace(', ', ',') | replace(' + ', '+') -%}
 {%- set req = [] -%}
-{%- set dataType = ['subscription', 'cancellation'] -%}
+{%- set dataType = ['subscription', 'data', 'cancellation'] -%}
 #include <ESP8266WebServer.h>
 #include <WebSocketsServer.h>
 #include <ArduinoJson.h>
@@ -594,9 +597,26 @@ bool events_subscriptionSchema[{{ template['numevents'] }}] = {
     {%- endif -%}
     {%- endfor -%}
 };
-bool events_cancellationSchema[{{ template['numevents'] }}] = {
+bool events_dataSchema[{{ template['numevents'] }}] = {
     {%- for event in template['events'] -%}
     {% if dataType[1] in event %}
+    {%- if loop.last -%}
+    true
+    {%- else -%}
+    true, 
+    {%- endif -%}
+    {%- else -%}
+    {%- if loop.last -%}
+    false
+    {%- else -%}
+    false, 
+    {%- endif -%}
+    {%- endif -%}
+    {%- endfor -%}
+};
+bool events_cancellationSchema[{{ template['numevents'] }}] = {
+    {%- for event in template['events'] -%}
+    {% if dataType[2] in event %}
     {%- if loop.last -%}
     true
     {%- else -%}
@@ -739,8 +759,11 @@ void setup() {
     {% endif %}
     {% endfor %}
     {% endif %}
-    {% if global['isSubscription'] or global['isCancellation'] %}
+    {% if template['numevents'] > 0 %}
 
+    // events data
+    {# Il documento es_doc mi serve per parsare correttamente i messaggi nel canale websocket #}
+    {% if global['isSubscription'] or global['isData'] or global['isCancellation'] %}
     {{ defineVariable('int', 'schema_size', '0') }}
     JsonArray arr;
     JsonObject obj;
@@ -767,7 +790,6 @@ void setup() {
     {% endfor %}
     {% endfor %}
     {% endif %}
-    {% if template['numevents'] > 0 %}
 
     {{ setVariable(False, 'ip_arr', 'ip_doc.createNestedArray("clients_list")') }}
     {% endif %}
@@ -957,7 +979,6 @@ void handleReq{{ loop.index+3+template['numproperties'] }}() {
                 }
                 {% elif item['type'] == 'string'%}
                 {{ setVariable(False, 'action' + a | string + '_input' + loop.index | string + '_value', 'action' + a | string + '_input[' + loop.index0 | string + ']') }}
-                }
                 {% elif item['type'] == 'null' %}
                 {{ setVariable(False, 'serializeJson(resp_doc["' + item['name'] + '"], action' + a | string +'_input' + loop.index | string +'_value)') }}
                 {% elif item['type'] == 'array' %}
@@ -999,6 +1020,45 @@ void handleReq{{ loop.index+3+template['numproperties'] }}() {
                 {% else %}
                 server.send(200, "text/plain", "");
                 {% endif %}
+                {% if template['numevents'] > 0 %}
+                {% for event in template['events'] %}
+                {% set enum = loop.index %}
+                {% for ae in event['actions'] %}
+                {% if ae == action['name'] %}
+
+                // {{ event['name'] }} condition
+                {% if global['isData'] %}
+                {{ defineVariable('String', 't_name', 'iv') }}
+                {{ defineVariable('String', 'ws_msg', 'iv') }}
+                StaticJsonDocument<1024> tmp_doc;
+                {{ defineVariable('JsonObject', 'tmp_obj', 'tmp_doc.createNestedObject()') }}
+
+                if(events_dataSchema[{{ enum }}]) {
+                    for(i=0; i<es_doc[event{{ enum }}_name]["data"].size(); i++) {
+                        {{ setVariable(False, 't_name', '""') }}
+                        {{ setVariable(False, 'serializeJson(es_doc[event' + enum | string + '_name]["data"][i]["name"], t_name)') }}
+                        {{ setVariable(False, 't_name.replace("\\"", "")') }}
+                        {{ setVariable(False, 'tmp_obj[t_name]', 'es_doc[event' + enum | string + '_name]["data"][i]["value"]') }}
+                    }
+                    {{ setVariable(False, 'serializeJson(tmp_obj, ws_msg)') }}
+                }
+                {% endif %}
+                if({{ event['condition'] }}) {
+                    for(i=0; i<ip_arr.size(); i++) {
+                        {{ defineVariable('string_nq', 'ws_ip', 'ip_arr[i]["ip"]') }}
+                        {{ defineVariable('JsonArray', 'ae', 'e_doc[ws_ip]') }}
+                        for(j=0; j<ae.size(); j++) {
+                            if(!ae[j][event{{ enum }}_name].isNull() && ae[j][event{{ enum }}_name]) {
+                                {{ defineVariable('unsigned char', 'ws_num', 'ip_doc[ws_ip]') }}
+                                webSocket.sendTXT(ws_num, ws_msg);
+                            }
+                        }
+                    }
+                }
+                {% endif %}
+                {% endfor %}
+                {% endfor %}
+                {% endif %}
             }
             else {
                 {{ setVariable(True, 'resp', 'InvalidInput') }}
@@ -1020,7 +1080,6 @@ void handleReq{{ loop.index+3+template['numproperties'] }}() {
         {% else %}
         server.send(200, "text/plain", "");
         {% endif %}
-        {% endif %}  
         {% if template['numevents'] > 0 %}
         {% for event in template['events'] %}
         {% for ae in event['actions'] %}
@@ -1030,6 +1089,7 @@ void handleReq{{ loop.index+3+template['numproperties'] }}() {
         {% endif %}
         {% endfor %}
         {% endfor %}
+        {% endif %}
         {% endif %}
     }
 }
@@ -1478,6 +1538,8 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t* pl, size_t length) {
                 if(events_endpoint[i].equals(payload)) {
                     if(e_doc[ip_s].isNull()) {
                         {{ setVariable(False, 'obj_e', 'e_doc.createNestedArray(ip_s).createNestedObject()') }}
+                        {# ip_doc contiene un array di oggetti (clients_list), dove ogni oggetto ha due termini, IP e NUM 
+                        e tanti termini (IP:NUM) quanti sono i client connessi al canale webSocket #}
                         {{ setVariable(False, 'obj_ip', 'ip_arr.createNestedObject()') }}
                         {{ setVariable(False, 'obj_ip["ip"]', 'ip_s') }}
                         {{ setVariable(False, 'obj_ip["num"]', 'num') }}
@@ -1486,7 +1548,7 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t* pl, size_t length) {
                     else {
                         {{ setVariable(False, 'j', '0') }}
                         while(!conn && j<e_doc[ip_s].size()) {
-                            if(!e_doc[ip_s][i][events_list[i]].isNull())
+                            if(!e_doc[ip_s][j][events_list[i]].isNull())
                                 {{ setVariable(False, 'conn', 'true') }}
                             {{ setVariable(False, 'j++') }}    
                         }
@@ -1495,13 +1557,18 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t* pl, size_t length) {
                     }
                     
                     if(conn) {
-                        webSocket.sendTXT(num, "Connection already established");
                         {{ setVariable(False, 'done', 'true') }}
+                        webSocket.sendTXT(num, "Connection already established");
                     }
                     else {
-                        {{ setVariable(False, 'obj_e[events_list[i]]', 'false') }}
-                        webSocket.sendTXT(num, "Connection confirmed");
                         {{ setVariable(False, 'done', 'true') }}
+                        webSocket.sendTXT(num, "Connection confirmed");
+                        if(events_subscriptionSchema[i]) 
+                            {{ setVariable(False, 'obj_e[events_list[i]]', 'false') }}
+                        else {
+                            {{ setVariable(False, 'obj_e[events_list[i]]', 'true') }}  
+                            webSocket.sendTXT(num, "Subscription confirmed");  
+                        }
                     }
                 }
                 {{ setVariable(False, 'i++') }}
@@ -1522,7 +1589,7 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t* pl, size_t length) {
             DynamicJsonDocument resp_doc(1024);
             {{ defineVariable('bool', 'parsingDone', 'false') }}
             {{ defineVariable('int', 'validInput', '0') }}
-            {{ defineVariable('String', 'm_name', 'iv') }}
+            {{ defineVariable('String', 't_name', 'iv') }}
             {{ defineVariable('String', 'validate', 'iv') }}
             {{ defineVariable('String', 'message', 'iv') }}
 
@@ -1552,13 +1619,15 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t* pl, size_t length) {
                                 {{ setVariable(False, 'validInput', '0') }}
                                 {{ setVariable(False, 'k', '0') }}
                                 while(!parsingDone && k<es_doc[events_list[j]]["subscription"].size()) {
-                                    {{ setVariable(True, 'm_name', '') }}
-                                    {{ setVariable(False, 'serializeJson(es_doc[events_list[j]]["subscription"][k]["name"], m_name)') }}
-                                    {{ setVariable(False, 'm_name.replace("\\"", "")') }}
-                                    if(!resp_doc[m_name].isNull()) {
-                                        {{ setVariable(False, 'tmp[m_name]', 'es_doc[events_list[j]]["subscription"][k]["value"]') }}
+                                    {{ setVariable(True, 't_name', '') }}
+                                    {{ setVariable(False, 'serializeJson(es_doc[events_list[j]]["subscription"][k]["name"], t_name)') }}
+                                    {{ setVariable(False, 't_name.replace("\\"", "")') }}
+                                    if(!resp_doc[t_name].isNull()) {
+                                        {{ setVariable(False, 'tmp[t_name]', 'es_doc[events_list[j]]["subscription"][k]["value"]') }}
                                         {{ setVariable(False, 'validInput++') }}
                                     }
+                                    else  
+                                        {{ setVariable(False, 'parsingDone', 'false') }}
                                     {{ setVariable(False, 'k++') }}
                                 }
                                 if(validInput == k) {
@@ -1579,13 +1648,15 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t* pl, size_t length) {
                                 {{ setVariable(False, 'validInput', '0') }}
                                 {{ setVariable(False, 'k', '0') }}
                                 while(!parsingDone && k<es_doc[events_list[j]]["cancellation"].size()) {
-                                    {{ setVariable(True, 'm_name', '') }}
-                                    {{ setVariable(False, 'serializeJson(es_doc[events_list[j]]["cancellation"][k]["name"], m_name)') }}
-                                    {{ setVariable(False, 'm_name.replace("\\"", "")') }}
-                                    if(!resp_doc[m_name].isNull()) {                                   
-                                        {{ setVariable(False, 'tmp[m_name]', 'es_doc[events_list[j]]["cancellation"][k]["value"]') }}
+                                    {{ setVariable(True, 't_name', '') }}
+                                    {{ setVariable(False, 'serializeJson(es_doc[events_list[j]]["cancellation"][k]["name"], t_name)') }}
+                                    {{ setVariable(False, 't_name.replace("\\"", "")') }}
+                                    if(!resp_doc[t_name].isNull()) {                                   
+                                        {{ setVariable(False, 'tmp[t_name]', 'es_doc[events_list[j]]["cancellation"][k]["value"]') }}
                                         {{ setVariable(False, 'validInput++') }}
                                     }
+                                    else
+                                        {{ setVariable(False, 'parsingDone', 'false') }}
                                     {{ setVariable(False, 'k++') }}
                                 }
                                 if(validInput == k) {
