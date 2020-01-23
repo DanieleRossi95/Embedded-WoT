@@ -745,7 +745,8 @@ def parseFunctionFromFile(ctx, fileName, funName, funCategory, startBody, templa
                             inputsString = line[openBracketIndex+1:closedBracketIndex]
                             inputString = ''
                             commasNumber = inputsString.count(',')
-                            for i in range(0, commasNumber+1):
+                            i = 0
+                            while not(parsingDone) and i<commasNumber+1:
                                 inp = {}
                                 commaIndex = 0
                                 if(commasNumber != 0):
@@ -760,21 +761,25 @@ def parseFunctionFromFile(ctx, fileName, funName, funCategory, startBody, templa
                                 if(blankSpacesNumber == 1):
                                     inputsList = inputString.split(' ')
                                     inp['type'] = inputsList[0]
-                                    if(funCategory == 'action'):
-                                        for iType in CTypes:
-                                            if(inputsList[0].lower() in iType):
-                                                inp['type'] = typesDict[iType]   
-                                                break      
                                     inp['name'] = inputsList[1]
                                     if(funCategory == 'action'):
-                                        ctx.obj['td']['actions'][funName].setdefault('input', {})
-                                        ctx.obj['td']['actions'][funName]['input'].setdefault(inp['name'], {})
-                                        ctx.obj['td']['actions'][funName]['input'][inp['name']]['type'] = inp['type']
-                                        actionFunctions[funIndex]['input'].append({'name':inp['name']})
-                                        actionFunctions[funIndex]['input'][i]['type'] = inp['type']
-                                        if(inp['type'] != 'string' or inp['type'] != 'boolean'):
-                                            click.echo('\nInput %s' % inp['name'])
-                                        handleThingTypes(ctx, inp['type'], 'actions', funName, 'input', inp['name'], actionIndex=(funIndex, i))              
+                                        if(not(any(iType in inputsList[0].lower() for iType in CTypes))):
+                                            parsingDone = True
+                                            parsingError = True
+                                        else:   
+                                            for iType in CTypes:
+                                                if(inputsList[0].lower() in iType):
+                                                    inp['type'] = typesDict[iType]   
+                                                    break      
+                                            if(funCategory == 'action'):
+                                                ctx.obj['td']['actions'][funName].setdefault('input', {})
+                                                ctx.obj['td']['actions'][funName]['input'].setdefault(inp['name'], {})
+                                                ctx.obj['td']['actions'][funName]['input'][inp['name']]['type'] = inp['type']
+                                                actionFunctions[funIndex]['input'].append({'name':inp['name']})
+                                                actionFunctions[funIndex]['input'][i]['type'] = inp['type']
+                                                if(inp['type'] != 'string' or inp['type'] != 'boolean'):
+                                                    click.echo('\nInput %s' % inp['name'])
+                                                handleThingTypes(ctx, inp['type'], 'actions', funName, 'input', inp['name'], actionIndex=(funIndex, i))              
                                 else:
                                     inputSlices = inputString.split(' ')
                                     inputType = []
@@ -790,22 +795,27 @@ def parseFunctionFromFile(ctx, fileName, funName, funCategory, startBody, templa
                                     if(len(inputType) > 1):    
                                         inputType = list(reversed(inputType))     
                                     inp['type'] = ' '.join([str(elem) for elem in inputType])
-                                    if(funCategory == 'action'):                                      
-                                        for iType in CTypes:
-                                            if(inp['type'].lower() in iType):
-                                                inp['type'] = typesDict[iType]   
-                                                break
-                                        ctx.obj['td']['actions'][funName].setdefault('input', {})
-                                        ctx.obj['td']['actions'][funName]['input'].setdefault(inp['name'], {})
-                                        ctx.obj['td']['actions'][funName]['input'][inp['name']]['type'] = inp['type']
-                                        actionFunctions[funIndex]['input'].append({'name':inp['name']})
-                                        actionFunctions[funIndex]['input'][i]['type'] = inp['type']
-                                        if(inp['type'] != 'string' or inp['type'] != 'boolean'):
-                                            click.echo('\nInput %s' % inp['name'])
-                                        handleThingTypes(ctx, inp['type'], 'actions', funName, 'input', inp['name'], actionIndex=(funIndex, i))                          
+                                    if(funCategory == 'action'):   
+                                        if(not(any(iType in inp['type'].lower() for iType in CTypes))):
+                                            parsingDone = True
+                                            parsingError = True
+                                        else:                                   
+                                            for iType in CTypes:
+                                                if(inp['type'].lower() in iType):
+                                                    inp['type'] = typesDict[iType]   
+                                                    break
+                                            ctx.obj['td']['actions'][funName].setdefault('input', {})
+                                            ctx.obj['td']['actions'][funName]['input'].setdefault(inp['name'], {})
+                                            ctx.obj['td']['actions'][funName]['input'][inp['name']]['type'] = inp['type']
+                                            actionFunctions[funIndex]['input'].append({'name':inp['name']})
+                                            actionFunctions[funIndex]['input'][i]['type'] = inp['type']
+                                            if(inp['type'] != 'string' or inp['type'] != 'boolean'):
+                                                click.echo('\nInput %s' % inp['name'])
+                                            handleThingTypes(ctx, inp['type'], 'actions', funName, 'input', inp['name'], actionIndex=(funIndex, i))                          
                                 if(funCategory == 'function'):    
                                     fun['inputs'].append(inp)
                                 inputsString = inputsString[commaIndex+1:]
+                                i = i+1
                         startBody = True     
         else:
             tmp = line.strip()
