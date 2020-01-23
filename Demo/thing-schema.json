@@ -403,10 +403,7 @@
                 "output": 
                 {
                     "type":"object",
-                    "additionalProperties":  
-                    {
-                        "$ref": "#/definitions/dataSchema"
-                    }
+                    "additionalProperties": true
                 },
                 "safe": 
                 {

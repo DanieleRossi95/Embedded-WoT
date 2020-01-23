@@ -388,7 +388,7 @@ JsonObject {{ name }} = {{ value }};
 {{ name }} = {{ value }};
 {%- endif -%}
 {%- endmacro %}
-{% macro defineFunction(name, input, output, body, cast) -%}
+{% macro defineFunction(name, input, output, body, source, cast) -%}
 {%- if 'type' in output -%}
 {%- if cast -%}
 {{ castType(output['type']) }}
@@ -412,9 +412,10 @@ void
         {%- endif -%}
     {%- endfor -%}
 ) {
-    {{ '\t' + body | replace('{', '\n\t{\n\t') | replace('}', '}\n\t') | replace(';', ';\n\t') }}
-    {% if 'name' in output %}
-    return {{ output['name'] }};
+    {% if source == 'cli' %}
+{{ '\t' + body | replace('{', '\n\t{\n\t') | replace('}', '}\n\t') | replace(';', ';\n\t') }}
+    {% else %}
+{{ body }}
     {% endif %}
 }    
 {%- endmacro %}
@@ -555,9 +556,6 @@ String {{ actionIndex + '_schema' }}[{{ action['input'] | length }}] = {
     {%- endif -%}
     {%- endfor -%}
 };
-{% if 'name' in action['output']  %}
-{{ defineVariable('String', actionIndex + '_output', action['output'] | string ) }}
-{% endif %}
 {% endfor %}
 {% endif %}
 
@@ -1485,7 +1483,7 @@ bool handleInputType(String value, String schema) {
 
 // Action functions
 {% for action in template['actions'] %}
-{{ defineFunction(action['name'], action['input'], action['output'], action['body'], True) }}
+{{ defineFunction(action['name'], action['input'], action['output'], action['body'], action['source'], True) }}
 {% endfor %}
 {% endif %}
 
@@ -1700,6 +1698,6 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t* pl, size_t length) {
 {% if template['functions'] | length > 0 %}
 {% for fun in template['functions'] %}
 
-{{ defineFunction(fun['name'], fun['inputs'], fun['output'], fun['body'], False) }}
+{{ defineFunction(fun['name'], fun['inputs'], fun['output'], fun['body'], fun['source'], False) }}
 {% endfor %}
 {% endif %}
