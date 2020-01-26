@@ -496,6 +496,7 @@ String {{ interactionName }}_opRequired[{{ interaction['required'] | length }}] 
 {%- set thingD = td | replace("'", '\\"') | replace('True', 'true') | replace('False', 'false') | replace(': ', ':') | replace(', ', ',') | replace(' + ', '+') -%}
 {%- set req = [] -%}
 {%- set dataType = ['subscription', 'data', 'cancellation'] -%}
+{%- set capacity = {} -%}
 #include <ESP8266WebServer.h>
 #include <WebSocketsServer.h>
 #include <ArduinoJson.h>
@@ -519,11 +520,48 @@ String {{ interactionName }}_opRequired[{{ interaction['required'] | length }}] 
 {{ defineVariable('String', 'thingName', thingName) }}
 {{ defineVariable('String', 'td', '') }}
 
-DynamicJsonDocument p_doc(1024);
+{% if template['numop'] > 0 %}
+DynamicJsonDocument p_doc(
+    {%- do capacity.update({'properties':0}) -%}
+    {%- if global['isPropertyArray'] -%}
+    {%- do capacity.update({'properties': 2000}) -%}
+    {%- endif -%}
+    {%- for property in template['properties'] -%}
+    {%- if property['type'] == 'object' -%}
+    {%- if 'properties' in property -%}
+    {%- do capacity.update({'properties': capacity['properties'] + property['properties'] | string | length * 200}) -%}
+    {%- else -%}
+    {%- do capacity.update({'properties': capacity['properties'] + 500}) -%}
+    {%- endif -%}
+    {%- endif -%}
+    {%- endfor -%}
+    {{ capacity['properties'] }}
+);
+{% endif %}
 {% if template['numevents'] > 0 %}
-DynamicJsonDocument e_doc(1024);
-DynamicJsonDocument es_doc(1024);
-DynamicJsonDocument ip_doc(1024);
+{# e_doc contiene n array, dove n è il numero di client connessi tramite websocket e
+gli elementi degli array corrispondono agli eventi ai quali i client si sono connessi e/o sottoscritti #}
+DynamicJsonDocument e_doc({{ template['numevents'] * 500 }});
+{# es_doc contiene i dati dei vari schema (subscription, data e cancellation) degli eventi #}
+{% if global['isSubscription'] or global['isData'] or global['isCancellation'] -%}
+DynamicJsonDocument es_doc(
+    {%- do capacity.update({'events':0}) -%}
+    {%- do capacity.update({'maxSchema':0}) -%}
+    {%- for event in template['events'] -%}
+    {%- for data in dataType -%}
+    {%- if data in event -%}
+    {%- do capacity.update({'events': capacity['events'] + event[data] | string | length}) -%}
+    {%- if event[data] | string | length > capacity['maxSchema'] -%}
+    {%- do capacity.update({'maxSchema': event[data] | string | length}) -%}
+    {%- endif -%}
+    {%- endif -%}
+    {%- endfor -%}
+    {%- endfor -%}
+    {{ capacity['events'] * 2 }});
+{% endif %}
+{# ip_doc contiene un array di oggetti (clients_list), dove ogni oggetto ha due termini, IP e NUM 
+e tanti termini (IP:NUM) quanti sono i client connessi al canale webSocket #}
+DynamicJsonDocument ip_doc(1000);
 JsonArray ip_arr;
 {% endif %}
 DeserializationError err;
@@ -719,10 +757,15 @@ void setup() {
     Serial.begin(115200);
     Serial.println();
     {% if template['numop'] > 0 %}
+
     // properties data 
     {% for property in template['properties'] %}
     {% if property['type'] == 'object' %}
-    DynamicJsonDocument op{{ loop.index }}_doc(1024);
+    {% set capacity = 0 %}
+    {% if 'properties' in property %}
+    {% set capacity = property['properties'] | string | length %}
+    {% endif %}
+    DynamicJsonDocument op{{ loop.index }}_doc({{ capacity*2 }});
     JsonArray arr{{ loop.index }};
     {% endif %}
     {% endfor %}
@@ -737,7 +780,7 @@ void setup() {
         {{ defineVariable('char_nq', 'op' + loop.index | string + '_name', 'arr' + loop.index | string + '[i]["name"]') }}
         {{ defineVariable('string_nq', 'op' + loop.index | string + '_type', 'arr' + loop.index | string + '[i]["type"]') }}
         {% if global['isPropertyString'] %}
-                if(op{{ loop.index }}_type.equals("string") || op{{ loop.index }}_type.equals("null"))
+        if(op{{ loop.index }}_type.equals("string") || op{{ loop.index }}_type.equals("null"))
             {{ setVariable(True, 'property' + loop.index | string + '_value[op' + loop.index | string + '_name]', '') }}
         {% endif -%}
         {% if global['isPropertyBooelan'] %}
@@ -770,7 +813,7 @@ void setup() {
     {% for data in dataType %}
     {% if data in event %}
 
-    {% if data == dataType[0] %}
+    {% if e == 1 %}
     {{ setVariable(False, 'schema_size', 'sizeof(event' + e | string + '_' + data + 'Schema) / sizeof(String)') }}
     {% endif %}
     if(es_doc[event{{ e }}_name].isNull())
@@ -778,7 +821,7 @@ void setup() {
     else
         {{ setVariable(False, 'arr', 'es_doc[event' + e | string + '_name].createNestedArray("' + data + '")') }}
     for(i=0; i<schema_size; i++) {
-        StaticJsonDocument<1024> tmp_doc;
+        DynamicJsonDocument tmp_doc({{ capacity['maxSchema'] * 2 }});
         {{ setVariable(False, 'deserializeJson(tmp_doc, event' + e | string + '_' + data + 'Schema[i])') }}
         {{ defineVariable('JsonObject', 'obj', 'arr.createNestedObject()') }}
         {{ setVariable(False, 'obj["name"]', 'tmp_doc["name"]') }}
@@ -864,7 +907,18 @@ void handleReq2() {
 }
 
 void handleReq3() {
-    DynamicJsonDocument tmp(1024);
+    {% do capacity.update({'nump':0}) %}
+    {% for property in template['properties'] %}
+    {% if property['type'] != 'object' or property['type'] != 'array' %}
+    {% do capacity.update({'nump': capacity['nump'] + 1}) %}
+    {% endif %}
+    {% endfor %}
+    DynamicJsonDocument tmp(
+        {%- if 'properties' in capacity -%}
+        {{ capacity['properties'] + capacity['nump'] * 200 + 20 }}
+        {%- else -%}
+        {{ capacity['nump'] * 200 + 20 }}
+        {%- endif -%});
     {{ defineVariable('String', 'resp', 'iv') }}
     {{ defineVariable('JsonObject', 'obj', 'tmp.createNestedObject()') }}
 
@@ -901,7 +955,12 @@ void handleReq{{ i+3 }}() {
 {% for action in template['actions'] %}
 {%- set a = loop.index -%}
 void handleReq{{ loop.index+3+template['numproperties'] }}() {
-    DynamicJsonDocument resp_doc(1024);
+    DynamicJsonDocument resp_doc(
+        {%- if 'input' in action -%}
+        {{ action['input'] | length * 200 }}
+        {%- else -%}
+        20        
+        {%- endif -%});
     {{ defineVariable('String', 'resp', 'iv') }}
 
     Serial.printf("\nPOST invokeaction %s\n", action{{ loop.index }}_name);
@@ -959,7 +1018,12 @@ void handleReq{{ loop.index+3+template['numproperties'] }}() {
             if(validInput) {
                 {% for item in action['input'] %}
                 {% if item['type'] == 'array' or item['type'] == 'object' %}
-                DynamicJsonDocument input{{ loop.index }}_doc(1024);
+                DynamicJsonDocument input{{ loop.index }}_doc(
+                    {%- if 'properties' in item -%}
+                    {{ item['properties'] | length * 200 }}
+                    {%- else -%}
+                    500
+                    {%- endif -%});
                 {% endif %}
                 {% endfor %}
 
@@ -1025,10 +1089,15 @@ void handleReq{{ loop.index+3+template['numproperties'] }}() {
                 {% if ae == action['name'] %}
 
                 // {{ event['name'] }} condition
+                {{ defineVariable('String', 'ws_msg', 'iv') }}
                 {% if global['isData'] %}
                 {{ defineVariable('String', 't_name', 'iv') }}
-                {{ defineVariable('String', 'ws_msg', 'iv') }}
-                StaticJsonDocument<1024> tmp_doc;
+                DynamicJsonDocument tmp_doc(
+                    {%- if 'data' in event -%}
+                    {{ event['data'] | string | length * 2 }}
+                    {%- else -%}
+                    20
+                    {%- endif -%});
                 {{ defineVariable('JsonObject', 'tmp_obj', 'tmp_doc.createNestedObject()') }}
 
                 if(events_dataSchema[{{ enum }}]) {
@@ -1100,8 +1169,54 @@ bool handleInputType(String value, String schema, bool array) {
 {% else %}
 bool handleInputType(String value, String schema) {   
 {% endif -%}     
-    {{ '\t\t' }}DynamicJsonDocument schema_doc(1024);
-    DynamicJsonDocument value_doc(1024);
+    {{ '\t' }}DynamicJsonDocument schema_doc(
+        {%- do capacity.update({'maxInput':20}) -%}
+        {%- do capacity.update({'maxInputObj':0}) -%}
+        {%- for action in template['actions'] -%}
+        {%- if 'input' in action -%}
+        {%- for item in action['input'] -%}
+        {%- if item['type'] == 'object' -%}
+        {%- if 'properties' in item -%}
+        {%- set dim1 = action['input'] | length * 200 + item['properties'] | length * 200 -%}
+        {%- set dim2 = item['properties'] | length * 200 -%}
+        {%- if dim1 > capacity['maxInput'] -%}
+        {%- do capacity.update({'maxInput': dim1}) -%}
+        {%- endif -%}
+        {%- if dim2 > capacity['maxInputObj'] -%}
+        {%- do capacity.update({'maxInputObj': dim2}) -%}
+        {%- endif -%}
+        {%- else -%}
+        {%- set dim1 = action['input'] | length * 200 + 500 -%}
+        {%- set dim2 = 500 -%}
+        {%- if dim1 > capacity['maxInput'] -%}
+        {%- do capacity.update({'maxInput': dim1}) -%}
+        {%- endif -%}
+        {%- if dim2 > capacity['maxInputObj'] -%}
+        {%- do capacity.update({'maxInputObj': dim2}) -%}
+        {%- endif -%}
+        {%- endif -%}
+        {%- elif item['type'] == 'array' -%}
+        {%- set dim1 = action['input'] | length * 200 + 2000 -%}
+        {%- set dim2 = 2000 -%}
+        {%- if dim1 > capacity['maxInput'] -%}
+        {%- do capacity.update({'maxInput': dim1}) -%}
+        {%- endif -%}
+        {%- if dim2 > capacity['maxInputObj'] -%}
+        {%- do capacity.update({'maxInputObj': dim2}) -%}
+        {%- endif -%}
+        {%- else -%}
+        {%- set dim1 = action['input'] | length * 200 -%}
+        {%- if dim1 > capacity['maxInput'] -%}
+        {%- do capacity.update({'maxInput': dim1}) -%}
+        {%- endif -%}
+        {%- endif -%}
+        {%- endfor -%}
+        {%- endif -%}
+        {%- endfor -%}
+        {{ capacity['maxInput'] }});
+    {% if global['isArray'] or global['isObject'] %}
+    DynamicJsonDocument value_doc({{ capacity['maxInputObj'] }});
+    {% endif %}
     {% if global['isArray'] %}
     {{ defineVariable('JsonArray', 'array_value', 'iv') }}
     {% endif %}
@@ -1536,8 +1651,6 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t* pl, size_t length) {
                 if(events_endpoint[i].equals(payload)) {
                     if(e_doc[ip_s].isNull()) {
                         {{ setVariable(False, 'obj_e', 'e_doc.createNestedArray(ip_s).createNestedObject()') }}
-                        {# ip_doc contiene un array di oggetti (clients_list), dove ogni oggetto ha due termini, IP e NUM 
-                        e tanti termini (IP:NUM) quanti sono i client connessi al canale webSocket #}
                         {{ setVariable(False, 'obj_ip', 'ip_arr.createNestedObject()') }}
                         {{ setVariable(False, 'obj_ip["ip"]', 'ip_s') }}
                         {{ setVariable(False, 'obj_ip["num"]', 'num') }}
@@ -1584,7 +1697,7 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t* pl, size_t length) {
 
         case WStype_TEXT:
         { 
-            DynamicJsonDocument resp_doc(1024);
+            DynamicJsonDocument resp_doc({{ capacity['maxSchema'] * 2}});
             {{ defineVariable('bool', 'parsingDone', 'false') }}
             {{ defineVariable('int', 'validInput', '0') }}
             {{ defineVariable('String', 't_name', 'iv') }}
@@ -1612,7 +1725,7 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t* pl, size_t length) {
                     while(!parsingDone && j<events_number) {
                         if(!e_doc[ip_s][i][events_list[j]].isNull()) {
                             if(!e_doc[ip_s][i][events_list[j]] && events_subscriptionSchema[j]) {
-                                StaticJsonDocument<1024> tmp_doc;
+                                DynamicJsonDocument tmp_doc({{ capacity['maxSchema'] * 2 }});
                                 {{ defineVariable('JsonObject', 'tmp', 'tmp_doc.createNestedObject()') }}
                                 {{ setVariable(False, 'validInput', '0') }}
                                 {{ setVariable(False, 'k', '0') }}
@@ -1641,7 +1754,7 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t* pl, size_t length) {
                                 }
                             }
                             else if(e_doc[ip_s][i][events_list[j]] && events_cancellationSchema[j]) {
-                                StaticJsonDocument<1024> tmp_doc;
+                                DynamicJsonDocument tmp_doc({{ capacity['maxSchema'] * 2 }});
                                 {{ defineVariable('JsonObject', 'tmp', 'tmp_doc.createNestedObject()') }}
                                 {{ setVariable(False, 'validInput', '0') }}
                                 {{ setVariable(False, 'k', '0') }}

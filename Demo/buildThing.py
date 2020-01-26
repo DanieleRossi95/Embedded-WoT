@@ -613,12 +613,15 @@ def handleEventData(ctx, dataTypeS, eventName, index):
                 ctx.obj['td']['events'][eventName][dataTypeTD][termName]['value'] = inpValue
 
 
-def handleTemplateTypes(ctx, interactionTypeTD, interactionName='', dataType='', termName=''):
+def handleTemplateTypes(ctx, interactionTypeTD, interactionName, dataType='', termName=''):
     t = {}
-    t['name'] = termName
+    if(interactionTypeTD == 'properties'):
+        t['name'] = interactionName
+    else:    
+        t['name'] = termName
     termType = ''
     if(interactionTypeTD == 'properties'):
-        termType = ctx.obj['td'][interactionTypeTD][termName]['type']
+        termType = ctx.obj['td'][interactionTypeTD][interactionName]['type']
     else:
         if(dataType == 'output'):
             termType = ctx.obj['td'][interactionTypeTD][interactionName][dataType]['type']      
@@ -627,10 +630,10 @@ def handleTemplateTypes(ctx, interactionTypeTD, interactionName='', dataType='',
     t['type'] = termType
     if(termType == 'integer' or termType == 'number'):
         if(interactionTypeTD == 'properties'):
-            if('minimum' in ctx.obj['td'][interactionTypeTD][termName]):
-                t['minimum'] = ctx.obj['td'][interactionTypeTD][termName]['minimum']
-            if('maximum' in ctx.obj['td'][interactionTypeTD][termName]):
-                t['maximum'] = ctx.obj['td'][interactionTypeTD][termName]['maximum']
+            if('minimum' in ctx.obj['td'][interactionTypeTD][interactionName]):
+                t['minimum'] = ctx.obj['td'][interactionTypeTD][interactionName]['minimum']
+            if('maximum' in ctx.obj['td'][interactionTypeTD][interactionName]):
+                t['maximum'] = ctx.obj['td'][interactionTypeTD][interactionName]['maximum']
         else:
             if(dataType == 'output'):
                 if('minimum' in ctx.obj['td'][interactionTypeTD][interactionName][dataType]):
@@ -644,11 +647,11 @@ def handleTemplateTypes(ctx, interactionTypeTD, interactionName='', dataType='',
                     t['maximum'] = ctx.obj['td'][interactionTypeTD][interactionName][dataType][termName]['maximum']
     elif(termType == 'array'):
         if(interactionTypeTD == 'properties'):
-            t['items'] = ctx.obj['td'][interactionTypeTD][termName]['items']
-            if('minItems' in ctx.obj['td'][interactionTypeTD][termName]):
-                t['minItems'] = ctx.obj['td'][interactionTypeTD][termName]['minItems']
-            if('maxItems' in ctx.obj['td'][interactionTypeTD][termName]):
-                t['maxItems'] = ctx.obj['td'][interactionTypeTD][termName]['maxItems'] 
+            t['items'] = ctx.obj['td'][interactionTypeTD][interactionName]['items']
+            if('minItems' in ctx.obj['td'][interactionTypeTD][interactionName]):
+                t['minItems'] = ctx.obj['td'][interactionTypeTD][interactionName]['minItems']
+            if('maxItems' in ctx.obj['td'][interactionTypeTD][interactionName]):
+                t['maxItems'] = ctx.obj['td'][interactionTypeTD][interactionName]['maxItems'] 
         else:
             if(dataType == 'output'):
                 t['items'] = ctx.obj['td'][interactionTypeTD][interactionName][dataType]['items']
@@ -664,16 +667,16 @@ def handleTemplateTypes(ctx, interactionTypeTD, interactionName='', dataType='',
                     t['maxItems'] = ctx.obj['td'][interactionTypeTD][interactionName][dataType][termName]['maxItems']  
     elif(termType == 'object'):
         if(interactionTypeTD == 'properties'):
-            if('properties' in ctx.obj['td'][interactionTypeTD][termName]):
-                objProp = list(ctx.obj['td'][interactionTypeTD][termName]['properties'].keys())
+            if('properties' in ctx.obj['td'][interactionTypeTD][interactionName]):
+                objProp = list(ctx.obj['td'][interactionTypeTD][interactionName]['properties'].keys())
                 t.setdefault('properties', [])
                 for propName in objProp:
                     p = {}
-                    p = dict(ctx.obj['td'][interactionTypeTD][termName]['properties'][propName])
+                    p = dict(ctx.obj['td'][interactionTypeTD][interactionName]['properties'][propName])
                     p['name'] = propName
                     t['properties'].append(p)
-            if('required' in ctx.obj['td'][interactionTypeTD][termName]):
-                t['required'] = ctx.obj['td'][interactionTypeTD][termName]['required']
+            if('required' in ctx.obj['td'][interactionTypeTD][interactionName]):
+                t['required'] = ctx.obj['td'][interactionTypeTD][interactionName]['required']
         else:
             if(dataType == 'output'):
                 if('properties' in ctx.obj['td'][interactionTypeTD][interactionName][dataType]):
@@ -1091,7 +1094,7 @@ def start(ctx, **kwargs):
                     parsingOutput = parseFunctionFromFile(ctx, fileName, actionName, 'action', False, False, a-1)
                     parsingError = parsingOutput[0]
                     if(parsingError):
-                        click.echo('Error: parsing process failed\n')
+                        click.echo('Error: parsing process failed')
             else:    
                 # ACTION INPUT
                 actionFunctions[a-1].setdefault('input', [])
@@ -1259,7 +1262,7 @@ def build(ctx):
                     parsingOutput = parseFunctionFromFile(ctx, fileName, thingActions[i], 'action', True, True, i)
                     parsingError = parsingOutput[0]
                     if(parsingError):
-                        click.echo('Error: parsing process failed\n')
+                        click.echo('Error: parsing process failed')
                 action['body'] = parsingOutput[1]    
             else:
                 if(i == 0):
@@ -1383,14 +1386,14 @@ def build(ctx):
             # GET FUNCTION FROM FILE
             parsingError = True
             while(parsingError):
-                fileName = click.prompt('Insert the path of the file', type=click.Path(exists=True, readable=True, resolve_path=True))
+                fileName = click.prompt('\nInsert the path of the file', type=click.Path(exists=True, readable=True, resolve_path=True))
                 parsingOutput = parseFunctionFromFile(ctx, fileName, fun['name'], 'function', False, False)
                 parsingError = parsingOutput[0]
                 if(parsingError):
-                    click.echo('Error: parsing process failed\n')
+                    click.echo('Error: parsing process failed')
         else:    
             fun.setdefault('output', {})
-            if(click.confirm('Insert Function Return Type?', default=False)):
+            if(click.confirm('\nInsert Function Return Type?', default=False)):
                 fun['output']['type'] = click.prompt('Function Return Type', type=SWN_STRING)
             if(click.confirm('\nInsert Function Inputs?', default=False)):
                 inputsNumber = click.prompt('Insert Inputs number', type=NN_INT)
@@ -1428,7 +1431,7 @@ def build(ctx):
     # THING PROPERTIES
     ctx.obj['template'].setdefault('properties', [])
     for i in range(0, ctx.obj['template']['numproperties']):
-        p = handleTemplateTypes(ctx, thingProperties[i], 'properties')
+        p = handleTemplateTypes(ctx, 'properties', thingProperties[i])
         ctx.obj['template']['properties'].append(p)         
     o = 0 
     for i in range(0, len(thingProperties)):    
@@ -1476,7 +1479,7 @@ def build(ctx):
                     t['type'] = inp
             t['body'] = click.prompt('WebSocket Message Type logic', type=str)
             ctx.obj['template']['websocket'].append(t)
-            click.echo('\n')
+            click.echo('\n')    
     output = template.render(td=ctx.obj['td'], template=ctx.obj['template'])    
     filePath = ctx.obj['td']['title'].lower() + '/' + ctx.obj['td']['title'].lower() + '.ino'
     writeFile(filePath, output)
