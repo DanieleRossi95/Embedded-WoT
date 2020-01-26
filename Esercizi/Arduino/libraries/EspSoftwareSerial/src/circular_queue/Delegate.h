@@ -36,112 +36,195 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #include "circular_queue/ghostl.h"
 #endif
 
-namespace detail
+namespace
 {
+
     template<typename R, typename... P>
-    static R IRAM_ATTR vPtrToFunPtrExec(void* fn, P... args)
+    R IRAM_ATTR vPtrToFunPtrExec(void* fn, P... args)
     {
         using target_type = R(P...);
         return reinterpret_cast<target_type*>(fn)(std::forward<P...>(args...));
     }
 
+}
+
+namespace delegate
+{
+    namespace detail
+    {
+
 #if !defined(ARDUINO) || defined(ESP8266) || defined(ESP32)
-    template<typename A, typename R, typename... P>
-    class DelegatePImpl {
-    public:
-        using target_type = R(P...);
-    protected:
-        using FunPtr = target_type*;
-        using FunAPtr = R(*)(A, P...);
-        using FunVPPtr = R(*)(void*, P...);
-        using FunctionType = std::function<target_type>;
-    public:
-        DelegatePImpl()
-        {
-            kind = FP;
-            fn = nullptr;
-        }
-
-        DelegatePImpl(std::nullptr_t)
-        {
-            kind = FP;
-            fn = nullptr;
-        }
-
-        ~DelegatePImpl()
-        {
-            if (FUNC == kind)
-                functional.~FunctionType();
-            else if (FPA == kind)
-                obj.~A();
-        }
-
-        DelegatePImpl(const DelegatePImpl<A, R, P...>& del)
-        {
-            kind = del.kind;
-            if (FUNC == del.kind)
+        template<typename A, typename R, typename... P>
+        class DelegatePImpl {
+        public:
+            using target_type = R(P...);
+        protected:
+            using FunPtr = target_type*;
+            using FunAPtr = R(*)(A, P...);
+            using FunVPPtr = R(*)(void*, P...);
+            using FunctionType = std::function<target_type>;
+        public:
+            DelegatePImpl()
             {
-                new (&functional) FunctionType(del.functional);
+                kind = FP;
+                fn = nullptr;
             }
-            else if (FPA == del.kind)
+
+            DelegatePImpl(std::nullptr_t)
             {
-                fnA = del.fnA;
-                new (&obj) A(del.obj);
+                kind = FP;
+                fn = nullptr;
             }
-            else
+
+            ~DelegatePImpl()
             {
-                fn = del.fn;
+                if (FUNC == kind)
+                    functional.~FunctionType();
+                else if (FPA == kind)
+                    obj.~A();
             }
-        }
 
-        DelegatePImpl(DelegatePImpl<A, R, P...>&& del)
-        {
-            kind = del.kind;
-            if (FUNC == del.kind)
+            DelegatePImpl(const DelegatePImpl<A, R, P...>& del)
             {
-                new (&functional) FunctionType(std::move(del.functional));
+                kind = del.kind;
+                if (FUNC == del.kind)
+                {
+                    new (&functional) FunctionType(del.functional);
+                }
+                else if (FPA == del.kind)
+                {
+                    fnA = del.fnA;
+                    new (&obj) A(del.obj);
+                }
+                else
+                {
+                    fn = del.fn;
+                }
             }
-            else if (FPA == del.kind)
+
+            DelegatePImpl(DelegatePImpl<A, R, P...>&& del)
             {
-                fnA = del.fnA;
-                new (&obj) A(std::move(del.obj));
+                kind = del.kind;
+                if (FUNC == del.kind)
+                {
+                    new (&functional) FunctionType(std::move(del.functional));
+                }
+                else if (FPA == del.kind)
+                {
+                    fnA = del.fnA;
+                    new (&obj) A(std::move(del.obj));
+                }
+                else
+                {
+                    fn = del.fn;
+                }
             }
-            else
+
+            DelegatePImpl(FunAPtr fnA, const A& obj)
             {
-                fn = del.fn;
+                kind = FPA;
+                DelegatePImpl::fnA = fnA;
+                new (&this->obj) A(obj);
             }
-        }
 
-        DelegatePImpl(FunAPtr fnA, const A& obj)
-        {
-            kind = FPA;
-            DelegatePImpl::fnA = fnA;
-            new (&this->obj) A(obj);
-        }
+            DelegatePImpl(FunAPtr fnA, A&& obj)
+            {
+                kind = FPA;
+                DelegatePImpl::fnA = fnA;
+                new (&this->obj) A(std::move(obj));
+            }
 
-        DelegatePImpl(FunAPtr fnA, A&& obj)
-        {
-            kind = FPA;
-            DelegatePImpl::fnA = fnA;
-            new (&this->obj) A(std::move(obj));
-        }
+            DelegatePImpl(FunPtr fn)
+            {
+                kind = FP;
+                DelegatePImpl::fn = fn;
+            }
 
-        DelegatePImpl(FunPtr fn)
-        {
-            kind = FP;
-            DelegatePImpl::fn = fn;
-        }
+            template<typename F> DelegatePImpl(F functional)
+            {
+                kind = FUNC;
+                new (&this->functional) FunctionType(std::forward<F>(functional));
+            }
 
-        template<typename F> DelegatePImpl(F functional)
-        {
-            kind = FUNC;
-            new (&this->functional) FunctionType(std::forward<F>(functional));
-        }
+            DelegatePImpl& operator=(const DelegatePImpl<A, R, P...>& del)
+            {
+                if (this == &del) return *this;
+                if (kind != del.kind)
+                {
+                    if (FUNC == kind)
+                    {
+                        functional.~FunctionType();
+                    }
+                    else if (FPA == kind)
+                    {
+                        obj.~A();
+                    }
+                    if (FUNC == del.kind)
+                    {
+                        new (&this->functional) FunctionType();
+                    }
+                    else if (FPA == del.kind)
+                    {
+                        new (&obj) A;
+                    }
+                    kind = del.kind;
+                }
+                if (FUNC == del.kind)
+                {
+                    functional = del.functional;
+                }
+                else if (FPA == del.kind)
+                {
+                    fnA = del.fnA;
+                    obj = del.obj;
+                }
+                else
+                {
+                    fn = del.fn;
+                }
+                return *this;
+            }
 
-        DelegatePImpl& operator=(const DelegatePImpl<A, R, P...>& del)
-        {
-            if (this == &del) return *this;
-            if (kind != del.kind)
+            DelegatePImpl& operator=(DelegatePImpl<A, R, P...>&& del)
+            {
+                if (this == &del) return *this;
+                if (kind != del.kind)
+                {
+                    if (FUNC == kind)
+                    {
+                        functional.~FunctionType();
+                    }
+                    else if (FPA == kind)
+                    {
+                        obj.~A();
+                    }
+                    if (FUNC == del.kind)
+                    {
+                        new (&this->functional) FunctionType();
+                    }
+                    else if (FPA == del.kind)
+                    {
+                        new (&obj) A;
+                    }
+                    kind = del.kind;
+                }
+                if (FUNC == del.kind)
+                {
+                    functional = std::move(del.functional);
+                }
+                else if (FPA == del.kind)
+                {
+                    fnA = del.fnA;
+                    obj = std::move(del.obj);
+                }
+                else
+                {
+                    fn = del.fn;
+                }
+                return *this;
+            }
+
+            DelegatePImpl& operator=(FunPtr fn)
             {
                 if (FUNC == kind)
                 {
@@ -151,36 +234,12 @@ namespace detail
                 {
                     obj.~A();
                 }
-                if (FUNC == del.kind)
-                {
-                    new (&this->functional) FunctionType();
-                }
-                else if (FPA == del.kind)
-                {
-                    new (&obj) A;
-                }
-                kind = del.kind;
+                kind = FP;
+                this->fn = fn;
+                return *this;
             }
-            if (FUNC == del.kind)
-            {
-                functional = del.functional;
-            }
-            else if (FPA == del.kind)
-            {
-                fnA = del.fnA;
-                obj = del.obj;
-            }
-            else
-            {
-                fn = del.fn;
-            }
-            return *this;
-        }
 
-        DelegatePImpl& operator=(DelegatePImpl<A, R, P...>&& del)
-        {
-            if (this == &del) return *this;
-            if (kind != del.kind)
+            DelegatePImpl& IRAM_ATTR operator=(std::nullptr_t)
             {
                 if (FUNC == kind)
                 {
@@ -190,1597 +249,1547 @@ namespace detail
                 {
                     obj.~A();
                 }
-                if (FUNC == del.kind)
+                kind = FP;
+                fn = nullptr;
+                return *this;
+            }
+
+            operator bool() const
+            {
+                if (FP == kind)
                 {
-                    new (&this->functional) FunctionType();
+                    return fn;
                 }
-                else if (FPA == del.kind)
+                else if (FPA == kind)
                 {
-                    new (&obj) A;
+                    return fnA;
                 }
-                kind = del.kind;
-            }
-            if (FUNC == del.kind)
-            {
-                functional = std::move(del.functional);
-            }
-            else if (FPA == del.kind)
-            {
-                fnA = del.fnA;
-                obj = std::move(del.obj);
-            }
-            else
-            {
-                fn = del.fn;
-            }
-            return *this;
-        }
-
-        DelegatePImpl& operator=(FunPtr fn)
-        {
-            if (FUNC == kind)
-            {
-                functional.~FunctionType();
-            }
-            else if (FPA == kind)
-            {
-                obj.~A();
-            }
-            kind = FP;
-            this->fn = fn;
-            return *this;
-        }
-
-        DelegatePImpl& IRAM_ATTR operator=(std::nullptr_t)
-        {
-            if (FUNC == kind)
-            {
-                functional.~FunctionType();
-            }
-            else if (FPA == kind)
-            {
-                obj.~A();
-            }
-            kind = FP;
-            fn = nullptr;
-            return *this;
-        }
-
-        operator bool() const
-        {
-            if (FP == kind)
-            {
-                return fn;
-            }
-            else if (FPA == kind)
-            {
-                return fnA;
-            }
-            else
-            {
-                return functional ? true : false;
-            }
-        }
-
-        static R IRAM_ATTR vPtrToFunAPtrExec(void* self, P... args)
-        {
-            return static_cast<DelegatePImpl*>(self)->fnA(
-                static_cast<DelegatePImpl*>(self)->obj,
-                std::forward<P...>(args...));
-        };
-
-        operator FunVPPtr() const
-        {
-            if (FP == kind)
-            {
-                return vPtrToFunPtrExec<R, P...>;
-            }
-            else if (FPA == kind)
-            {
-                return vPtrToFunAPtrExec;
-            }
-            else
-            {
-                return [](void* self, P... args) -> R
+                else
                 {
-                    return static_cast<DelegatePImpl*>(self)->functional(std::forward<P...>(args...));
+                    return functional ? true : false;
+                }
+            }
+
+            static R IRAM_ATTR vPtrToFunAPtrExec(void* self, P... args)
+            {
+                return static_cast<DelegatePImpl*>(self)->fnA(
+                    static_cast<DelegatePImpl*>(self)->obj,
+                    std::forward<P...>(args...));
+            };
+
+            operator FunVPPtr() const
+            {
+                if (FP == kind)
+                {
+                    return vPtrToFunPtrExec<R, P...>;
+                }
+                else if (FPA == kind)
+                {
+                    return vPtrToFunAPtrExec;
+                }
+                else
+                {
+                    return [](void* self, P... args) -> R
+                    {
+                        return static_cast<DelegatePImpl*>(self)->functional(std::forward<P...>(args...));
+                    };
+                }
+            }
+
+            void* arg() const
+            {
+                if (FP == kind)
+                {
+                    return reinterpret_cast<void*>(fn);
+                }
+                else
+                {
+                    return const_cast<DelegatePImpl*>(this);
+                }
+            }
+
+            operator FunctionType() const
+            {
+                if (FP == kind)
+                {
+                    return fn;
+                }
+                else if (FPA == kind)
+                {
+                    return [this](P... args) { return fnA(obj, std::forward<P...>(args...)); };
+                }
+                else
+                {
+                    return functional;
+                }
+            }
+
+            R IRAM_ATTR operator()(P... args) const
+            {
+                if (FP == kind)
+                {
+                    return fn(std::forward<P...>(args...));
+                }
+                else if (FPA == kind)
+                {
+                    return fnA(obj, std::forward<P...>(args...));
+                }
+                else
+                {
+                    return functional(std::forward<P...>(args...));
+                }
+            }
+
+        protected:
+            enum { FUNC, FP, FPA } kind;
+            union {
+                FunctionType functional;
+                FunPtr fn;
+                struct {
+                    FunAPtr fnA;
+                    A obj;
                 };
-            }
-        }
-
-        void* arg() const
-        {
-            if (FP == kind)
-            {
-                return reinterpret_cast<void*>(fn);
-            }
-            else
-            {
-                return const_cast<DelegatePImpl*>(this);
-            }
-        }
-
-        operator FunctionType() const
-        {
-            if (FP == kind)
-            {
-                return fn;
-            }
-            else if (FPA == kind)
-            {
-                return [this](P... args) { return fnA(obj, std::forward<P...>(args...)); };
-            }
-            else
-            {
-                return functional;
-            }
-        }
-
-        R IRAM_ATTR operator()(P... args) const
-        {
-            if (FP == kind)
-            {
-                return fn(std::forward<P...>(args...));
-            }
-            else if (FPA == kind)
-            {
-                return fnA(obj, std::forward<P...>(args...));
-            }
-            else
-            {
-                return functional(std::forward<P...>(args...));
-            }
-        }
-
-    protected:
-        enum { FUNC, FP, FPA } kind;
-        union {
-            FunctionType functional;
-            FunPtr fn;
-            struct {
-                FunAPtr fnA;
-                A obj;
             };
         };
-    };
 #else
-    template<typename A, typename R, typename... P>
-    class DelegatePImpl {
-    public:
-        using target_type = R(P...);
-    protected:
-        using FunPtr = target_type*;
-        using FunAPtr = R(*)(A, P...);
-        using FunVPPtr = R(*)(void*, P...);
-    public:
-        DelegatePImpl()
-        {
-            kind = FP;
-            fn = nullptr;
-        }
-
-        DelegatePImpl(std::nullptr_t)
-        {
-            kind = FP;
-            fn = nullptr;
-        }
-
-        DelegatePImpl(const DelegatePImpl<A, R, P...>& del)
-        {
-            kind = del.kind;
-            if (FPA == del.kind)
+        template<typename A, typename R, typename... P>
+        class DelegatePImpl {
+        public:
+            using target_type = R(P...);
+        protected:
+            using FunPtr = target_type*;
+            using FunAPtr = R(*)(A, P...);
+            using FunVPPtr = R(*)(void*, P...);
+        public:
+            DelegatePImpl()
             {
-                fnA = del.fnA;
-                obj = del.obj;
-            }
-            else
-            {
-                fn = del.fn;
-            }
-        }
-
-        DelegatePImpl(DelegatePImpl<A, R, P...>&& del)
-        {
-            kind = del.kind;
-            if (FPA == del.kind)
-            {
-                fnA = del.fnA;
-                obj = std::move(del.obj);
-            }
-            else
-            {
-                fn = del.fn;
-            }
-        }
-
-        DelegatePImpl(FunAPtr fnA, const A& obj)
-        {
-            kind = FPA;
-            DelegatePImpl::fnA = fnA;
-            this->obj = obj;
-        }
-
-        DelegatePImpl(FunAPtr fnA, A&& obj)
-        {
-            kind = FPA;
-            DelegatePImpl::fnA = fnA;
-            this->obj = std::move(obj);
-        }
-
-        DelegatePImpl(FunPtr fn)
-        {
-            kind = FP;
-            DelegatePImpl::fn = fn;
-        }
-
-        template<typename F> DelegatePImpl(F fn)
-        {
-            kind = FP;
-            DelegatePImpl::fn = std::forward<F>(fn);
-        }
-
-        DelegatePImpl& operator=(const DelegatePImpl<A, R, P...>& del)
-        {
-            if (this == &del) return *this;
-            if (kind != del.kind)
-            {
-                if (FPA == kind)
-                {
-                    obj = {};
-                }
-                kind = del.kind;
-            }
-            if (FPA == del.kind)
-            {
-                fnA = del.fnA;
-                obj = del.obj;
-            }
-            else
-            {
-                fn = del.fn;
-            }
-            return *this;
-        }
-
-        DelegatePImpl& operator=(DelegatePImpl<A, R, P...>&& del)
-        {
-            if (this == &del) return *this;
-            if (kind != del.kind)
-            {
-                if (FPA == kind)
-                {
-                    obj = {};
-                }
-                kind = del.kind;
-            }
-            if (FPA == del.kind)
-            {
-                fnA = del.fnA;
-                obj = std::move(del.obj);
-            }
-            else
-            {
-                fn = del.fn;
-            }
-            return *this;
-        }
-
-        DelegatePImpl& operator=(FunPtr fn)
-        {
-            if (FPA == kind)
-            {
-                obj = {};
-            }
-            kind = FP;
-            this->fn = fn;
-            return *this;
-        }
-
-        DelegatePImpl& IRAM_ATTR operator=(std::nullptr_t)
-        {
-            if (FPA == kind)
-            {
-                obj = {};
-            }
-            kind = FP;
-            fn = nullptr;
-            return *this;
-        }
-
-        operator bool() const
-        {
-            if (FP == kind)
-            {
-                return fn;
-            }
-            else
-            {
-                return fnA;
-            }
-        }
-
-        static R IRAM_ATTR vPtrToFunAPtrExec(void* self, P... args)
-        {
-            return static_cast<DelegatePImpl*>(self)->fnA(
-                static_cast<DelegatePImpl*>(self)->obj,
-                std::forward<P...>(args...));
-        };
-
-        operator FunVPPtr() const
-        {
-            if (FP == kind)
-            {
-                return vPtrToFunPtrExec<R, P...>;
-            }
-            else
-            {
-                return vPtrToFunAPtrExec;
-            }
-        }
-
-        void* arg() const
-        {
-            if (FP == kind)
-            {
-                return reinterpret_cast<void*>(fn);
-            }
-            else
-            {
-                return const_cast<DelegatePImpl*>(this);
-            }
-        }
-
-        R IRAM_ATTR operator()(P... args) const
-        {
-            if (FP == kind)
-            {
-                return fn(std::forward<P...>(args...));
-            }
-            else
-            {
-                return fnA(obj, std::forward<P...>(args...));
-            }
-        }
-
-    protected:
-        enum { FP, FPA } kind;
-        union {
-            FunPtr fn;
-            FunAPtr fnA;
-        };
-        A obj;
-    };
-#endif
-
-#if !defined(ARDUINO) || defined(ESP8266) || defined(ESP32)
-    template<typename R, typename... P>
-    class DelegatePImpl<void, R, P...> {
-    public:
-        using target_type = R(P...);
-    protected:
-        using FunPtr = target_type*;
-        using FunctionType = std::function<target_type>;
-        using FunVPPtr = R(*)(void*, P...);
-    public:
-        DelegatePImpl()
-        {
-            kind = FP;
-            fn = nullptr;
-        }
-
-        DelegatePImpl(std::nullptr_t)
-        {
-            kind = FP;
-            fn = nullptr;
-        }
-
-        ~DelegatePImpl()
-        {
-            if (FUNC == kind)
-                functional.~FunctionType();
-        }
-
-        DelegatePImpl(const DelegatePImpl<void, R, P...>& del)
-        {
-            kind = del.kind;
-            if (FUNC == del.kind)
-            {
-                new (&functional) FunctionType(del.functional);
-            }
-            else
-            {
-                fn = del.fn;
-            }
-        }
-
-        DelegatePImpl(DelegatePImpl<void, R, P...>&& del)
-        {
-            kind = del.kind;
-            if (FUNC == del.kind)
-            {
-                new (&functional) FunctionType(std::move(del.functional));
-            }
-            else
-            {
-                fn = del.fn;
-            }
-        }
-
-        DelegatePImpl(FunPtr fn)
-        {
-            kind = FP;
-            DelegatePImpl::fn = fn;
-        }
-
-        template<typename F> DelegatePImpl(F functional)
-        {
-            kind = FUNC;
-            new (&this->functional) FunctionType(std::forward<F>(functional));
-        }
-
-        DelegatePImpl& operator=(const DelegatePImpl<void, R, P...>& del)
-        {
-            if (this == &del) return *this;
-            if (FUNC == kind && FUNC != del.kind)
-            {
-                functional.~FunctionType();
-            }
-            else if (FUNC != kind && FUNC == del.kind)
-            {
-                new (&this->functional) FunctionType();
-            }
-            kind = del.kind;
-            if (FUNC == del.kind)
-            {
-                functional = del.functional;
-            }
-            else
-            {
-                fn = del.fn;
-            }
-            return *this;
-        }
-
-        DelegatePImpl& operator=(DelegatePImpl<void, R, P...>&& del)
-        {
-            if (this == &del) return *this;
-            if (FUNC == kind && FUNC != del.kind)
-            {
-                functional.~FunctionType();
-            }
-            else if (FUNC != kind && FUNC == del.kind)
-            {
-                new (&this->functional) FunctionType();
-            }
-            kind = del.kind;
-            if (FUNC == del.kind)
-            {
-                functional = std::move(del.functional);
-            }
-            else
-            {
-                fn = del.fn;
-            }
-            return *this;
-        }
-
-        DelegatePImpl& operator=(FunPtr fn)
-        {
-            if (FUNC == kind)
-            {
-                functional.~FunctionType();
                 kind = FP;
+                fn = nullptr;
             }
-            DelegatePImpl::fn = fn;
-            return *this;
-        }
 
-        DelegatePImpl& IRAM_ATTR operator=(std::nullptr_t)
-        {
-            if (FUNC == kind)
+            DelegatePImpl(std::nullptr_t)
             {
-                functional.~FunctionType();
+                kind = FP;
+                fn = nullptr;
             }
-            kind = FP;
-            fn = nullptr;
-            return *this;
-        }
 
-        operator bool() const
-        {
-            if (FP == kind)
+            DelegatePImpl(const DelegatePImpl<A, R, P...>& del)
             {
-                return fn;
-            }
-            else
-            {
-                return functional ? true : false;
-            }
-        }
-
-        operator FunVPPtr() const
-        {
-            if (FP == kind)
-            {
-                return vPtrToFunPtrExec<R, P...>;
-            }
-            else
-            {
-                return [](void* self, P... args) -> R
+                kind = del.kind;
+                if (FPA == del.kind)
                 {
-                    return static_cast<DelegatePImpl*>(self)->functional(std::forward<P...>(args...));
-                };
+                    fnA = del.fnA;
+                    obj = del.obj;
+                }
+                else
+                {
+                    fn = del.fn;
+                }
             }
-        }
 
-        void* arg() const
-        {
-            if (FP == kind)
+            DelegatePImpl(DelegatePImpl<A, R, P...>&& del)
             {
-                return reinterpret_cast<void*>(fn);
+                kind = del.kind;
+                if (FPA == del.kind)
+                {
+                    fnA = del.fnA;
+                    obj = std::move(del.obj);
+                }
+                else
+                {
+                    fn = del.fn;
+                }
             }
-            else
-            {
-                return const_cast<DelegatePImpl*>(this);
-            }
-        }
 
-        operator FunctionType() const
-        {
-            if (FP == kind)
+            DelegatePImpl(FunAPtr fnA, const A& obj)
             {
-                return fn;
+                kind = FPA;
+                DelegatePImpl::fnA = fnA;
+                this->obj = obj;
             }
-            else
-            {
-                return functional;
-            }
-        }
 
-        R IRAM_ATTR operator()(P... args) const
-        {
-            if (FP == kind)
+            DelegatePImpl(FunAPtr fnA, A&& obj)
             {
-                return fn(std::forward<P...>(args...));
+                kind = FPA;
+                DelegatePImpl::fnA = fnA;
+                this->obj = std::move(obj);
             }
-            else
-            {
-                return functional(std::forward<P...>(args...));
-            }
-        }
 
-    protected:
-        enum { FUNC, FP } kind;
-        union {
-            FunctionType functional;
-            FunPtr fn;
+            DelegatePImpl(FunPtr fn)
+            {
+                kind = FP;
+                DelegatePImpl::fn = fn;
+            }
+
+            template<typename F> DelegatePImpl(F fn)
+            {
+                kind = FP;
+                DelegatePImpl::fn = std::forward<F>(fn);
+            }
+
+            DelegatePImpl& operator=(const DelegatePImpl<A, R, P...>& del)
+            {
+                if (this == &del) return *this;
+                if (kind != del.kind)
+                {
+                    if (FPA == kind)
+                    {
+                        obj = {};
+                    }
+                    kind = del.kind;
+                }
+                if (FPA == del.kind)
+                {
+                    fnA = del.fnA;
+                    obj = del.obj;
+                }
+                else
+                {
+                    fn = del.fn;
+                }
+                return *this;
+            }
+
+            DelegatePImpl& operator=(DelegatePImpl<A, R, P...>&& del)
+            {
+                if (this == &del) return *this;
+                if (kind != del.kind)
+                {
+                    if (FPA == kind)
+                    {
+                        obj = {};
+                    }
+                    kind = del.kind;
+                }
+                if (FPA == del.kind)
+                {
+                    fnA = del.fnA;
+                    obj = std::move(del.obj);
+                }
+                else
+                {
+                    fn = del.fn;
+                }
+                return *this;
+            }
+
+            DelegatePImpl& operator=(FunPtr fn)
+            {
+                if (FPA == kind)
+                {
+                    obj = {};
+                }
+                kind = FP;
+                this->fn = fn;
+                return *this;
+            }
+
+            DelegatePImpl& IRAM_ATTR operator=(std::nullptr_t)
+            {
+                if (FPA == kind)
+                {
+                    obj = {};
+                }
+                kind = FP;
+                fn = nullptr;
+                return *this;
+            }
+
+            operator bool() const
+            {
+                if (FP == kind)
+                {
+                    return fn;
+                }
+                else
+                {
+                    return fnA;
+                }
+            }
+
+            static R IRAM_ATTR vPtrToFunAPtrExec(void* self, P... args)
+            {
+                return static_cast<DelegatePImpl*>(self)->fnA(
+                    static_cast<DelegatePImpl*>(self)->obj,
+                    std::forward<P...>(args...));
+            };
+
+            operator FunVPPtr() const
+            {
+                if (FP == kind)
+                {
+                    return vPtrToFunPtrExec<R, P...>;
+                }
+                else
+                {
+                    return vPtrToFunAPtrExec;
+                }
+            }
+
+            void* arg() const
+            {
+                if (FP == kind)
+                {
+                    return reinterpret_cast<void*>(fn);
+                }
+                else
+                {
+                    return const_cast<DelegatePImpl*>(this);
+                }
+            }
+
+            R IRAM_ATTR operator()(P... args) const
+            {
+                if (FP == kind)
+                {
+                    return fn(std::forward<P...>(args...));
+                }
+                else
+                {
+                    return fnA(obj, std::forward<P...>(args...));
+                }
+            }
+
+        protected:
+            enum { FP, FPA } kind;
+            union {
+                FunPtr fn;
+                FunAPtr fnA;
+            };
+            A obj;
         };
-    };
-#else
-    template<typename R, typename... P>
-    class DelegatePImpl<void, R, P...> {
-    public:
-        using target_type = R(P...);
-    protected:
-        using FunPtr = target_type*;
-        using FunVPPtr = R(*)(void*, P...);
-    public:
-        DelegatePImpl()
-        {
-            fn = nullptr;
-        }
-
-        DelegatePImpl(std::nullptr_t)
-        {
-            fn = nullptr;
-        }
-
-        DelegatePImpl(const DelegatePImpl<void, R, P...>& del)
-        {
-            fn = del.fn;
-        }
-
-        DelegatePImpl(DelegatePImpl<void, R, P...>&& del)
-        {
-            fn = std::move(del.fn);
-        }
-
-        DelegatePImpl(FunPtr fn)
-        {
-            DelegatePImpl::fn = fn;
-        }
-
-        template<typename F> DelegatePImpl(F fn)
-        {
-            DelegatePImpl::fn = std::forward<F>(fn);
-        }
-
-        DelegatePImpl& operator=(const DelegatePImpl<void, R, P...>& del)
-        {
-            if (this == &del) return *this;
-            fn = del.fn;
-            return *this;
-        }
-
-        DelegatePImpl& operator=(DelegatePImpl<void, R, P...>&& del)
-        {
-            if (this == &del) return *this;
-            fn = std::move(del.fn);
-            return *this;
-        }
-
-        DelegatePImpl& operator=(FunPtr fn)
-        {
-            DelegatePImpl::fn = fn;
-            return *this;
-        }
-
-        DelegatePImpl& IRAM_ATTR operator=(std::nullptr_t)
-        {
-            fn = nullptr;
-            return *this;
-        }
-
-        operator bool() const
-        {
-            return fn;
-        }
-
-        operator FunVPPtr() const
-        {
-            return vPtrToFunPtrExec<R, P...>;
-        }
-
-        void* arg() const
-        {
-            return reinterpret_cast<void*>(fn);
-        }
-
-        R IRAM_ATTR operator()(P... args) const
-        {
-            return fn(std::forward<P...>(args...));
-        }
-
-    protected:
-        FunPtr fn;
-    };
 #endif
 
 #if !defined(ARDUINO) || defined(ESP8266) || defined(ESP32)
-    template<typename A, typename R>
-    class DelegateImpl {
-    public:
-        using target_type = R();
-    protected:
-        using FunPtr = target_type*;
-        using FunAPtr = R(*)(A);
-        using FunctionType = std::function<target_type>;
-        using FunVPPtr = R(*)(void*);
-    public:
-        DelegateImpl()
-        {
-            kind = FP;
-            fn = nullptr;
-        }
-
-        DelegateImpl(std::nullptr_t)
-        {
-            kind = FP;
-            fn = nullptr;
-        }
-
-        ~DelegateImpl()
-        {
-            if (FUNC == kind)
-                functional.~FunctionType();
-            else if (FPA == kind)
-                obj.~A();
-        }
-
-        DelegateImpl(const DelegateImpl<A, R>& del)
-        {
-            kind = del.kind;
-            if (FUNC == del.kind)
+        template<typename R, typename... P>
+        class DelegatePImpl<void, R, P...> {
+        public:
+            using target_type = R(P...);
+        protected:
+            using FunPtr = target_type*;
+            using FunctionType = std::function<target_type>;
+            using FunVPPtr = R(*)(void*, P...);
+        public:
+            DelegatePImpl()
             {
-                new (&functional) FunctionType(del.functional);
+                kind = FP;
+                fn = nullptr;
             }
-            else if (FPA == del.kind)
+
+            DelegatePImpl(std::nullptr_t)
             {
-                fnA = del.fnA;
-                new (&obj) A(del.obj);
+                kind = FP;
+                fn = nullptr;
             }
-            else
+
+            ~DelegatePImpl()
             {
-                fn = del.fn;
+                if (FUNC == kind)
+                    functional.~FunctionType();
             }
-        }
 
-        DelegateImpl(DelegateImpl<A, R>&& del)
-        {
-            kind = del.kind;
-            if (FUNC == del.kind)
+            DelegatePImpl(const DelegatePImpl<void, R, P...>& del)
             {
-                new (&functional) FunctionType(std::move(del.functional));
+                kind = del.kind;
+                if (FUNC == del.kind)
+                {
+                    new (&functional) FunctionType(del.functional);
+                }
+                else
+                {
+                    fn = del.fn;
+                }
             }
-            else if (FPA == del.kind)
+
+            DelegatePImpl(DelegatePImpl<void, R, P...>&& del)
             {
-                fnA = del.fnA;
-                new (&obj) A(std::move(del.obj));
+                kind = del.kind;
+                if (FUNC == del.kind)
+                {
+                    new (&functional) FunctionType(std::move(del.functional));
+                }
+                else
+                {
+                    fn = del.fn;
+                }
             }
-            else
+
+            DelegatePImpl(FunPtr fn)
             {
-                fn = del.fn;
+                kind = FP;
+                DelegatePImpl::fn = fn;
             }
-        }
 
-        DelegateImpl(FunAPtr fnA, const A& obj)
-        {
-            kind = FPA;
-            DelegateImpl::fnA = fnA;
-            new (&this->obj) A(obj);
-        }
+            template<typename F> DelegatePImpl(F functional)
+            {
+                kind = FUNC;
+                new (&this->functional) FunctionType(std::forward<F>(functional));
+            }
 
-        DelegateImpl(FunAPtr fnA, A&& obj)
-        {
-            kind = FPA;
-            DelegateImpl::fnA = fnA;
-            new (&this->obj) A(std::move(obj));
-        }
+            DelegatePImpl& operator=(const DelegatePImpl<void, R, P...>& del)
+            {
+                if (this == &del) return *this;
+                if (FUNC == kind && FUNC != del.kind)
+                {
+                    functional.~FunctionType();
+                }
+                else if (FUNC != kind && FUNC == del.kind)
+                {
+                    new (&this->functional) FunctionType();
+                }
+                kind = del.kind;
+                if (FUNC == del.kind)
+                {
+                    functional = del.functional;
+                }
+                else
+                {
+                    fn = del.fn;
+                }
+                return *this;
+            }
 
-        DelegateImpl(FunPtr fn)
-        {
-            kind = FP;
-            DelegateImpl::fn = fn;
-        }
+            DelegatePImpl& operator=(DelegatePImpl<void, R, P...>&& del)
+            {
+                if (this == &del) return *this;
+                if (FUNC == kind && FUNC != del.kind)
+                {
+                    functional.~FunctionType();
+                }
+                else if (FUNC != kind && FUNC == del.kind)
+                {
+                    new (&this->functional) FunctionType();
+                }
+                kind = del.kind;
+                if (FUNC == del.kind)
+                {
+                    functional = std::move(del.functional);
+                }
+                else
+                {
+                    fn = del.fn;
+                }
+                return *this;
+            }
 
-        template<typename F> DelegateImpl(F functional)
-        {
-            kind = FUNC;
-            new (&this->functional) FunctionType(std::forward<F>(functional));
-        }
+            DelegatePImpl& operator=(FunPtr fn)
+            {
+                if (FUNC == kind)
+                {
+                    functional.~FunctionType();
+                    kind = FP;
+                }
+                DelegatePImpl::fn = fn;
+                return *this;
+            }
 
-        DelegateImpl& operator=(const DelegateImpl<A, R>& del)
-        {
-            if (this == &del) return *this;
-            if (kind != del.kind)
+            DelegatePImpl& IRAM_ATTR operator=(std::nullptr_t)
             {
                 if (FUNC == kind)
                 {
                     functional.~FunctionType();
                 }
-                else if (FPA == kind)
+                kind = FP;
+                fn = nullptr;
+                return *this;
+            }
+
+            operator bool() const
+            {
+                if (FP == kind)
                 {
-                    obj.~A();
+                    return fn;
                 }
-                if (FUNC == del.kind)
+                else
                 {
-                    new (&this->functional) FunctionType();
+                    return functional ? true : false;
                 }
-                else if (FPA == del.kind)
+            }
+
+            operator FunVPPtr() const
+            {
+                if (FP == kind)
                 {
-                    new (&obj) A;
+                    return vPtrToFunPtrExec<R, P...>;
                 }
-                kind = del.kind;
-            }
-            if (FUNC == del.kind)
-            {
-                functional = del.functional;
-            }
-            else if (FPA == del.kind)
-            {
-                fnA = del.fnA;
-                obj = del.obj;
-            }
-            else
-            {
-                fn = del.fn;
-            }
-            return *this;
-        }
-
-        DelegateImpl& operator=(DelegateImpl<A, R>&& del)
-        {
-            if (this == &del) return *this;
-            if (kind != del.kind)
-            {
-                if (FUNC == kind)
+                else
                 {
-                    functional.~FunctionType();
+                    return [](void* self, P... args) -> R
+                    {
+                        return static_cast<DelegatePImpl*>(self)->functional(std::forward<P...>(args...));
+                    };
                 }
-                else if (FPA == kind)
+            }
+
+            void* arg() const
+            {
+                if (FP == kind)
                 {
-                    obj.~A();
+                    return reinterpret_cast<void*>(fn);
                 }
-                if (FUNC == del.kind)
+                else
                 {
-                    new (&this->functional) FunctionType();
+                    return const_cast<DelegatePImpl*>(this);
                 }
-                else if (FPA == del.kind)
+            }
+
+            operator FunctionType() const
+            {
+                if (FP == kind)
                 {
-                    new (&obj) A;
+                    return fn;
                 }
-                kind = del.kind;
-            }
-            if (FUNC == del.kind)
-            {
-                functional = std::move(del.functional);
-            }
-            else if (FPA == del.kind)
-            {
-                fnA = del.fnA;
-                obj = std::move(del.obj);
-            }
-            else
-            {
-                fn = del.fn;
-            }
-            return *this;
-        }
-
-        DelegateImpl& operator=(FunPtr fn)
-        {
-            if (FUNC == kind)
-            {
-                functional.~FunctionType();
-            }
-            else if (FPA == kind)
-            {
-                obj.~A();
-            }
-            kind = FP;
-            this->fn = fn;
-            return *this;
-        }
-
-        DelegateImpl& IRAM_ATTR operator=(std::nullptr_t)
-        {
-            if (FUNC == kind)
-            {
-                functional.~FunctionType();
-            }
-            else if (FPA == kind)
-            {
-                obj.~A();
-            }
-            kind = FP;
-            fn = nullptr;
-            return *this;
-        }
-
-        operator bool() const
-        {
-            if (FP == kind)
-            {
-                return fn;
-            }
-            else if (FPA == kind)
-            {
-                return fnA;
-            }
-            else
-            {
-                return functional ? true : false;
-            }
-        }
-
-        static R IRAM_ATTR vPtrToFunAPtrExec(void* self)
-        {
-            return static_cast<DelegateImpl*>(self)->fnA(
-                static_cast<DelegateImpl*>(self)->obj);
-        };
-
-        operator FunVPPtr() const
-        {
-            if (FP == kind)
-            {
-                return reinterpret_cast<FunVPPtr>(fn);
-            }
-            else if (FPA == kind)
-            {
-                return vPtrToFunAPtrExec;
-            }
-            else
-            {
-                return [](void* self) -> R
+                else
                 {
-                    return static_cast<DelegateImpl*>(self)->functional();
-                };
+                    return functional;
+                }
             }
-        }
 
-        void* arg() const
-        {
-            if (FP == kind)
+            R IRAM_ATTR operator()(P... args) const
             {
-                return nullptr;
+                if (FP == kind)
+                {
+                    return fn(std::forward<P...>(args...));
+                }
+                else
+                {
+                    return functional(std::forward<P...>(args...));
+                }
             }
-            else
-            {
-                return const_cast<DelegateImpl*>(this);
-            }
-        }
 
-        operator FunctionType() const
-        {
-            if (FP == kind)
-            {
-                return fn;
-            }
-            else if (FPA == kind)
-            {
-                return [this]() { return fnA(obj); };
-            }
-            else
-            {
-                return functional;
-            }
-        }
-
-        R IRAM_ATTR operator()() const
-        {
-            if (FP == kind)
-            {
-                return fn();
-            }
-            else if (FPA == kind)
-            {
-                return fnA(obj);
-            }
-            else
-            {
-                return functional();
-            }
-        }
-
-    protected:
-        enum { FUNC, FP, FPA } kind;
-        union {
-            FunctionType functional;
-            FunPtr fn;
-            struct {
-                FunAPtr fnA;
-                A obj;
+        protected:
+            enum { FUNC, FP } kind;
+            union {
+                FunctionType functional;
+                FunPtr fn;
             };
         };
-    };
 #else
-    template<typename A, typename R>
-    class DelegateImpl {
-    public:
-        using target_type = R();
-    protected:
-        using FunPtr = target_type*;
-        using FunAPtr = R(*)(A);
-        using FunVPPtr = R(*)(void*);
-    public:
-        DelegateImpl()
-        {
-            kind = FP;
-            fn = nullptr;
-        }
-
-        DelegateImpl(std::nullptr_t)
-        {
-            kind = FP;
-            fn = nullptr;
-        }
-
-        DelegateImpl(const DelegateImpl<A, R>& del)
-        {
-            kind = del.kind;
-            if (FPA == del.kind)
+        template<typename R, typename... P>
+        class DelegatePImpl<void, R, P...> {
+        public:
+            using target_type = R(P...);
+        protected:
+            using FunPtr = target_type*;
+            using FunVPPtr = R(*)(void*, P...);
+        public:
+            DelegatePImpl()
             {
-                fnA = del.fnA;
-                obj = del.obj;
+                fn = nullptr;
             }
-            else
+
+            DelegatePImpl(std::nullptr_t)
+            {
+                fn = nullptr;
+            }
+
+            DelegatePImpl(const DelegatePImpl<void, R, P...>& del)
             {
                 fn = del.fn;
             }
-        }
 
-        DelegateImpl(DelegateImpl<A, R>&& del)
-        {
-            kind = del.kind;
-            if (FPA == del.kind)
+            DelegatePImpl(DelegatePImpl<void, R, P...>&& del)
             {
-                fnA = del.fnA;
-                obj = std::move(del.obj);
+                fn = std::move(del.fn);
             }
-            else
+
+            DelegatePImpl(FunPtr fn)
             {
+                DelegatePImpl::fn = fn;
+            }
+
+            template<typename F> DelegatePImpl(F fn)
+            {
+                DelegatePImpl::fn = std::forward<F>(fn);
+            }
+
+            DelegatePImpl& operator=(const DelegatePImpl<void, R, P...>& del)
+            {
+                if (this == &del) return *this;
                 fn = del.fn;
+                return *this;
             }
-        }
 
-        DelegateImpl(FunAPtr fnA, const A& obj)
-        {
-            kind = FPA;
-            DelegateImpl::fnA = fnA;
-            this->obj = obj;
-        }
-
-        DelegateImpl(FunAPtr fnA, A&& obj)
-        {
-            kind = FPA;
-            DelegateImpl::fnA = fnA;
-            this->obj = std::move(obj);
-        }
-
-        DelegateImpl(FunPtr fn)
-        {
-            kind = FP;
-            DelegateImpl::fn = fn;
-        }
-
-        template<typename F> DelegateImpl(F fn)
-        {
-            kind = FP;
-            DelegateImpl::fn = std::forward<F>(fn);
-        }
-
-        DelegateImpl& operator=(const DelegateImpl<A, R>& del)
-        {
-            if (this == &del) return *this;
-            if (kind != del.kind)
+            DelegatePImpl& operator=(DelegatePImpl<void, R, P...>&& del)
             {
-                if (FPA == kind)
-                {
-                    obj = {};
-                }
-                kind = del.kind;
+                if (this == &del) return *this;
+                fn = std::move(del.fn);
+                return *this;
             }
-            if (FPA == del.kind)
-            {
-                fnA = del.fnA;
-                obj = del.obj;
-            }
-            else
-            {
-                fn = del.fn;
-            }
-            return *this;
-        }
 
-        DelegateImpl& operator=(DelegateImpl<A, R>&& del)
-        {
-            if (this == &del) return *this;
-            if (kind != del.kind)
+            DelegatePImpl& operator=(FunPtr fn)
             {
-                if (FPA == kind)
-                {
-                    obj = {};
-                }
-                kind = del.kind;
+                DelegatePImpl::fn = fn;
+                return *this;
             }
-            if (FPA == del.kind)
-            {
-                fnA = del.fnA;
-                obj = std::move(del.obj);
-            }
-            else
-            {
-                fn = del.fn;
-            }
-            return *this;
-        }
 
-        DelegateImpl& operator=(FunPtr fn)
-        {
-            if (FPA == kind)
+            DelegatePImpl& IRAM_ATTR operator=(std::nullptr_t)
             {
-                obj = {};
+                fn = nullptr;
+                return *this;
             }
-            kind = FP;
-            this->fn = fn;
-            return *this;
-        }
 
-        DelegateImpl& IRAM_ATTR operator=(std::nullptr_t)
-        {
-            if (FPA == kind)
-            {
-                obj = {};
-            }
-            kind = FP;
-            fn = nullptr;
-            return *this;
-        }
-
-        operator bool() const
-        {
-            if (FP == kind)
+            operator bool() const
             {
                 return fn;
             }
-            else
-            {
-                return fnA;
-            }
-        }
 
-        static R IRAM_ATTR vPtrToFunAPtrExec(void* self)
-        {
-            return static_cast<DelegateImpl*>(self)->fnA(
-                static_cast<DelegateImpl*>(self)->obj);
-        };
+            operator FunVPPtr() const
+            {
+                return vPtrToFunPtrExec<R, P...>;
+            }
 
-        operator FunVPPtr() const
-        {
-            if (FP == kind)
+            void* arg() const
             {
-                return reinterpret_cast<FunVPPtr>(fn);
+                return reinterpret_cast<void*>(fn);
             }
-            else
-            {
-                return vPtrToFunAPtrExec;
-            }
-        }
 
-        void* arg() const
-        {
-            if (FP == kind)
+            R IRAM_ATTR operator()(P... args) const
             {
-                return nullptr;
+                return fn(std::forward<P...>(args...));
             }
-            else
-            {
-                return const_cast<DelegateImpl*>(this);
-            }
-        }
 
-        R IRAM_ATTR operator()() const
-        {
-            if (FP == kind)
-            {
-                return fn();
-            }
-            else
-            {
-                return fnA(obj);
-            }
-        }
-
-    protected:
-        enum { FP, FPA } kind;
-        union {
+        protected:
             FunPtr fn;
-            FunAPtr fnA;
         };
-        A obj;
-    };
 #endif
 
 #if !defined(ARDUINO) || defined(ESP8266) || defined(ESP32)
-    template<typename R>
-    class DelegateImpl<void, R> {
-    public:
-        using target_type = R();
-    protected:
-        using FunPtr = target_type*;
-        using FunctionType = std::function<target_type>;
-        using FunVPPtr = R(*)(void*);
-    public:
-        DelegateImpl()
-        {
-            kind = FP;
-            fn = nullptr;
-        }
-
-        DelegateImpl(std::nullptr_t)
-        {
-            kind = FP;
-            fn = nullptr;
-        }
-
-        ~DelegateImpl()
-        {
-            if (FUNC == kind)
-                functional.~FunctionType();
-        }
-
-        DelegateImpl(const DelegateImpl<void, R>& del)
-        {
-            kind = del.kind;
-            if (FUNC == del.kind)
+        template<typename A, typename R>
+        class DelegateImpl {
+        public:
+            using target_type = R();
+        protected:
+            using FunPtr = target_type*;
+            using FunAPtr = R(*)(A);
+            using FunctionType = std::function<target_type>;
+            using FunVPPtr = R(*)(void*);
+        public:
+            DelegateImpl()
             {
-                new (&functional) FunctionType(del.functional);
-            }
-            else
-            {
-                fn = del.fn;
-            }
-        }
-
-        DelegateImpl(DelegateImpl<void, R>&& del)
-        {
-            kind = del.kind;
-            if (FUNC == del.kind)
-            {
-                new (&functional) FunctionType(std::move(del.functional));
-            }
-            else
-            {
-                fn = del.fn;
-            }
-        }
-
-        DelegateImpl(FunPtr fn)
-        {
-            kind = FP;
-            DelegateImpl::fn = fn;
-        }
-
-        template<typename F> DelegateImpl(F functional)
-        {
-            kind = FUNC;
-            new (&this->functional) FunctionType(std::forward<F>(functional));
-        }
-
-        DelegateImpl& operator=(const DelegateImpl<void, R>& del)
-        {
-            if (this == &del) return *this;
-            if (FUNC == kind && FUNC != del.kind)
-            {
-                functional.~FunctionType();
-            }
-            else if (FUNC != kind && FUNC == del.kind)
-            {
-                new (&this->functional) FunctionType();
-            }
-            kind = del.kind;
-            if (FUNC == del.kind)
-            {
-                functional = del.functional;
-            }
-            else
-            {
-                fn = del.fn;
-            }
-            return *this;
-        }
-
-        DelegateImpl& operator=(DelegateImpl<void, R>&& del)
-        {
-            if (this == &del) return *this;
-            if (FUNC == kind && FUNC != del.kind)
-            {
-                functional.~FunctionType();
-            }
-            else if (FUNC != kind && FUNC == del.kind)
-            {
-                new (&this->functional) FunctionType();
-            }
-            kind = del.kind;
-            if (FUNC == del.kind)
-            {
-                functional = std::move(del.functional);
-            }
-            else
-            {
-                fn = del.fn;
-            }
-            return *this;
-        }
-
-        DelegateImpl& operator=(FunPtr fn)
-        {
-            if (FUNC == kind)
-            {
-                functional.~FunctionType();
                 kind = FP;
+                fn = nullptr;
             }
-            DelegateImpl::fn = fn;
-            return *this;
-        }
 
-        DelegateImpl& IRAM_ATTR operator=(std::nullptr_t)
-        {
-            if (FUNC == kind)
+            DelegateImpl(std::nullptr_t)
             {
-                functional.~FunctionType();
+                kind = FP;
+                fn = nullptr;
             }
-            kind = FP;
-            fn = nullptr;
-            return *this;
-        }
 
-        operator bool() const
-        {
-            if (FP == kind)
+            ~DelegateImpl()
+            {
+                if (FUNC == kind)
+                    functional.~FunctionType();
+                else if (FPA == kind)
+                    obj.~A();
+            }
+
+            DelegateImpl(const DelegateImpl<A, R>& del)
+            {
+                kind = del.kind;
+                if (FUNC == del.kind)
+                {
+                    new (&functional) FunctionType(del.functional);
+                }
+                else if (FPA == del.kind)
+                {
+                    fnA = del.fnA;
+                    new (&obj) A(del.obj);
+                }
+                else
+                {
+                    fn = del.fn;
+                }
+            }
+
+            DelegateImpl(DelegateImpl<A, R>&& del)
+            {
+                kind = del.kind;
+                if (FUNC == del.kind)
+                {
+                    new (&functional) FunctionType(std::move(del.functional));
+                }
+                else if (FPA == del.kind)
+                {
+                    fnA = del.fnA;
+                    new (&obj) A(std::move(del.obj));
+                }
+                else
+                {
+                    fn = del.fn;
+                }
+            }
+
+            DelegateImpl(FunAPtr fnA, const A& obj)
+            {
+                kind = FPA;
+                DelegateImpl::fnA = fnA;
+                new (&this->obj) A(obj);
+            }
+
+            DelegateImpl(FunAPtr fnA, A&& obj)
+            {
+                kind = FPA;
+                DelegateImpl::fnA = fnA;
+                new (&this->obj) A(std::move(obj));
+            }
+
+            DelegateImpl(FunPtr fn)
+            {
+                kind = FP;
+                DelegateImpl::fn = fn;
+            }
+
+            template<typename F> DelegateImpl(F functional)
+            {
+                kind = FUNC;
+                new (&this->functional) FunctionType(std::forward<F>(functional));
+            }
+
+            DelegateImpl& operator=(const DelegateImpl<A, R>& del)
+            {
+                if (this == &del) return *this;
+                if (kind != del.kind)
+                {
+                    if (FUNC == kind)
+                    {
+                        functional.~FunctionType();
+                    }
+                    else if (FPA == kind)
+                    {
+                        obj.~A();
+                    }
+                    if (FUNC == del.kind)
+                    {
+                        new (&this->functional) FunctionType();
+                    }
+                    else if (FPA == del.kind)
+                    {
+                        new (&obj) A;
+                    }
+                    kind = del.kind;
+                }
+                if (FUNC == del.kind)
+                {
+                    functional = del.functional;
+                }
+                else if (FPA == del.kind)
+                {
+                    fnA = del.fnA;
+                    obj = del.obj;
+                }
+                else
+                {
+                    fn = del.fn;
+                }
+                return *this;
+            }
+
+            DelegateImpl& operator=(DelegateImpl<A, R>&& del)
+            {
+                if (this == &del) return *this;
+                if (kind != del.kind)
+                {
+                    if (FUNC == kind)
+                    {
+                        functional.~FunctionType();
+                    }
+                    else if (FPA == kind)
+                    {
+                        obj.~A();
+                    }
+                    if (FUNC == del.kind)
+                    {
+                        new (&this->functional) FunctionType();
+                    }
+                    else if (FPA == del.kind)
+                    {
+                        new (&obj) A;
+                    }
+                    kind = del.kind;
+                }
+                if (FUNC == del.kind)
+                {
+                    functional = std::move(del.functional);
+                }
+                else if (FPA == del.kind)
+                {
+                    fnA = del.fnA;
+                    obj = std::move(del.obj);
+                }
+                else
+                {
+                    fn = del.fn;
+                }
+                return *this;
+            }
+
+            DelegateImpl& operator=(FunPtr fn)
+            {
+                if (FUNC == kind)
+                {
+                    functional.~FunctionType();
+                }
+                else if (FPA == kind)
+                {
+                    obj.~A();
+                }
+                kind = FP;
+                this->fn = fn;
+                return *this;
+            }
+
+            DelegateImpl& IRAM_ATTR operator=(std::nullptr_t)
+            {
+                if (FUNC == kind)
+                {
+                    functional.~FunctionType();
+                }
+                else if (FPA == kind)
+                {
+                    obj.~A();
+                }
+                kind = FP;
+                fn = nullptr;
+                return *this;
+            }
+
+            operator bool() const
+            {
+                if (FP == kind)
+                {
+                    return fn;
+                }
+                else if (FPA == kind)
+                {
+                    return fnA;
+                }
+                else
+                {
+                    return functional ? true : false;
+                }
+            }
+
+            static R IRAM_ATTR vPtrToFunAPtrExec(void* self)
+            {
+                return static_cast<DelegateImpl*>(self)->fnA(
+                    static_cast<DelegateImpl*>(self)->obj);
+            };
+
+            operator FunVPPtr() const
+            {
+                if (FP == kind)
+                {
+                    return reinterpret_cast<FunVPPtr>(fn);
+                }
+                else if (FPA == kind)
+                {
+                    return vPtrToFunAPtrExec;
+                }
+                else
+                {
+                    return [](void* self) -> R
+                    {
+                        return static_cast<DelegateImpl*>(self)->functional();
+                    };
+                }
+            }
+
+            void* arg() const
+            {
+                if (FP == kind)
+                {
+                    return nullptr;
+                }
+                else
+                {
+                    return const_cast<DelegateImpl*>(this);
+                }
+            }
+
+            operator FunctionType() const
+            {
+                if (FP == kind)
+                {
+                    return fn;
+                }
+                else if (FPA == kind)
+                {
+                    return [this]() { return fnA(obj); };
+                }
+                else
+                {
+                    return functional;
+                }
+            }
+
+            R IRAM_ATTR operator()() const
+            {
+                if (FP == kind)
+                {
+                    return fn();
+                }
+                else if (FPA == kind)
+                {
+                    return fnA(obj);
+                }
+                else
+                {
+                    return functional();
+                }
+            }
+
+        protected:
+            enum { FUNC, FP, FPA } kind;
+            union {
+                FunctionType functional;
+                FunPtr fn;
+                struct {
+                    FunAPtr fnA;
+                    A obj;
+                };
+            };
+        };
+#else
+        template<typename A, typename R>
+        class DelegateImpl {
+        public:
+            using target_type = R();
+        protected:
+            using FunPtr = target_type*;
+            using FunAPtr = R(*)(A);
+            using FunVPPtr = R(*)(void*);
+        public:
+            DelegateImpl()
+            {
+                kind = FP;
+                fn = nullptr;
+            }
+
+            DelegateImpl(std::nullptr_t)
+            {
+                kind = FP;
+                fn = nullptr;
+            }
+
+            DelegateImpl(const DelegateImpl<A, R>& del)
+            {
+                kind = del.kind;
+                if (FPA == del.kind)
+                {
+                    fnA = del.fnA;
+                    obj = del.obj;
+                }
+                else
+                {
+                    fn = del.fn;
+                }
+            }
+
+            DelegateImpl(DelegateImpl<A, R>&& del)
+            {
+                kind = del.kind;
+                if (FPA == del.kind)
+                {
+                    fnA = del.fnA;
+                    obj = std::move(del.obj);
+                }
+                else
+                {
+                    fn = del.fn;
+                }
+            }
+
+            DelegateImpl(FunAPtr fnA, const A& obj)
+            {
+                kind = FPA;
+                DelegateImpl::fnA = fnA;
+                this->obj = obj;
+            }
+
+            DelegateImpl(FunAPtr fnA, A&& obj)
+            {
+                kind = FPA;
+                DelegateImpl::fnA = fnA;
+                this->obj = std::move(obj);
+            }
+
+            DelegateImpl(FunPtr fn)
+            {
+                kind = FP;
+                DelegateImpl::fn = fn;
+            }
+
+            template<typename F> DelegateImpl(F fn)
+            {
+                kind = FP;
+                DelegateImpl::fn = std::forward<F>(fn);
+            }
+
+            DelegateImpl& operator=(const DelegateImpl<A, R>& del)
+            {
+                if (this == &del) return *this;
+                if (kind != del.kind)
+                {
+                    if (FPA == kind)
+                    {
+                        obj = {};
+                    }
+                    kind = del.kind;
+                }
+                if (FPA == del.kind)
+                {
+                    fnA = del.fnA;
+                    obj = del.obj;
+                }
+                else
+                {
+                    fn = del.fn;
+                }
+                return *this;
+            }
+
+            DelegateImpl& operator=(DelegateImpl<A, R>&& del)
+            {
+                if (this == &del) return *this;
+                if (kind != del.kind)
+                {
+                    if (FPA == kind)
+                    {
+                        obj = {};
+                    }
+                    kind = del.kind;
+                }
+                if (FPA == del.kind)
+                {
+                    fnA = del.fnA;
+                    obj = std::move(del.obj);
+                }
+                else
+                {
+                    fn = del.fn;
+                }
+                return *this;
+            }
+
+            DelegateImpl& operator=(FunPtr fn)
+            {
+                if (FPA == kind)
+                {
+                    obj = {};
+                }
+                kind = FP;
+                this->fn = fn;
+                return *this;
+            }
+
+            DelegateImpl& IRAM_ATTR operator=(std::nullptr_t)
+            {
+                if (FPA == kind)
+                {
+                    obj = {};
+                }
+                kind = FP;
+                fn = nullptr;
+                return *this;
+            }
+
+            operator bool() const
+            {
+                if (FP == kind)
+                {
+                    return fn;
+                }
+                else
+                {
+                    return fnA;
+                }
+            }
+
+            static R IRAM_ATTR vPtrToFunAPtrExec(void* self)
+            {
+                return static_cast<DelegateImpl*>(self)->fnA(
+                    static_cast<DelegateImpl*>(self)->obj);
+            };
+
+            operator FunVPPtr() const
+            {
+                if (FP == kind)
+                {
+                    return reinterpret_cast<FunVPPtr>(fn);
+                }
+                else
+                {
+                    return vPtrToFunAPtrExec;
+                }
+            }
+
+            void* arg() const
+            {
+                if (FP == kind)
+                {
+                    return nullptr;
+                }
+                else
+                {
+                    return const_cast<DelegateImpl*>(this);
+                }
+            }
+
+            R IRAM_ATTR operator()() const
+            {
+                if (FP == kind)
+                {
+                    return fn();
+                }
+                else
+                {
+                    return fnA(obj);
+                }
+            }
+
+        protected:
+            enum { FP, FPA } kind;
+            union {
+                FunPtr fn;
+                FunAPtr fnA;
+            };
+            A obj;
+        };
+#endif
+
+#if !defined(ARDUINO) || defined(ESP8266) || defined(ESP32)
+        template<typename R>
+        class DelegateImpl<void, R> {
+        public:
+            using target_type = R();
+        protected:
+            using FunPtr = target_type*;
+            using FunctionType = std::function<target_type>;
+            using FunVPPtr = R(*)(void*);
+        public:
+            DelegateImpl()
+            {
+                kind = FP;
+                fn = nullptr;
+            }
+
+            DelegateImpl(std::nullptr_t)
+            {
+                kind = FP;
+                fn = nullptr;
+            }
+
+            ~DelegateImpl()
+            {
+                if (FUNC == kind)
+                    functional.~FunctionType();
+            }
+
+            DelegateImpl(const DelegateImpl<void, R>& del)
+            {
+                kind = del.kind;
+                if (FUNC == del.kind)
+                {
+                    new (&functional) FunctionType(del.functional);
+                }
+                else
+                {
+                    fn = del.fn;
+                }
+            }
+
+            DelegateImpl(DelegateImpl<void, R>&& del)
+            {
+                kind = del.kind;
+                if (FUNC == del.kind)
+                {
+                    new (&functional) FunctionType(std::move(del.functional));
+                }
+                else
+                {
+                    fn = del.fn;
+                }
+            }
+
+            DelegateImpl(FunPtr fn)
+            {
+                kind = FP;
+                DelegateImpl::fn = fn;
+            }
+
+            template<typename F> DelegateImpl(F functional)
+            {
+                kind = FUNC;
+                new (&this->functional) FunctionType(std::forward<F>(functional));
+            }
+
+            DelegateImpl& operator=(const DelegateImpl<void, R>& del)
+            {
+                if (this == &del) return *this;
+                if (FUNC == kind && FUNC != del.kind)
+                {
+                    functional.~FunctionType();
+                }
+                else if (FUNC != kind && FUNC == del.kind)
+                {
+                    new (&this->functional) FunctionType();
+                }
+                kind = del.kind;
+                if (FUNC == del.kind)
+                {
+                    functional = del.functional;
+                }
+                else
+                {
+                    fn = del.fn;
+                }
+                return *this;
+            }
+
+            DelegateImpl& operator=(DelegateImpl<void, R>&& del)
+            {
+                if (this == &del) return *this;
+                if (FUNC == kind && FUNC != del.kind)
+                {
+                    functional.~FunctionType();
+                }
+                else if (FUNC != kind && FUNC == del.kind)
+                {
+                    new (&this->functional) FunctionType();
+                }
+                kind = del.kind;
+                if (FUNC == del.kind)
+                {
+                    functional = std::move(del.functional);
+                }
+                else
+                {
+                    fn = del.fn;
+                }
+                return *this;
+            }
+
+            DelegateImpl& operator=(FunPtr fn)
+            {
+                if (FUNC == kind)
+                {
+                    functional.~FunctionType();
+                    kind = FP;
+                }
+                DelegateImpl::fn = fn;
+                return *this;
+            }
+
+            DelegateImpl& IRAM_ATTR operator=(std::nullptr_t)
+            {
+                if (FUNC == kind)
+                {
+                    functional.~FunctionType();
+                }
+                kind = FP;
+                fn = nullptr;
+                return *this;
+            }
+
+            operator bool() const
+            {
+                if (FP == kind)
+                {
+                    return fn;
+                }
+                else
+                {
+                    return functional ? true : false;
+                }
+            }
+
+            operator FunVPPtr() const
+            {
+                if (FP == kind)
+                {
+                    return reinterpret_cast<FunVPPtr>(fn);
+                }
+                else
+                {
+                    return [](void* self) -> R
+                    {
+                        return static_cast<DelegateImpl*>(self)->functional();
+                    };
+                }
+            }
+
+            void* arg() const
+            {
+                if (FP == kind)
+                {
+                    return nullptr;
+                }
+                else
+                {
+                    return const_cast<DelegateImpl*>(this);
+                }
+            }
+
+            operator FunctionType() const
+            {
+                if (FP == kind)
+                {
+                    return fn;
+                }
+                else
+                {
+                    return functional;
+                }
+            }
+
+            R IRAM_ATTR operator()() const
+            {
+                if (FP == kind)
+                {
+                    return fn();
+                }
+                else
+                {
+                    return functional();
+                }
+            }
+
+        protected:
+            enum { FUNC, FP } kind;
+            union {
+                FunctionType functional;
+                FunPtr fn;
+            };
+        };
+#else
+        template<typename R>
+        class DelegateImpl<void, R> {
+        public:
+            using target_type = R();
+        protected:
+            using FunPtr = target_type*;
+            using FunVPPtr = R(*)(void*);
+        public:
+            DelegateImpl()
+            {
+                fn = nullptr;
+            }
+
+            DelegateImpl(std::nullptr_t)
+            {
+                fn = nullptr;
+            }
+
+            DelegateImpl(const DelegateImpl<void, R>& del)
+            {
+                fn = del.fn;
+            }
+
+            DelegateImpl(DelegateImpl<void, R>&& del)
+            {
+                fn = std::move(del.fn);
+            }
+
+            DelegateImpl(FunPtr fn)
+            {
+                DelegateImpl::fn = fn;
+            }
+
+            template<typename F> DelegateImpl(F fn)
+            {
+                DelegateImpl::fn = std::forward<F>(fn);
+            }
+
+            DelegateImpl& operator=(const DelegateImpl<void, R>& del)
+            {
+                if (this == &del) return *this;
+                fn = del.fn;
+                return *this;
+            }
+
+            DelegateImpl& operator=(DelegateImpl<void, R>&& del)
+            {
+                if (this == &del) return *this;
+                fn = std::move(del.fn);
+                return *this;
+            }
+
+            DelegateImpl& operator=(FunPtr fn)
+            {
+                DelegateImpl::fn = fn;
+                return *this;
+            }
+
+            DelegateImpl& IRAM_ATTR operator=(std::nullptr_t)
+            {
+                fn = nullptr;
+                return *this;
+            }
+
+            operator bool() const
             {
                 return fn;
             }
-            else
-            {
-                return functional ? true : false;
-            }
-        }
 
-        operator FunVPPtr() const
-        {
-            if (FP == kind)
+            operator FunVPPtr() const
             {
                 return reinterpret_cast<FunVPPtr>(fn);
             }
-            else
-            {
-                return [](void* self) -> R
-                {
-                    return static_cast<DelegateImpl*>(self)->functional();
-                };
-            }
-        }
 
-        void* arg() const
-        {
-            if (FP == kind)
+            void* arg() const
             {
                 return nullptr;
             }
-            else
-            {
-                return const_cast<DelegateImpl*>(this);
-            }
-        }
 
-        operator FunctionType() const
-        {
-            if (FP == kind)
-            {
-                return fn;
-            }
-            else
-            {
-                return functional;
-            }
-        }
-
-        R IRAM_ATTR operator()() const
-        {
-            if (FP == kind)
+            R IRAM_ATTR operator()() const
             {
                 return fn();
             }
-            else
-            {
-                return functional();
-            }
-        }
 
-    protected:
-        enum { FUNC, FP } kind;
-        union {
-            FunctionType functional;
+        protected:
             FunPtr fn;
         };
-    };
-#else
-    template<typename R>
-    class DelegateImpl<void, R> {
-    public:
-        using target_type = R();
-    protected:
-        using FunPtr = target_type*;
-        using FunVPPtr = R(*)(void*);
-    public:
-        DelegateImpl()
-        {
-            fn = nullptr;
-        }
-
-        DelegateImpl(std::nullptr_t)
-        {
-            fn = nullptr;
-        }
-
-        DelegateImpl(const DelegateImpl<void, R>& del)
-        {
-            fn = del.fn;
-        }
-
-        DelegateImpl(DelegateImpl<void, R>&& del)
-        {
-            fn = std::move(del.fn);
-        }
-
-        DelegateImpl(FunPtr fn)
-        {
-            DelegateImpl::fn = fn;
-        }
-
-        template<typename F> DelegateImpl(F fn)
-        {
-            DelegateImpl::fn = std::forward<F>(fn);
-        }
-
-        DelegateImpl& operator=(const DelegateImpl<void, R>& del)
-        {
-            if (this == &del) return *this;
-            fn = del.fn;
-            return *this;
-        }
-
-        DelegateImpl& operator=(DelegateImpl<void, R>&& del)
-        {
-            if (this == &del) return *this;
-            fn = std::move(del.fn);
-            return *this;
-        }
-
-        DelegateImpl& operator=(FunPtr fn)
-        {
-            DelegateImpl::fn = fn;
-            return *this;
-        }
-
-        DelegateImpl& IRAM_ATTR operator=(std::nullptr_t)
-        {
-            fn = nullptr;
-            return *this;
-        }
-
-        operator bool() const
-        {
-            return fn;
-        }
-
-        operator FunVPPtr() const
-        {
-            return reinterpret_cast<FunVPPtr>(fn);
-        }
-
-        void* arg() const
-        {
-            return nullptr;
-        }
-
-        R IRAM_ATTR operator()() const
-        {
-            return fn();
-        }
-
-    protected:
-        FunPtr fn;
-    };
 #endif
 
-    template<typename R = void, typename A = void, typename... P>
-    class Delegate : private detail::DelegatePImpl<A, R, P...>
-    {
-    private:
-        using typename detail::DelegatePImpl<A, R, P...>::FunVPPtr;
+        template<typename R = void, typename A = void, typename... P>
+        class Delegate : private detail::DelegatePImpl<A, R, P...>
+        {
+        private:
+            using typename detail::DelegatePImpl<A, R, P...>::FunVPPtr;
 #if !defined(ARDUINO) || defined(ESP8266) || defined(ESP32)
-        using typename detail::DelegatePImpl<A, R, P...>::FunctionType;
+            using typename detail::DelegatePImpl<A, R, P...>::FunctionType;
 #endif
-    public:
-        using detail::DelegatePImpl<A, R, P...>::target_type;
-        using detail::DelegatePImpl<A, R, P...>::DelegatePImpl;
-        using detail::DelegatePImpl<A, R, P...>::operator=;
-        using detail::DelegatePImpl<A, R, P...>::operator bool;
-        using detail::DelegatePImpl<A, R, P...>::operator FunVPPtr;
-        using detail::DelegatePImpl<A, R, P...>::arg;
+        public:
+            using detail::DelegatePImpl<A, R, P...>::target_type;
+            using detail::DelegatePImpl<A, R, P...>::DelegatePImpl;
+            using detail::DelegatePImpl<A, R, P...>::operator=;
+            using detail::DelegatePImpl<A, R, P...>::operator bool;
+            using detail::DelegatePImpl<A, R, P...>::operator FunVPPtr;
+            using detail::DelegatePImpl<A, R, P...>::arg;
 #if !defined(ARDUINO) || defined(ESP8266) || defined(ESP32)
-        using detail::DelegatePImpl<A, R, P...>::operator FunctionType;
+            using detail::DelegatePImpl<A, R, P...>::operator FunctionType;
 #endif
-        using detail::DelegatePImpl<A, R, P...>::operator();
-    };
+            using detail::DelegatePImpl<A, R, P...>::operator();
+        };
 
-    template<typename R, typename A, typename... P>
-    class Delegate<R, A*, P...> : private detail::DelegatePImpl<A*, R, P...>
-    {
-    private:
-        using typename detail::DelegatePImpl<A*, R, P...>::FunVPPtr;
-#if !defined(ARDUINO) || defined(ESP8266) || defined(ESP32)
-        using typename detail::DelegatePImpl<A*, R, P...>::FunctionType;
-#endif
-    public:
-        using detail::DelegatePImpl<A*, R, P...>::target_type;
-        using detail::DelegatePImpl<A*, R, P...>::DelegatePImpl;
-        using detail::DelegatePImpl<A*, R, P...>::operator=;
-        using detail::DelegatePImpl<A*, R, P...>::operator bool;
-#if !defined(ARDUINO) || defined(ESP8266) || defined(ESP32)
-        using detail::DelegatePImpl<A*, R, P...>::operator FunctionType;
-#endif
-        using detail::DelegatePImpl<A*, R, P...>::operator();
-        operator FunVPPtr() const
+        template<typename R, typename A, typename... P>
+        class Delegate<R, A*, P...> : private detail::DelegatePImpl<A*, R, P...>
         {
-            if (detail::DelegatePImpl<A*, R, P...>::FPA == detail::DelegatePImpl<A*, R, P...>::kind)
+        private:
+            using typename detail::DelegatePImpl<A*, R, P...>::FunVPPtr;
+#if !defined(ARDUINO) || defined(ESP8266) || defined(ESP32)
+            using typename detail::DelegatePImpl<A*, R, P...>::FunctionType;
+#endif
+        public:
+            using detail::DelegatePImpl<A*, R, P...>::target_type;
+            using detail::DelegatePImpl<A*, R, P...>::DelegatePImpl;
+            using detail::DelegatePImpl<A*, R, P...>::operator=;
+            using detail::DelegatePImpl<A*, R, P...>::operator bool;
+#if !defined(ARDUINO) || defined(ESP8266) || defined(ESP32)
+            using detail::DelegatePImpl<A*, R, P...>::operator FunctionType;
+#endif
+            using detail::DelegatePImpl<A*, R, P...>::operator();
+            operator FunVPPtr() const
             {
-                return reinterpret_cast<R(*)(void*, P...)>(detail::DelegatePImpl<A*, R, P...>::fnA);
+                if (detail::DelegatePImpl<A*, R, P...>::FPA == detail::DelegatePImpl<A*, R, P...>::kind)
+                {
+                    return reinterpret_cast<R(*)(void*, P...)>(detail::DelegatePImpl<A*, R, P...>::fnA);
+                }
+                else
+                {
+                    return detail::DelegatePImpl<A*, R, P...>::operator FunVPPtr();
+                }
             }
-            else
+            void* arg() const
             {
-                return detail::DelegatePImpl<A*, R, P...>::operator FunVPPtr();
+                if (detail::DelegatePImpl<A*, R, P...>::FPA == detail::DelegatePImpl<A*, R, P...>::kind)
+                {
+                    return detail::DelegatePImpl<A*, R, P...>::obj;
+                }
+                else
+                {
+                    return detail::DelegatePImpl<A*, R, P...>::arg();
+                }
             }
-        }
-        void* arg() const
-        {
-            if (detail::DelegatePImpl<A*, R, P...>::FPA == detail::DelegatePImpl<A*, R, P...>::kind)
-            {
-                return detail::DelegatePImpl<A*, R, P...>::obj;
-            }
-            else
-            {
-                return detail::DelegatePImpl<A*, R, P...>::arg();
-            }
-        }
-    };
+        };
 
-    template<typename R, typename A>
-    class Delegate<R, A> : private detail::DelegateImpl<A, R>
-    {
-    private:
-        using typename detail::DelegateImpl<A, R>::FunVPPtr;
-#if !defined(ARDUINO) || defined(ESP8266) || defined(ESP32)
-        using typename detail::DelegateImpl<A, R>::FunctionType;
-#endif
-    public:
-        using detail::DelegateImpl<A, R>::target_type;
-        using detail::DelegateImpl<A, R>::DelegateImpl;
-        using detail::DelegateImpl<A, R>::operator=;
-        using detail::DelegateImpl<A, R>::operator bool;
-        using detail::DelegateImpl<A, R>::operator FunVPPtr;
-        using detail::DelegateImpl<A, R>::arg;
-#if !defined(ARDUINO) || defined(ESP8266) || defined(ESP32)
-        using detail::DelegateImpl<A, R>::operator FunctionType;
-#endif
-        using detail::DelegateImpl<A, R>::operator();
-    };
-
-    template<typename R, typename A>
-    class Delegate<R, A*> : private detail::DelegateImpl<A*, R>
-    {
-    private:
-        using typename detail::DelegateImpl<A*, R>::FunVPPtr;
-#if !defined(ARDUINO) || defined(ESP8266) || defined(ESP32)
-        using typename detail::DelegateImpl<A*, R>::FunctionType;
-#endif
-    public:
-        using detail::DelegateImpl<A*, R>::target_type;
-        using detail::DelegateImpl<A*, R>::DelegateImpl;
-        using detail::DelegateImpl<A*, R>::operator=;
-        using detail::DelegateImpl<A*, R>::operator bool;
-#if !defined(ARDUINO) || defined(ESP8266) || defined(ESP32)
-        using detail::DelegateImpl<A*, R>::operator FunctionType;
-#endif
-        using detail::DelegateImpl<A*, R>::operator();
-        operator FunVPPtr() const
+        template<typename R, typename A>
+        class Delegate<R, A> : private detail::DelegateImpl<A, R>
         {
-            if (detail::DelegateImpl<A*, R>::FPA == detail::DelegateImpl<A*, R>::kind)
-            {
-                return reinterpret_cast<R(*)(void*)>(detail::DelegateImpl<A*, R>::fnA);
-            }
-            else
-            {
-                return detail::DelegateImpl<A*, R>::operator FunVPPtr();
-            }
-        }
-        void* arg() const
-        {
-            if (detail::DelegateImpl<A*, R>::FPA == detail::DelegateImpl<A*, R>::kind)
-            {
-                return detail::DelegateImpl<A*, R>::obj;
-            }
-            else
-            {
-                return detail::DelegateImpl<A*, R>::arg();
-            }
-        }
-    };
+        private:
+            using typename detail::DelegateImpl<A, R>::FunVPPtr;
+#if !defined(ARDUINO) || defined(ESP8266) || defined(ESP32)
+            using typename detail::DelegateImpl<A, R>::FunctionType;
+#endif
+        public:
+            using detail::DelegateImpl<A, R>::target_type;
+            using detail::DelegateImpl<A, R>::DelegateImpl;
+            using detail::DelegateImpl<A, R>::operator=;
+            using detail::DelegateImpl<A, R>::operator bool;
+            using detail::DelegateImpl<A, R>::operator FunVPPtr;
+            using detail::DelegateImpl<A, R>::arg;
+#if !defined(ARDUINO) || defined(ESP8266) || defined(ESP32)
+            using detail::DelegateImpl<A, R>::operator FunctionType;
+#endif
+            using detail::DelegateImpl<A, R>::operator();
+        };
 
+        template<typename R, typename A>
+        class Delegate<R, A*> : private detail::DelegateImpl<A*, R>
+        {
+        private:
+            using typename detail::DelegateImpl<A*, R>::FunVPPtr;
+#if !defined(ARDUINO) || defined(ESP8266) || defined(ESP32)
+            using typename detail::DelegateImpl<A*, R>::FunctionType;
+#endif
+        public:
+            using detail::DelegateImpl<A*, R>::target_type;
+            using detail::DelegateImpl<A*, R>::DelegateImpl;
+            using detail::DelegateImpl<A*, R>::operator=;
+            using detail::DelegateImpl<A*, R>::operator bool;
+#if !defined(ARDUINO) || defined(ESP8266) || defined(ESP32)
+            using detail::DelegateImpl<A*, R>::operator FunctionType;
+#endif
+            using detail::DelegateImpl<A*, R>::operator();
+            operator FunVPPtr() const
+            {
+                if (detail::DelegateImpl<A*, R>::FPA == detail::DelegateImpl<A*, R>::kind)
+                {
+                    return reinterpret_cast<R(*)(void*)>(detail::DelegateImpl<A*, R>::fnA);
+                }
+                else
+                {
+                    return detail::DelegateImpl<A*, R>::operator FunVPPtr();
+                }
+            }
+            void* arg() const
+            {
+                if (detail::DelegateImpl<A*, R>::FPA == detail::DelegateImpl<A*, R>::kind)
+                {
+                    return detail::DelegateImpl<A*, R>::obj;
+                }
+                else
+                {
+                    return detail::DelegateImpl<A*, R>::arg();
+                }
+            }
+        };
+
+    }
 }
 
 template<typename R, typename A = void, typename... P> class Delegate;
-template<typename R, typename A, typename... P> class Delegate<R(P...), A> : public detail::Delegate<R, A, P...>
+template<typename R, typename A, typename... P> class Delegate<R(P...), A> : public delegate::detail::Delegate<R, A, P...>
 {
 public:
-    using detail::Delegate<R, A, P...>::Delegate;
+    using delegate::detail::Delegate<R, A, P...>::Delegate;
 };
-template<typename R, typename... P> class Delegate<R(P...)> : public detail::Delegate<R, void, P...>
+template<typename R, typename... P> class Delegate<R(P...)> : public delegate::detail::Delegate<R, void, P...>
 {
 public:
-    using detail::Delegate<R, void, P...>::Delegate;
+    using delegate::detail::Delegate<R, void, P...>::Delegate;
 };
 
 #endif // __Delegate_h
