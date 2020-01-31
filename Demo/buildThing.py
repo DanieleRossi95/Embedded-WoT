@@ -836,7 +836,7 @@ def parseFunctionFromFile(ctx, fileName, funName, funCategory, startBody, templa
                     else:
                         body = body + '\n' + line  
                 else:
-                    if(any(fType in line.lower() for fType in CTypes)):
+                    if(any(fType in line.lower() for fType in CTypes) and ('(' in line)):
                         parsingDone = True
                     elif(tmp != ''):
                         startBlankLines = False
@@ -951,6 +951,9 @@ def start(ctx, **kwargs):
     click.echo('THING')
     # THING TITLE
     addTitle(ctx, 'Thing')  
+    #THING SECURITY
+    click.echo('\nWARNING: No Security Scheme has been implemented yet')
+    click.echo('It is necessary to add it from skretch')
     # THING ID
     inp = click.prompt('\nThing ID URI', type=SWN_STRING)
     ctx.obj['td']['id'] = inp
@@ -965,10 +968,15 @@ def start(ctx, **kwargs):
         # elemento alla volta, si possono utilizzare i metodi setdeafult per creare l'array e 
         # append per aggiungere gli elementi
         ctx.obj['td'].setdefault('@context', [])
+        ctx.obj['td']['@context'].append(uri)
         for i in range(1, contextElements+1):
             inp = click.prompt('Insert element %d' % i, type=OBJ_STRING)
             ctx.obj['td']['@context'].append(inp)
-        ctx.obj['td']['@context'].append(uri)
+    # THING SECURITY
+    ctx.obj['td']['security'] = 'nosec_sc'
+    ctx.obj['td'].setdefault('securityDefinitions', {})      
+    ctx.obj['td']['securityDefinitions'].setdefault('nosec_sc', {})
+    ctx.obj['td']['securityDefinitions']['nosec_sc']['scheme'] = 'nosec'
     # THING FORM
     opType = ['readallproperties', 'writeallproperties', 'readmultipleproperties', 'writemultipleproperties']
     addForm(ctx, opType, 'Thing')
@@ -1123,7 +1131,6 @@ def start(ctx, **kwargs):
                 # ACTION OUTPUT
                 if(click.confirm('\nAction %d has Output?' % a, default=True)):    
                     ctx.obj['td']['actions'][actionName].setdefault('output', {})
-                    outName = click.prompt('\nAction Output Name', type=SWN_STRING)
                     outType = click.prompt('Action Output Type', type=click.Choice(['boolean', 'integer', 'number', 'string', 'object', 'array', 'null']), show_default=True) 
                     ctx.obj['td']['actions'][actionName]['output']['type'] = outType
                     actionFunctions[a-1]['output']['type'] = outType

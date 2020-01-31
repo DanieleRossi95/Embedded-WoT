@@ -529,14 +529,13 @@ DynamicJsonDocument p_doc(
     {%- for property in template['properties'] -%}
     {%- if property['type'] == 'object' -%}
     {%- if 'properties' in property -%}
-    {%- do capacity.update({'properties': capacity['properties'] + property['properties'] | string | length * 200}) -%}
+    {%- do capacity.update({'properties': capacity['properties'] + property['properties'] | length * 200}) -%}
     {%- else -%}
     {%- do capacity.update({'properties': capacity['properties'] + 500}) -%}
     {%- endif -%}
     {%- endif -%}
     {%- endfor -%}
-    {{ capacity['properties'] }}
-);
+    {{ capacity['properties'] }});
 {% endif %}
 {% if template['numevents'] > 0 %}
 {# e_doc contiene n array, dove n è il numero di client connessi tramite websocket e
@@ -703,6 +702,10 @@ String events_endpoint[{{ template['numevents'] }}] = {
 {% set request = 'req' + (i + 3 + template['numproperties']) | string %}
 {{ defineVariable('String', request, ['"/"', '+', 'thingName', '+', '"/actions/"', '+', 'action' + i | string + '_name']) }}
 {% do req.append((request, 'HTTP_POST')) %}
+{% endfor %}
+{% for i in range(1, template['numactions']+1) %}
+{% set request = 'req' + (i + 3 + template['numproperties']) | string %}
+{% do req.append((request, 'HTTP_GET')) %}
 {% endfor %}
 
 ESP8266WebServer server(portServer);
@@ -954,7 +957,7 @@ void handleReq{{ i+3 }}() {
 {# HandleReq for Actions #}
 {% for action in template['actions'] %}
 {%- set a = loop.index -%}
-void handleReq{{ loop.index+3+template['numproperties'] }}() {
+void handleReq{{ a+3+template['numproperties'] }}() {
     DynamicJsonDocument resp_doc(
         {%- if 'input' in action -%}
         {{ action['input'] | length * 200 }}
@@ -963,7 +966,7 @@ void handleReq{{ loop.index+3+template['numproperties'] }}() {
         {%- endif -%});
     {{ defineVariable('String', 'resp', 'iv') }}
 
-    Serial.printf("\nPOST invokeaction %s\n", action{{ loop.index }}_name);
+    Serial.printf("\nPOST invokeaction %s\n", action{{ a }}_name);
     String body = server.arg("plain");
     Serial.printf("Body received: %s\n", body.c_str());
     
@@ -1159,6 +1162,14 @@ void handleReq{{ loop.index+3+template['numproperties'] }}() {
         {% endif %}
         {% endif %}
     }
+}
+{% endfor %}
+
+{% for action in template['actions'] %}
+{%- set a = loop.index -%}
+void handleReq{{ a+3+template['numproperties']+template['numactions'] }}() {
+    {{ defineVariable('char*', 'resp', 'Method Not Allowed') }}
+    server.send(405, "text/plain", resp);
 }
 {% endfor %}
 

@@ -715,6 +715,13 @@
             "type": "string",
             "format": "uri"
         },
+        "security": {
+            "$ref": "#/definitions/type_declaration"
+        },
+        "securityDefinitions": {
+            "type": "object",
+            "additionalProperties": true
+        },
         "description": 
         {
             "$ref": "#/definitions/description"
@@ -782,7 +789,9 @@
     "required":
     [
         "title",
-        "@context"
+        "@context",
+        "security",
+        "securityDefinitions"
     ],
     "additionalProperties": true
 }
