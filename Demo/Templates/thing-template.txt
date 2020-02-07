@@ -58,7 +58,7 @@
 {%- for p in property['properties'] -%}
 {%- if (p['type'] == 'string' or p['type'] == 'null') and (not(global['isPropertyString'])) -%}
 {%- do global.update({'isPropertyString':True}) -%}
-{%- elif p['type'] == 'booelan' and not(global['isPropertyBoolean']) -%}
+{%- elif p['type'] == 'boolean' and not(global['isPropertyBoolean']) -%}
 {%- do global.update({'isPropertyBoolean':True}) -%}
 {% elif p['type'] == 'integer' and not(global['isPropertyInteger']) -%}
 {%- do global.update({'isPropertyInteger':True}) -%}
@@ -414,10 +414,10 @@ void
 ) {
     {% if source == 'cli' %}
 {{ '\t' + body | replace('{', '\n\t{\n\t') | replace('}', '}\n\t') | replace(';', ';\n\t') }}
+}
     {% else %}
 {{ body }}
     {% endif %}
-}    
 {%- endmacro %}
 {% macro castType(type) -%}
 {%- if type == 'integer' -%}
@@ -442,13 +442,13 @@ JsonObject
 {% endif %}
 {% if 'maxItems' in interaction %}
 {{ defineVariable('int', interactionName + '_minItems', interaction['maxItems']) }}
-{% endif %}
+{%- endif %}
 {{ handleInputType(interaction['items'], interactionName, True) }}
 {% elif interaction['type'] == 'object' %}
 {{ defineVariable('JsonObject', interactionName + '_value', 'iv') }}
 {% if 'properties' in interaction %}
 {{ defineVariable('String', interactionName + '_schema', interaction['properties'] | replace("'", '\\"') | replace(': ', ':') | replace(', ', ',')) }}
-{% endif %}
+{%- endif %}
 {% if 'required' in interaction %}
 String {{ interactionName }}_opRequired[{{ interaction['required'] | length }}] = {
     {%- for p in interaction['required'] -%}
@@ -506,6 +506,12 @@ String {{ interactionName }}_opRequired[{{ interaction['required'] | length }}] 
 {% endfor %}
 {% endif %}
 
+{% for const in template['constants'] %}
+#define {{ const['name'] }} {{ const['value'] }}
+{% if loop.last %}
+
+{% endif %}
+{% endfor %}
 {{ defineVariable('const char*', 'ssid', ssid) }}
 {{ defineVariable('const char*', 'password', password) }}
 {{ defineVariable('String', 'protocolServer', protocolServer) }}
@@ -537,10 +543,14 @@ DynamicJsonDocument p_doc(
     {%- endfor -%}
     {{ capacity['properties'] }});
 {% endif %}
+{% if template['numproperties'] > 0 or template['numactions'] > 0 %}
+DynamicJsonDocument ipia_doc(2000);
+JsonArray ipia_arr;
+{% endif %}
 {% if template['numevents'] > 0 %}
 {# e_doc contiene n array, dove n è il numero di client connessi tramite websocket e
 gli elementi degli array corrispondono agli eventi ai quali i client si sono connessi e/o sottoscritti #}
-DynamicJsonDocument e_doc({{ template['numevents'] * 500 }});
+DynamicJsonDocument e_doc({{ template['numevents'] * 1000 }});
 {# es_doc contiene i dati dei vari schema (subscription, data e cancellation) degli eventi #}
 {% if global['isSubscription'] or global['isData'] or global['isCancellation'] -%}
 DynamicJsonDocument es_doc(
@@ -558,10 +568,10 @@ DynamicJsonDocument es_doc(
     {%- endfor -%}
     {{ capacity['events'] * 2 }});
 {% endif %}
-{# ip_doc contiene un array di oggetti (clients_list), dove ogni oggetto ha due termini, IP e NUM 
+{# ipe_doc contiene un array di oggetti (clients_list), dove ogni oggetto ha due termini, IP e NUM 
 e tanti termini (IP:NUM) quanti sono i client connessi al canale webSocket #}
-DynamicJsonDocument ip_doc(1000);
-JsonArray ip_arr;
+DynamicJsonDocument ipe_doc(2000);
+JsonArray ipe_arr;
 {% endif %}
 DeserializationError err;
 
@@ -707,6 +717,15 @@ String events_endpoint[{{ template['numevents'] }}] = {
 {% set request = 'req' + (i + 3 + template['numproperties']) | string %}
 {% do req.append((request, 'HTTP_GET')) %}
 {% endfor %}
+String requests[{{ req | length - template['numactions'] }}] = {
+    {%- for i in range(1, req | length - template['numactions']+1) -%}
+    {%- if loop.last  -%}
+    req{{ i }}
+    {%- else -%}
+    req{{ i }},
+    {%- endif -%}
+    {%- endfor -%}
+}; 
 
 ESP8266WebServer server(portServer);
 {% if template['numevents'] != 0 %}
@@ -714,10 +733,6 @@ WebSocketsServer webSocket = WebSocketsServer(portSocket);
 {% endif %}
 
 IPAddress ipS;
-
-String header;
-
-int i, j, k;
 
 {% for var in template['globals'] %}
 {% set i = loop.index %}
@@ -754,8 +769,10 @@ int i, j, k;
 {{ var['type'] }} {{ var['name'] }}[{{ var['itemsNumber'] }}] = {};
 {% endif %}
 {% endif %}
-
 {% endfor %}
+
+int i, j, k;
+
 void setup() {
     Serial.begin(115200);
     Serial.println();
@@ -780,14 +797,14 @@ void setup() {
     {{ setVariable(False, 'property' + loop.index | string + '_value', 'p_doc.createNestedObject()') }}
     {% if 'properties' in property %}
     for(i=0; i<arr{{ loop.index }}.size(); i++) {
-        {{ defineVariable('char_nq', 'op' + loop.index | string + '_name', 'arr' + loop.index | string + '[i]["name"]') }}
+        {{ defineVariable('string_nq', 'op' + loop.index | string + '_name', 'arr' + loop.index | string + '[i]["name"]') }}
         {{ defineVariable('string_nq', 'op' + loop.index | string + '_type', 'arr' + loop.index | string + '[i]["type"]') }}
         {% if global['isPropertyString'] %}
         if(op{{ loop.index }}_type.equals("string") || op{{ loop.index }}_type.equals("null"))
             {{ setVariable(True, 'property' + loop.index | string + '_value[op' + loop.index | string + '_name]', '') }}
         {% endif -%}
-        {% if global['isPropertyBooelan'] %}
-        {% if global['isPropertyString'] %}{{ '\t\t\t\telse if' }}{% else %}{{ '\t\t\t\tif' }}{% endif %}(op{{ loop.index }}_type.equals("booelan"))
+        {% if global['isPropertyBoolean'] %}
+        {% if global['isPropertyString'] %}{{ '\t\t\t\telse if' }}{% else %}{{ '\t\t\t\tif' }}{% endif %}(op{{ loop.index }}_type.equals("boolean"))
             {{ setVariable(False, 'property' + loop.index | string + '_value[op' + loop.index | string + '_name]', 'false') }}
         {% endif -%}
         {% if global['isPropertyInteger'] %}
@@ -835,7 +852,10 @@ void setup() {
     {% endfor %}
     {% endif %}
 
-    {{ setVariable(False, 'ip_arr', 'ip_doc.createNestedArray("clients_list")') }}
+    {{ setVariable(False, 'ipe_arr', 'ipe_doc.createNestedArray("clients_list")') }}
+    {% endif %}
+    {% if template['numproperties'] > 0 or template['numactions'] > 0 %}
+    {{ setVariable(False, 'ipia_arr', 'ipia_doc.createNestedArray("clients_list")') }}
     {% endif %}
   
     connection(ssid, password);
@@ -862,15 +882,15 @@ void setup() {
 }    
 
 void loop() {
+    {% if 'loop' in template %}
+    {{ template['loop'] | replace('{', '\n\t{\n\t') | replace('}', '}\n\t') | replace(';', ';\n\t') }}
+    {% endif %}
+
     // handle Requests
     {% if template['numevents'] != 0 %}
     webSocket.loop();
     {% endif %}
     server.handleClient();
-    {% if 'loop' in template %}
-
-    {{ template['loop'] | replace('{', '\n\t{\n\t') | replace('}', '}\n\t') | replace(';', ';\n\t') }}
-    {% endif %}
 }
 
 void connection(const char* ssid, const char* password) {
@@ -910,9 +930,51 @@ void handleReq2() {
 }
 
 void handleReq3() {
+    {{ defineVariable('String', 'resp', 'iv') }}
+
+    {{ setVariable(False, 'resp', 'request3()') }}
+    server.send(200, "application/ld+json", resp);
+}
+
+{# HandleReq for Properties #}
+{% for property in template['properties'] %}
+{% set i = loop.index %}
+{% set n = i+3 %}
+void handleReq{{ n }}() {
+    {{ defineVariable('String', 'resp', '') }}
+    
+    {{ setVariable(False, 'resp', 'request' + n | string + '()') }}
+    server.send(200, "application/ld+json", resp);
+}
+
+{% endfor -%}
+
+{# HandleReq for Actions #}
+{% for action in template['actions'] %}
+{%- set a = loop.index -%}
+{% set n = a+3+template['numproperties'] %}
+void handleReq{{ n }}() {
+    {{ defineVariable('String', 'resp', '') }}
+    String body = server.arg("plain");
+    
+    {{ setVariable(False, 'resp', 'request' + n | string + '(body)') }}
+    server.send(200, "application/ld+json", resp);
+}
+{% endfor %}
+
+{% for action in template['actions'] %}
+{%- set a = loop.index -%}
+void handleReq{{ a+3+template['numproperties']+template['numactions'] }}() {
+    {{ defineVariable('char*', 'resp', 'Method Not Allowed') }}
+    server.send(405, "text/plain", resp);
+}
+{% endfor %}
+
+{# functions for property and actions used for HTTP Requests and WebSocket #}
+String request3() {
     {% do capacity.update({'nump':0}) %}
     {% for property in template['properties'] %}
-    {% if property['type'] != 'object' or property['type'] != 'array' %}
+    {% if property['type'] != 'object' and property['type'] != 'array' %}
     {% do capacity.update({'nump': capacity['nump'] + 1}) %}
     {% endif %}
     {% endfor %}
@@ -930,13 +992,13 @@ void handleReq3() {
     {{ setVariable(False, 'obj[property' + i | string + '_name]', 'property' + i | string + '_value') }}
     {% endfor %}
     {{ setVariable(False, 'serializeJson(obj, resp)') }}
-    server.send(200, "application/ld+json", resp);
+
+    return resp;
 }
 
-{# HandleReq for Properties #}
 {% for property in template['properties'] %}
 {% set i = loop.index %}
-void handleReq{{ i+3 }}() {
+String request{{ i+3 }}() {
     {{ defineVariable('String', 'resp', '') }}
     {% if property['type'] == 'object' or property['type'] == 'array' %}
     {{ defineVariable('String', 'tmp', '') }}
@@ -949,15 +1011,15 @@ void handleReq{{ i+3 }}() {
     {% else %}
     {{ setVariable(True, 'resp', '{\\"" + (String) property' + i | string + '_name + "\\":" + property' + i | string + '_value + "}') }}
     {% endif %}
-    server.send(200, "application/ld+json", resp);
+    
+    return resp;
 }
 
 {% endfor -%}
 
-{# HandleReq for Actions #}
 {% for action in template['actions'] %}
 {%- set a = loop.index -%}
-void handleReq{{ a+3+template['numproperties'] }}() {
+String request{{ a+3+template['numproperties'] }}(String body) {
     DynamicJsonDocument resp_doc(
         {%- if 'input' in action -%}
         {{ action['input'] | length * 200 }}
@@ -967,13 +1029,13 @@ void handleReq{{ a+3+template['numproperties'] }}() {
     {{ defineVariable('String', 'resp', 'iv') }}
 
     Serial.printf("\nPOST invokeaction %s\n", action{{ a }}_name);
-    String body = server.arg("plain");
     Serial.printf("Body received: %s\n", body.c_str());
     
     {{ setVariable(False, 'err', 'deserializeJson(resp_doc, body)') }}
     if(err) {
         Serial.printf("deserializeJson() failed with code %s", err.c_str());
-        server.send(400, "text/plain", err.c_str());
+        {{ setVariable(False, 'resp', 'err.c_str()') }}
+        return resp;
     }
     else {
         {% if action['input'] | length > 0 %}
@@ -984,10 +1046,8 @@ void handleReq{{ a+3+template['numproperties'] }}() {
         {{ ' || ' }}
         {%- endif -%}
         {%- endfor -%}
-        ) {
+        )
             {{ setVariable(True, 'resp', 'InvalidInput') }}
-            server.send(400, "text/plain", resp);
-        }
         else {
             {{ defineVariable('bool', 'validInput', 'true') }}
             {{ defineVariable('String', 'value', 'iv') }}
@@ -1078,12 +1138,12 @@ void handleReq{{ a+3+template['numproperties'] }}() {
                 {% endif %}
                 {% if 'type' in action['output'] %}    
                 {% if action['output']['type'] != 'string' or action['output']['type'] != 'null' %}
-                server.send(200, "text/plain", (char*) output);
+                {{ setVariable(False, 'resp', '(String) output') }}
                 {% else %}
-                server.send(200, "text/plain", output);
+                {{ setVariable(False, 'resp', 'output') }}
                 {% endif %}
                 {% else %}
-                server.send(200, "text/plain", "");
+                {{ setVariable(True, 'resp', '') }}
                 {% endif %}
                 {% if template['numevents'] > 0 %}
                 {% for event in template['events'] %}
@@ -1114,12 +1174,12 @@ void handleReq{{ a+3+template['numproperties'] }}() {
                 }
                 {% endif %}
                 if({{ event['condition'] }}) {
-                    for(i=0; i<ip_arr.size(); i++) {
-                        {{ defineVariable('string_nq', 'ws_ip', 'ip_arr[i]["ip"]') }}
+                    for(i=0; i<ipe_arr.size(); i++) {
+                        {{ defineVariable('string_nq', 'ws_ip', 'ipe_arr[i]["ip"]') }}
                         {{ defineVariable('JsonArray', 'ae', 'e_doc[ws_ip]') }}
                         for(j=0; j<ae.size(); j++) {
                             if(!ae[j][event{{ enum }}_name].isNull() && ae[j][event{{ enum }}_name]) {
-                                {{ defineVariable('unsigned char', 'ws_num', 'ip_doc[ws_ip]') }}
+                                {{ defineVariable('unsigned char', 'ws_num', 'ipe_doc[ws_ip]') }}
                                 webSocket.sendTXT(ws_num, ws_msg);
                             }
                         }
@@ -1130,10 +1190,8 @@ void handleReq{{ a+3+template['numproperties'] }}() {
                 {% endfor %}
                 {% endif %}
             }
-            else {
+            else
                 {{ setVariable(True, 'resp', 'InvalidInput') }}
-                server.send(400, "text/plain", resp);
-            }
         }
         {% else %}
         {% if 'type' in action['output'] %}
@@ -1143,12 +1201,12 @@ void handleReq{{ a+3+template['numproperties'] }}() {
         {% endif %}
         {% if 'type' in action['output'] %}    
         {% if action['output']['type'] != 'string' or action['output']['type'] != 'null' %}
-        server.send(200, "text/plain", (char*) output);
+        {{ setVariable(False, 'resp', '(String) output') }}
         {% else %}
-        server.send(200, "text/plain", output);
+        {{ setVariable(False, 'resp', 'output') }}
         {% endif %}
         {% else %}
-        server.send(200, "text/plain", "");
+        {{ setVariable(True, 'resp', '') }}
         {% endif %}
         {% if template['numevents'] > 0 %}
         {% for event in template['events'] %}
@@ -1162,14 +1220,7 @@ void handleReq{{ a+3+template['numproperties'] }}() {
         {% endif %}
         {% endif %}
     }
-}
-{% endfor %}
-
-{% for action in template['actions'] %}
-{%- set a = loop.index -%}
-void handleReq{{ a+3+template['numproperties']+template['numactions'] }}() {
-    {{ defineVariable('char*', 'resp', 'Method Not Allowed') }}
-    server.send(405, "text/plain", resp);
+    return resp;
 }
 {% endfor %}
 
@@ -1604,7 +1655,7 @@ bool handleInputType(String value, String schema) {
     }
     {% endif %}
     {% endif %}
-    {{ setVariable(False, 'return validInput') }}
+    return validInput;
 }
 
 // Action functions
@@ -1623,23 +1674,64 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t* pl, size_t length) {
 
     switch(type) {
         case WStype_DISCONNECTED: {
+            {% if template['numevents'] > 0 and (template['numproperties'] > 0 or template['numactions'] > 0) %}
+            {{ defineVariable('bool', 'deleted', 'false') }}
+            {% endif %}
+
             Serial.printf("\n%d", num);
             Serial.println(" -> Disconnected");
 
+            {% if template['numevents'] > 0 and (template['numproperties'] > 0 or template['numactions'] > 0) %}
             // remove all client subscriptions
-            for(i=0; i<ip_arr.size(); i++)
-                if(ip_arr[i]["num"] == num) {
-                    {{ setVariable(False, 'serializeJson(ip_arr[i]["ip"], ip_s)') }}
+            for(i=0; i<ipe_arr.size(); i++)
+                if(ipe_arr[i]["num"] == num) {
+                    {{ setVariable(False, 'deleted', 'true') }}
+                    {{ setVariable(False, 'serializeJson(ipe_arr[i]["ip"], ip_s)') }}
                     {{ setVariable(False, 'ip_s.replace("\\"", "")') }}
-                    {{ setVariable(False, 'ip_arr.remove(i)') }}
-                    {{ setVariable(False, 'ip_doc.remove(ip_s)') }}
+                    {{ setVariable(False, 'ipe_arr.remove(i)') }}
+                    {{ setVariable(False, 'ipe_doc.remove(ip_s)') }}
                     {{ setVariable(False, 'e_doc.remove(ip_s)') }}
                     break;
                 }
 
+            if(!deleted)
+                // remove all client requests
+                for(i=0; i<ipia_arr.size(); i++)
+                    if(ipai_arr[i]["num"] == num) {
+                        {{ setVariable(False, 'serializeJson(ipia_arr[i]["ip"], ip_s)') }}
+                        {{ setVariable(False, 'ip_s.replace("\\"", "")') }}
+                        {{ setVariable(False, 'ipia_arr.remove(i)') }}
+                        {{ setVariable(False, 'ipia_doc.remove(ip_s)') }}
+                        break;
+                    }     
+            {% elif template['numevents'] == 0 %}  
+            // remove all client requests
+            for(i=0; i<ipia_arr.size(); i++)
+                if(ipai_arr[i]["num"] == num) {
+                    {{ setVariable(False, 'serializeJson(ipia_arr[i]["ip"], ip_s)') }}
+                    {{ setVariable(False, 'ip_s.replace("\\"", "")') }}
+                    {{ setVariable(False, 'ipia_arr.remove(i)') }}
+                    {{ setVariable(False, 'ipia_doc.remove(ip_s)') }}
+                    break;
+                }   
+            {% else %}
+            // remove all client subscriptions
+            for(i=0; i<ipe_arr.size(); i++)
+                if(ipe_arr[i]["num"] == num) {
+                    {{ setVariable(False, 'serializeJson(ipe_arr[i]["ip"], ip_s)') }}
+                    {{ setVariable(False, 'ip_s.replace("\\"", "")') }}
+                    {{ setVariable(False, 'ipe_arr.remove(i)') }}
+                    {{ setVariable(False, 'ipe_doc.remove(ip_s)') }}
+                    {{ setVariable(False, 'e_doc.remove(ip_s)') }}
+                    break;
+                }
+            {% endif %}    
+
             {{ setVariable(False, 'serializeJson(e_doc, Serial)') }}
             Serial.println();
-            {{ setVariable(False, 'serializeJson(ip_doc, Serial)') }}
+            {{ setVariable(False, 'serializeJson(ipe_doc, Serial)') }}
+            Serial.println();
+            {{ setVariable(False, 'serializeJson(ipia_doc, Serial)') }}
             Serial.println();
         }
         break;
@@ -1662,10 +1754,10 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t* pl, size_t length) {
                 if(events_endpoint[i].equals(payload)) {
                     if(e_doc[ip_s].isNull()) {
                         {{ setVariable(False, 'obj_e', 'e_doc.createNestedArray(ip_s).createNestedObject()') }}
-                        {{ setVariable(False, 'obj_ip', 'ip_arr.createNestedObject()') }}
+                        {{ setVariable(False, 'obj_ip', 'ipe_arr.createNestedObject()') }}
                         {{ setVariable(False, 'obj_ip["ip"]', 'ip_s') }}
                         {{ setVariable(False, 'obj_ip["num"]', 'num') }}
-                        {{ setVariable(False, 'ip_doc[ip_s]', 'num') }}
+                        {{ setVariable(False, 'ipe_doc[ip_s]', 'num') }}
                     }
                     else {
                         {{ setVariable(False, 'j', '0') }}
@@ -1695,13 +1787,13 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t* pl, size_t length) {
                 }
                 {{ setVariable(False, 'i++') }}
             }
-
+            
             if(!done)
                 webSocket.sendTXT(num, "Connection refused"); 
 
             {{ setVariable(False, 'serializeJson(e_doc, Serial)') }}
             Serial.println();
-            {{ setVariable(False, 'serializeJson(ip_doc, Serial)') }}
+            {{ setVariable(False, 'serializeJson(ipe_doc, Serial)') }}
             Serial.println();
         }
         break;
@@ -1804,7 +1896,7 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t* pl, size_t length) {
 
             {{ setVariable(False, 'serializeJson(e_doc, Serial)') }}
             Serial.println();
-            {{ setVariable(False, 'serializeJson(ip_doc, Serial)') }}
+            {{ setVariable(False, 'serializeJson(ipe_doc, Serial)') }}
             Serial.println();
         }
         break;

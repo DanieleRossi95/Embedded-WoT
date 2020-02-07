@@ -716,12 +716,13 @@ def parseFunctionFromFile(ctx, fileName, funName, funCategory, startBody, templa
     typesDict = {}
     CTypes = ['void', 'bool', 'int', 'float', 'double', 'string', 'JsonArray', 'JsonObject']
     thingTypes = ['boolean', 'integer', 'number', 'number', 'string', 'array', 'object']
+    logicOperators = ['=', '!', '>', '<', '&&', '||']
     for i in range(1, len(CTypes)):
         typesDict[CTypes[i]] = thingTypes[i-1]   
     lines = f.readlines()
     fileLength = len(lines)
     l = 0
-    while not(parsingDone) and l<fileLength-1:
+    while not(parsingDone) and l<fileLength:
         line = lines[l].rstrip()
         if(not(startBody)):
             openBracketIndex = line.find('(')
@@ -823,27 +824,19 @@ def parseFunctionFromFile(ctx, fileName, funName, funCategory, startBody, templa
         else:
             tmp = line.strip()
             if(bodyCount == 0):
-                if(tmp == '}'):
-                    parsingDone = True
-                    parsingError = True
-                else:
-                    body = line
+                body = line
             else:
                 if(not(startBlankLines)):
                     if(tmp == '}'):
-                        startBlankLines = True
-                        lastNonEmptyLine = line
-                    else:
-                        body = body + '\n' + line  
+                        startBlankLines = True   
+                    if(tmp != ''):    
+                        body = body + '\n' + line   
                 else:
-                    if(any(fType in line.lower() for fType in CTypes) and ('(' in line)):
+                    if(any(fType in line.lower() for fType in CTypes) and ('(' in line) and (')' in line) and not(';' in line) and not(any(lop in line for lop in logicOperators))):
                         parsingDone = True
                     elif(tmp != ''):
                         startBlankLines = False
-                        body = body + '\n' + lastNonEmptyLine + '\n' + line
-                    elif(bodyCount == fileLength-1):
-                        parsingDone = True
-                        parsingError = True
+                        body = body + '\n' + line
             bodyCount = l
         l = l+1
     f.close()    
@@ -1261,7 +1254,7 @@ def build(ctx):
             if(i == 0):
                 click.echo('\nHint: The Body of an Action can be retrieved from a file by providing his path or by this wizard')
                 click.echo('If you choose the method via file, the function written in the file corresponding to the Action MUST have the same name of the latter')
-            choice = click.prompt('\nPress 1 to insert this Action from a file or 2 to insert it from this wizard', type=click.IntRange(1,2))
+            choice = click.prompt('\nPress 1 to insert Action %s from a file or 2 to insert it from this wizard' % thingActions[i], type=click.IntRange(1,2))
             if(choice == 1):
                 parsingError = True
                 while(parsingError):
@@ -1277,6 +1270,7 @@ def build(ctx):
                     click.echo('You have to provide only the code enclosed by braces on one line, neither Function name or inputs')
                     click.echo('This elements are retrived from the information you gave before')    
                 action['body'] = click.prompt('\nFunction %s Body' % thingActions[i], type=str) 
+                action['source'] = 'cli'
             actionFunctions.append(action)    
         for i in range(0, len(thingEvents)):
             if(i == 0):
@@ -1335,11 +1329,27 @@ def build(ctx):
             else:
                 nameList.append(inp)    
                 ctx.obj['template']['libraries'].append(inp)
+    # ADDITIONAL CONSTANTS
+    nameList = []
+    ctx.obj['template'].setdefault('constants', [])
+    while(click.confirm('\nAdd additional Constant?', default=False)):
+        const = {}
+        nameAlreadyExists = True
+        while(nameAlreadyExists):
+            inp = click.prompt('Constant Name', type=SWN_STRING)
+            nameAlreadyExists = searchName(nameList, inp)
+            if(nameAlreadyExists):
+                click.echo('Error: Constant already exists\n')
+            else:
+                nameList.append(inp)
+                const['name'] = inp
+        const['value'] = click.prompt('Constant value', type=str)     
+        ctx.obj['template']['constants'].append(const)   
     # ADDITIONAL GLOBAL VARIABLES
     hint = 0
     nameList = []
     ctx.obj['template'].setdefault('globals', [])
-    while(click.confirm('\nAdd additional Global Variables?', default=False)):
+    while(click.confirm('\nAdd additional Global Variable?', default=False)):
         if(hint == 0):
             click.echo('\nHint: For each global variable you have to insert its name and its type supported in Embedded-C. Value is optional')     
             click.echo('For array variables it is necessarly to insert their length and their elements one-by-one')
