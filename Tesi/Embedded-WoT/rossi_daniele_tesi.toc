@@ -1,0 +1,26 @@
+\babel@toc {italian}{}
+\babel@toc {italian}{}
+\thispagestyle {empty}
+\contentsline {chapter}{Introduzione \vspace {5mm}}{1}{chapter*.1}
+\contentsline {chapter}{\relax \fontsize {17.28}{22}\selectfont I\hspace {\fontdimen 2\font }\hspace {\fontdimen 2\font }Stato dell'arte}{4}{chapter*.2}
+\contentsline {chapter}{\numberline {1}Internet of Things}{5}{chapter.1}
+\contentsline {section}{\numberline {1.1}Architettura dell'IoT}{7}{section.1.1}
+\contentsline {section}{\numberline {1.2}Interoperabilit\`a nell'IoT}{9}{section.1.2}
+\contentsline {chapter}{\numberline {2}W3C Web of Things}{15}{chapter.2}
+\contentsline {section}{\numberline {2.1}Architettura del WoT}{16}{section.2.1}
+\contentsline {subsection}{\numberline {2.1.1}Casi d'uso}{16}{subsection.2.1.1}
+\contentsline {subsection}{\numberline {2.1.2}Thing}{19}{subsection.2.1.2}
+\contentsline {subsection}{\numberline {2.1.3}Thing Description}{20}{subsection.2.1.3}
+\contentsline {subsection}{\numberline {2.1.4}Binding Templates}{24}{subsection.2.1.4}
+\contentsline {subsection}{\numberline {2.1.5}Scripting API}{26}{subsection.2.1.5}
+\contentsline {subsection}{\numberline {2.1.6}Security and Privacy Guidelines}{27}{subsection.2.1.6}
+\contentsline {subsection}{\numberline {2.1.7}WoT Servient}{29}{subsection.2.1.7}
+\contentsline {section}{\numberline {2.2}Implementazioni concrete del WoT Servient}{32}{section.2.2}
+\contentsline {subsection}{\numberline {2.2.1}WoT Arduino}{33}{subsection.2.2.1}
+\contentsline {subsubsection}{Utilizzo}{34}{section*.3}
+\contentsline {subsection}{\numberline {2.2.2}Arduino RDF Server}{35}{subsection.2.2.2}
+\contentsline {subsubsection}{Utilizzo}{36}{section*.4}
+\contentsline {chapter}{Conclusioni}{39}{chapter*.5}
+\contentsline {chapter}{\numberline {A}Prima Appendice}{41}{appendix.Alph1}
+\contentsline {chapter}{\numberline {B}Seconda Appendice}{43}{appendix.Alph2}
+\contentsline {chapter}{Bibliografia}{45}{appendix*.6}
