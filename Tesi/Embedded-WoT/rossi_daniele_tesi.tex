@@ -48,8 +48,15 @@
 \usepackage{tocloft}
 \usepackage{titlecaps}
 \usepackage{chngcntr}
+\usepackage{afterpage}
+
 %
 \counterwithout{footnote}{chapter}
+\newcommand\blankpage{
+	\null
+	\thispagestyle{empty}
+	\addtocounter{page}{-1}
+	\newpage}
 %
 %\renewcommand{\cftchapfont}{\Large\bfseries}
 %\renewcommand{\cftchappagefont}{\Large\bfseries}
@@ -160,7 +167,7 @@ INDICE}}
 		INTRODUZIONE}}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%aggiunge la voce Introduzione
 %   nell'indice
-\addcontentsline{toc}{chapter}{Introduzione \vspace{5mm}}
+\addcontentsline{toc}{chapter}{Introduzione}
 Questa \`e l'introduzione.
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \pagenumbering{arabic}     				%mette i numeri arabi
@@ -171,7 +178,13 @@ Questa \`e l'introduzione.
 \thispagestyle{empty}
 \restoregeometry
 
-\addcontentsline{toc}{chapter}{\Large I\HS\HS Stato dell'arte}
+\addtocontents{toc}{\string\let\string\cftchapfont\string\Large\bfseries}
+\addtocontents{toc}{\string\let\string\cftchappagefont\string\Large\bfseries}
+\addtocontents{toc}{\vspace{0.4cm}}
+\addcontentsline{toc}{chapter}{I\HS\HS Stato dell'arte}
+\addtocontents{toc}{\vspace{0.2cm}}
+\addtocontents{toc}{\string\let\string\cftchapfont\string\bfseries}
+\addtocontents{toc}{\string\let\string\cftchappagefont\string\bfseries}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%non numera l'ultima pagina sinistra
 \clearpage{\pagestyle{empty}\cleardoublepage}
 \renewcommand{\thechapter}{\arabic{chapter}}
@@ -771,13 +784,38 @@ Infine, sempre in \textit{Semantic.h}, si devono inserire all'interno dell'array
 
 La TD con i relativi servizi è esposta nella root (\verb"/") del Web Server e può essere acceduta tramite una richiesta GET.
 
-Se vogliamo fare un parallelismo tra i componenti di Arduino RDF Server e quelli dell'architettura del WoT, possiamo dire che i servizi corrispondono alle Interaction Affordances del WoT, dove le funzioni corrispondono alle azioni e le risorse alle proprietà, il protocollo di comunicazione (Protocol Binding) scelto è CoAP, mentre le Scripting API sono le API Hydra. Gli eventi, invece, non sono stati ancora implementati.
+Se volessimo fare un parallelismo tra i componenti di Arduino RDF Server e quelli dell'architettura del WoT, potremmo dire che i servizi del primo corrispondono alle Interaction Affordances del secondo. In particolare, le proprietà e le azioni del WoT sono denominate risorse e funzioni in Arduino RDF Server. Per quanto concerne gli eventi in Arduino RDF Server, essi non sono ancora stati implementati. Il protocollo di comunicazione (Protocol Binding) scelto è CoAP, mentre le Scripting API sono le API Hydra. 
 
-In conclusione, c'è da dire che le due implementazioni sono ancora incomplete, infatti offrono soltanto funzionalità di base e non supportano l'intero set di specifiche del Web of Things. Oltre a questo, al momento di scrittura di questa tesi, esse non vengono aggiornate già da alcuni anni. La prima dal 2016, mentre la seconda dal 2017. 
+In conclusione, le due implementazioni risultano essere incomplete, poiché offrono soltanto funzionalità di base e non supportano l'intero set di specifiche del Web of Things. Attualmente, esse non vengono aggiornate già da alcuni anni. La prima dal 2016, mentre la seconda dal 2017. 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%non numera l'ultima pagina sinistra
+\afterpage{\blankpage}
+
+\newgeometry{right=2.5cm}         
+\chapter*{\vspace*{\fill} \begin{center} \centering{Parte 2\\ \vspace{15pt} Embedded WoT Servient} \end{center} \vspace{\fill}}
+\thispagestyle{empty}
+\restoregeometry
+
+% comandi per modificare il font del capitolo e della pagina nella toc
+\addtocontents{toc}{\string\let\string\cftchapfont\string\Large\bfseries}
+\addtocontents{toc}{\string\let\string\cftchappagefont\string\Large\bfseries}
+\addtocontents{toc}{\vspace{0.4cm}}
+\addcontentsline{toc}{chapter}{\Large II\HS\HS Embedded WoT Servient}
+\addtocontents{toc}{\vspace{0.2cm}}
+\addtocontents{toc}{\string\let\string\cftchapfont\string\bfseries}
+\addtocontents{toc}{\string\let\string\cftchappagefont\string\bfseries}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \clearpage{\pagestyle{empty}\cleardoublepage}
+\chapter{Progettazione}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\section{Obiettivo}
+
+
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%per fare le conclusioni
+\clearpage{\pagestyle{empty}\cleardoublepage}
+
 \chapter*{Conclusioni}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%imposta l'intestazione di pagina
 \rhead[\fancyplain{}{\bfseries
