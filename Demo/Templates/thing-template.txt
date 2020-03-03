@@ -1,19 +1,31 @@
 {% macro updateTD() -%}
 {%- for item in td['forms'] if 'href' in item %}
-    {%- do item.update(href='" + urlServer + "/all/properties') -%}
+    {%- if loop.index == 2 -%}
+    {%- do item.update(href='" + urlSocket + "/all/properties') -%} 
+    {%- else -%}
+    {%- do item.update(href='" + urlServer + "/all/properties') -%}    
+    {%- endif -%}
 {%- endfor %}    
 {#- EndPoint Properties #}
 {%- for property in template['properties'] %}
     {%- set i = loop.index -%}
     {%- for item in td['properties'][property['name']]['forms'] if 'href' in item -%}
+        {%- if loop.index == 2 -%}
+        {%- do item.update(href='" + urlSocket + "/properties/" + property' + i | string + '_name + "' ) -%}
+        {%- else -%}
         {%- do item.update(href='" + urlServer + "/properties/" + property' + i | string + '_name + "' ) -%}
+        {%- endif -%}
     {%- endfor -%}
 {%- endfor %}
 {#- EndPoint Actions #}    
 {%- for action in template['actions'] %}
     {%- set i = loop.index -%}
     {%- for item in td['actions'][action['name']]['forms'] if 'href' in item -%}
+        {%- if loop.index == 2 -%}
+        {%- do item.update(href='" + urlSocket + "/actions/" + action' + i | string + '_name + "' ) -%}
+        {%- else -%}
         {%- do item.update(href='" + urlServer + "/actions/" + action' + i | string + '_name + "' ) -%}
+        {%- endif -%}
     {%- endfor -%}
 {%- endfor %}     
 {#- EndPoint Events #}    
@@ -52,6 +64,7 @@
 {%- do global.update({'isSubscription':False}) -%}
 {%- do global.update({'isData':False}) -%}
 {%- do global.update({'isCancellation':False}) -%}
+{%- do global.update({'isWS':False}) -%}
 {%- for property in template['properties'] -%}
 {%- if property['type'] == 'object' -%}
 {%- if 'properties' in property -%}
@@ -297,6 +310,23 @@
 {%- endif -%}
 {%- endfor -%}
 {%- endfor -%}
+{%- if td['forms'] | length == 2 -%}
+{%- do global.update({'isWS':True}) -%}
+{%- endif -%}
+{%- for property in template['properties'] -%}
+{%- if td['properties'][property['name']]['forms'] | length == 2 -%}
+{%- if not(global['isWS']) -%}
+{%- do global.update({'isWS':True}) -%}
+{%- endif -%}
+{%- endif -%}
+{%- endfor -%}
+{%- for action in template['action'] -%}
+{%- if td['actions'][action['name']]['forms'] | length == 2 -%}
+{%- if not(global['isWS']) -%}
+{%- do global.update({'isWS':True}) -%}
+{%- endif -%}
+{%- endif -%}
+{%- endfor -%}
 {%- endmacro -%}
 {% macro defineVariable(typeV, name, value) -%}
 {%- if value is iterable and value is not string %}
@@ -497,6 +527,8 @@ String {{ interactionName }}_opRequired[{{ interaction['required'] | length }}] 
 {%- set req = [] -%}
 {%- set dataType = ['subscription', 'data', 'cancellation'] -%}
 {%- set capacity = {} -%}
+{%- do capacity.update({'maxSchema':20}) -%}
+{%- do capacity.update({'maxInputSchema':0}) -%}
 #include <ESP8266WebServer.h>
 #include <WebSocketsServer.h>
 #include <ArduinoJson.h>
@@ -517,7 +549,7 @@ String {{ interactionName }}_opRequired[{{ interaction['required'] | length }}] 
 {{ defineVariable('String', 'protocolServer', protocolServer) }}
 {{ defineVariable('int', 'portServer', portServer) }}
 {{ defineVariable('String', 'urlServer', '') }}
-{% if template['numevents'] != 0 %}
+{% if template['numevents'] != 0 or global['isWS'] %}
 {{ defineVariable('String', 'protocolSocket', protocolSocket) }}
 {{ defineVariable('int', 'portSocket', portSocket) }}
 {{ defineVariable('String', 'urlSocket', '') }}
@@ -543,7 +575,15 @@ DynamicJsonDocument p_doc(
     {%- endfor -%}
     {{ capacity['properties'] }});
 {% endif %}
-{% if template['numproperties'] > 0 or template['numactions'] > 0 %}
+{% if global['isWS'] %}
+DynamicJsonDocument ia_doc(
+    {%- do capacity.update({'actions':0}) -%}
+    {%- for action in template['actions'] -%}
+    {%- if td['actions'][action['name']]['forms'] | length == 2 -%}
+    {%- do capacity.update({'actions' : capacity['actions'] + 1}) -%}
+    {%- endif -%}
+    {%- endfor -%}
+    {{ capacity['actions'] * 1000 }});
 DynamicJsonDocument ipia_doc(2000);
 JsonArray ipia_arr;
 {% endif %}
@@ -555,7 +595,6 @@ DynamicJsonDocument e_doc({{ template['numevents'] * 1000 }});
 {% if global['isSubscription'] or global['isData'] or global['isCancellation'] -%}
 DynamicJsonDocument es_doc(
     {%- do capacity.update({'events':0}) -%}
-    {%- do capacity.update({'maxSchema':0}) -%}
     {%- for event in template['events'] -%}
     {%- for data in dataType -%}
     {%- if data in event -%}
@@ -567,6 +606,8 @@ DynamicJsonDocument es_doc(
     {%- endfor -%}
     {%- endfor -%}
     {{ capacity['events'] * 2 }});
+{% else %}
+DynamicJsonDocument es_doc(20);
 {% endif %}
 {# ipe_doc contiene un array di oggetti (clients_list), dove ogni oggetto ha due termini, IP e NUM 
 e tanti termini (IP:NUM) quanti sono i client connessi al canale webSocket #}
@@ -603,6 +644,11 @@ String {{ actionIndex + '_schema' }}[{{ action['input'] | length }}] = {
     {%- endif -%}
     {%- endfor -%}
 };
+{% if action['input'] | length > 0 %}
+{% if action['input'] | string | length > capacity['maxInputSchema'] %}
+{% do capacity.update({'maxInputSchema': action['input'] | string | length }) %}
+{% endif %}
+{% endif %}
 {% endfor %}
 {% endif %}
 
@@ -717,18 +763,62 @@ String events_endpoint[{{ template['numevents'] }}] = {
 {% set request = 'req' + (i + 3 + template['numproperties']) | string %}
 {% do req.append((request, 'HTTP_GET')) %}
 {% endfor %}
-String requests[{{ req | length - template['numactions'] }}] = {
-    {%- for i in range(1, req | length - template['numactions']+1) -%}
+{% if global['isWS'] %}
+{% set reqWS = [] %}
+{% set reqPropertyWS = [] %}
+{% if td['forms'] | length == 2 %}
+{% do reqWS.append(('thingName', 3)) %}
+{% do reqPropertyWS.append(('thingName', 3)) %}
+{% endif %}
+{% for property in template['properties'] %}
+{% if td['properties'][property['name']]['forms'] | length == 2 %}
+{% do reqWS.append(('property' + loop.index | string + '_name', loop.index+3)) %}
+{% do reqPropertyWS.append(('property' + loop.index | string + '_name', loop.index+3)) %}
+{% endif %}
+{% endfor %}
+{% for action in template['actions'] %}
+{% if td['actions'][action['name']]['forms'] | length == 2 %}
+{% do reqWS.append(('action' + loop.index | string + '_name', loop.index+3+template['numproperties'])) %}
+{% endif %}
+{% endfor %}
+
+{{ defineVariable('int', 'ws_requestsNumber', reqWS | length) }}
+{{ defineVariable('int', 'ws_actionsNumber', capacity['actions']) }}
+String ws_requests[{{ reqWS | length }}] = {
+    {%- for i in reqWS -%}
     {%- if loop.last  -%}
-    req{{ i }}
+    {{ reqWS[loop.index0][0] }}
     {%- else -%}
-    req{{ i }},
+    {{ reqWS[loop.index0][0] }},
+    {%- endif -%}
+    {%- endfor -%}
+};
+String ws_endpoint[{{ reqWS | length }}] = {
+    {%- for i in reqWS -%}
+    {%- if loop.last  -%}
+    req{{ reqWS[loop.index0][1] }}
+    {%- else -%}
+    req{{ reqWS[loop.index0][1] }},
     {%- endif -%}
     {%- endfor -%}
 }; 
+{% if template['numactions'] > 0 %}
+String ws_actions[{{ capacity['actions'] }}] = {
+    {%- for action in template['actions'] -%}
+    {%- if td['actions'][action['name']]['forms'] | length == 2 -%}
+    {%- if loop.last -%}
+    action{{ loop.index }}_name
+    {%- else -%}
+    action{{ loop.index }}_name,
+    {%- endif -%}
+    {%- endif -%}
+    {%- endfor -%}
+};
+{% endif %}
+{% endif %}
 
 ESP8266WebServer server(portServer);
-{% if template['numevents'] != 0 %}
+{% if template['numevents'] != 0 or global['isWS'] %}
 WebSocketsServer webSocket = WebSocketsServer(portSocket);
 {% endif %}
 
@@ -771,7 +861,7 @@ IPAddress ipS;
 {% endif %}
 {% endfor %}
 
-int i, j, k;
+int i, j, k, n;
 
 void setup() {
     Serial.begin(115200);
@@ -854,7 +944,7 @@ void setup() {
 
     {{ setVariable(False, 'ipe_arr', 'ipe_doc.createNestedArray("clients_list")') }}
     {% endif %}
-    {% if template['numproperties'] > 0 or template['numactions'] > 0 %}
+    {% if global['isWS'] %}
     {{ setVariable(False, 'ipia_arr', 'ipia_doc.createNestedArray("clients_list")') }}
     {% endif %}
   
@@ -868,7 +958,7 @@ void setup() {
     {% endfor %}
 
     server.begin();
-    {% if template['numevents'] != 0 %}
+    {% if template['numevents'] != 0 or global['isWS'] %}
     webSocket.begin();
     webSocket.onEvent(webSocketEvent);
     {% endif %}
@@ -887,7 +977,7 @@ void loop() {
     {% endif %}
 
     // handle Requests
-    {% if template['numevents'] != 0 %}
+    {% if template['numevents'] != 0 or global['isWS'] %}
     webSocket.loop();
     {% endif %}
     server.handleClient();
@@ -910,7 +1000,7 @@ void connection(const char* ssid, const char* password) {
     Serial.println(ipS);
 
     urlServer = protocolServer + "://" + ipS.toString() + ":" + portServer + "/" + thingName;
-    {% if template['numevents'] != 0 %}
+    {% if template['numevents'] != 0 or global['isWS'] %}
     urlSocket = protocolSocket + "://" + ipS.toString() + ":" + portSocket + "/" + thingName;
     {% endif %}
 }
@@ -1021,7 +1111,7 @@ String request{{ i+3 }}() {
 {%- set a = loop.index -%}
 String request{{ a+3+template['numproperties'] }}(String body) {
     DynamicJsonDocument resp_doc(
-        {%- if 'input' in action -%}
+        {%- if action['input'] | length > 0 -%}
         {{ action['input'] | length * 200 }}
         {%- else -%}
         20        
@@ -1210,10 +1300,43 @@ String request{{ a+3+template['numproperties'] }}(String body) {
         {% endif %}
         {% if template['numevents'] > 0 %}
         {% for event in template['events'] %}
+        {% set enum = loop.index %}
         {% for ae in event['actions'] %}
         {% if ae == action['name'] %}
         // {{ event['name'] }} condition
-        {{ event['condition'] | replace('{', '\n\t{\n') | replace('}', '}\n\t') | replace(';', ';\n\t') }}
+        {{ defineVariable('String', 'ws_msg', 'iv') }}
+        {% if global['isData'] %}
+        {{ defineVariable('String', 't_name', 'iv') }}
+        DynamicJsonDocument tmp_doc(
+            {%- if 'data' in event -%}
+            {{ event['data'] | string | length * 2 }}
+            {%- else -%}
+            20
+            {%- endif -%});
+        {{ defineVariable('JsonObject', 'tmp_obj', 'tmp_doc.createNestedObject()') }}
+
+        if(events_dataSchema[{{ enum }}]) {
+            for(i=0; i<es_doc[event{{ enum }}_name]["data"].size(); i++) {
+                {{ setVariable(False, 't_name', '""') }}
+                {{ setVariable(False, 'serializeJson(es_doc[event' + enum | string + '_name]["data"][i]["name"], t_name)') }}
+                {{ setVariable(False, 't_name.replace("\\"", "")') }}
+                {{ setVariable(False, 'tmp_obj[t_name]', 'es_doc[event' + enum | string + '_name]["data"][i]["value"]') }}
+            }
+            {{ setVariable(False, 'serializeJson(tmp_obj, ws_msg)') }}
+        }
+        {% endif %}
+        if({{ event['condition'] }}) {
+            for(i=0; i<ipe_arr.size(); i++) {
+                {{ defineVariable('string_nq', 'ws_ip', 'ipe_arr[i]["ip"]') }}
+                {{ defineVariable('JsonArray', 'ae', 'e_doc[ws_ip]') }}
+                for(j=0; j<ae.size(); j++) {
+                    if(!ae[j][event{{ enum }}_name].isNull() && ae[j][event{{ enum }}_name]) {
+                        {{ defineVariable('unsigned char', 'ws_num', 'ipe_doc[ws_ip]') }}
+                        webSocket.sendTXT(ws_num, ws_msg);
+                    }
+                }
+            }
+        }
         {% endif %}
         {% endfor %}
         {% endfor %}
@@ -1665,27 +1788,31 @@ bool handleInputType(String value, String schema) {
 {% endif %}
 
 {# Events #}
-{% if template['numevents'] > 0 %}
+{% if template['numevents'] > 0 or global['isWS'] %}
 // handle Events
 void webSocketEvent(uint8_t num, WStype_t type, uint8_t* pl, size_t length) {
     IPAddress ip;
     {{ defineVariable('String', 'ip_s', '') }}
     {{ defineVariable('char_nq', 'payload', '(char *) pl') }}
+    {% if global['isWS'] %}
+    {{ defineVariable('String', 'resp', '') }}
+    {% endif %}
 
     switch(type) {
         case WStype_DISCONNECTED: {
-            {% if template['numevents'] > 0 and (template['numproperties'] > 0 or template['numactions'] > 0) %}
+            {% if template['numevents'] > 0 and global['isWS'] %}
             {{ defineVariable('bool', 'deleted', 'false') }}
             {% endif %}
-
             Serial.printf("\n%d", num);
             Serial.println(" -> Disconnected");
 
-            {% if template['numevents'] > 0 and (template['numproperties'] > 0 or template['numactions'] > 0) %}
+            {% if template['numevents'] > 0 %}
             // remove all client subscriptions
             for(i=0; i<ipe_arr.size(); i++)
                 if(ipe_arr[i]["num"] == num) {
+                    {% if template['numevents'] > 0 and global['isWS'] %}
                     {{ setVariable(False, 'deleted', 'true') }}
+                    {% endif %}
                     {{ setVariable(False, 'serializeJson(ipe_arr[i]["ip"], ip_s)') }}
                     {{ setVariable(False, 'ip_s.replace("\\"", "")') }}
                     {{ setVariable(False, 'ipe_arr.remove(i)') }}
@@ -1693,11 +1820,14 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t* pl, size_t length) {
                     {{ setVariable(False, 'e_doc.remove(ip_s)') }}
                     break;
                 }
-
+            {% endif %}
+            {% if template['numevents'] > 0 and global['isWS'] %}    
+            
             if(!deleted)
                 // remove all client requests
                 for(i=0; i<ipia_arr.size(); i++)
-                    if(ipai_arr[i]["num"] == num) {
+                    if(ipia_arr[i]["num"] == num) {
+                        {{ setVariable(True, 'ip_s', '') }}
                         {{ setVariable(False, 'serializeJson(ipia_arr[i]["ip"], ip_s)') }}
                         {{ setVariable(False, 'ip_s.replace("\\"", "")') }}
                         {{ setVariable(False, 'ipia_arr.remove(i)') }}
@@ -1707,40 +1837,40 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t* pl, size_t length) {
             {% elif template['numevents'] == 0 %}  
             // remove all client requests
             for(i=0; i<ipia_arr.size(); i++)
-                if(ipai_arr[i]["num"] == num) {
+                if(ipia_arr[i]["num"] == num) {
                     {{ setVariable(False, 'serializeJson(ipia_arr[i]["ip"], ip_s)') }}
                     {{ setVariable(False, 'ip_s.replace("\\"", "")') }}
                     {{ setVariable(False, 'ipia_arr.remove(i)') }}
                     {{ setVariable(False, 'ipia_doc.remove(ip_s)') }}
                     break;
                 }   
-            {% else %}
-            // remove all client subscriptions
-            for(i=0; i<ipe_arr.size(); i++)
-                if(ipe_arr[i]["num"] == num) {
-                    {{ setVariable(False, 'serializeJson(ipe_arr[i]["ip"], ip_s)') }}
-                    {{ setVariable(False, 'ip_s.replace("\\"", "")') }}
-                    {{ setVariable(False, 'ipe_arr.remove(i)') }}
-                    {{ setVariable(False, 'ipe_doc.remove(ip_s)') }}
-                    {{ setVariable(False, 'e_doc.remove(ip_s)') }}
-                    break;
-                }
             {% endif %}    
 
+            {% if template['numevents'] > 0 %}
             {{ setVariable(False, 'serializeJson(e_doc, Serial)') }}
             Serial.println();
             {{ setVariable(False, 'serializeJson(ipe_doc, Serial)') }}
             Serial.println();
+            {% endif %}
+            {% if global['isWS'] %}
+            {{ setVariable(False, 'serializeJson(ia_doc, Serial)') }}
             {{ setVariable(False, 'serializeJson(ipia_doc, Serial)') }}
             Serial.println();
+            {% endif %}
         }
         break;
 
         case WStype_CONNECTED: {
             {{ defineVariable('bool', 'done', 'false') }}
             {{ defineVariable('bool', 'conn', 'false') }}
+            {% if template['numevents'] > 0 %}
             JsonObject obj_e;
-            JsonObject obj_ip;
+            JsonObject obj_ipe;
+            {% endif %}
+            {% if global['isWS'] %}
+            JsonObject obj_ia;
+            JsonObject obj_ipia;
+            {% endif %}
 
             {{ setVariable(False, 'ip', 'webSocket.remoteIP(num)') }}
             {{ setVariable(False, 'ip_s', 'ip.toString()') }}
@@ -1749,14 +1879,15 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t* pl, size_t length) {
             Serial.println(ip);
             Serial.printf("Payload: %s\n", payload);
 
+            {% if template['numevents'] > 0 %}
             {{ setVariable(False, 'i', '0') }}
             while(!done && i<events_number) {
                 if(events_endpoint[i].equals(payload)) {
                     if(e_doc[ip_s].isNull()) {
                         {{ setVariable(False, 'obj_e', 'e_doc.createNestedArray(ip_s).createNestedObject()') }}
-                        {{ setVariable(False, 'obj_ip', 'ipe_arr.createNestedObject()') }}
-                        {{ setVariable(False, 'obj_ip["ip"]', 'ip_s') }}
-                        {{ setVariable(False, 'obj_ip["num"]', 'num') }}
+                        {{ setVariable(False, 'obj_ipe', 'ipe_arr.createNestedObject()') }}
+                        {{ setVariable(False, 'obj_ipe["ip"]', 'ip_s') }}
+                        {{ setVariable(False, 'obj_ipe["num"]', 'num') }}
                         {{ setVariable(False, 'ipe_doc[ip_s]', 'num') }}
                     }
                     else {
@@ -1787,25 +1918,211 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t* pl, size_t length) {
                 }
                 {{ setVariable(False, 'i++') }}
             }
+            {% endif %}
+            {% if template['numevents'] > 0 and global['isWS'] %}
             
+            if(!done) {
+                {{ setVariable(False, 'i', '0') }}
+                while(!done && i<ws_requestsNumber) {
+                    if(ws_endpoint[i].equals(payload)) {
+                        if(ia_doc[ip_s].isNull()) {
+                            {{ setVariable(False, 'obj_ia', 'ia_doc.createNestedArray(ip_s).createNestedObject()') }}
+                            {{ setVariable(False, 'obj_ipia', 'ipia_arr.createNestedObject()') }}
+                            {{ setVariable(False, 'obj_ipia["ip"]', 'ip_s') }}
+                            {{ setVariable(False, 'obj_ipia["num"]', 'num') }}
+                            {{ setVariable(False, 'ipia_doc[ip_s]', 'num') }}
+                        }
+                        else {
+                            {{ setVariable(False, 'j', '0') }}
+                            while(!conn && j<ia_doc[ip_s].size()) {
+                                if(!ia_doc[ip_s][j][ws_requests[i]].isNull())
+                                    {{ setVariable(False, 'conn', 'true') }}
+                                {{ setVariable(False, 'j++') }}    
+                            }
+                            if(!conn)
+                                {{ setVariable(False, 'obj_ia', 'ia_doc[ip_s].createNestedObject()') }}  
+                        }
+                        
+                        if(conn) {
+                            {{ setVariable(False, 'done', 'true') }}
+                            webSocket.sendTXT(num, "Connection already established");
+                        }
+                        else {
+                            {{ setVariable(False, 'done', 'true') }}
+                            webSocket.sendTXT(num, "Connection confirmed");
+
+                            {% if capacity['actions'] > 0 %}
+                            // verify if the endpoint of this connection request refers to an Action
+                            {{ defineVariable('bool', 'isAction', 'false') }}
+                            {{ setVariable(False, 'j', '0') }}
+                            while(!done && j<ws_actionsNumber) {
+                                if(ws_requests[i].equals(ws_actions[j])) {
+                                    {{ setVariable(False, 'done', 'true') }}
+                                    {{ setVariable(False, 'obj_ia[ws_requests[i]]', 'false') }}
+                                    {{ setVariable(False, 'isAction', 'true') }}
+                                }
+                                {{ setVariable(False, 'j++') }}
+                            }
+
+                            if(!isAction) {
+                                {{ setVariable(False, 'done', 'true') }}
+                                {{ setVariable(False, 'obj_ia[ws_requests[i]]', 'true') }}  
+                                
+                                {% for elem in reqPropertyWS %}
+                                {% if loop.first %}
+                                if(ws_requests[i].equals({{ elem[0] }}))
+                                    {{ setVariable(False, 'resp', 'request' + elem[1] | string + '()') }}
+                                {% else %}
+                                else if(ws_requests[i].equals({{ elem[0] }}))
+                                    {{ setVariable(False, 'resp', 'request' + elem[1] | string + '()') }}
+                                {% endif %}
+                                {% endfor %}
+
+                                webSocket.sendTXT(num, resp);  
+                            }
+                            {% else %}
+                            {{ setVariable(False, 'done', 'true') }}
+                            {{ setVariable(False, 'obj_ia[ws_requests[i]]', 'true') }}  
+                            
+                            {% for elem in reqPropertyWS %}
+                            {% if loop.first %}
+                            if(ws_requests[i].equals({{ elem[0] }}))
+                                {{ setVariable(False, 'resp', 'request' + elem[1] | string + '()') }}
+                            {% else %}
+                            else if(ws_requests[i].equals({{ elem[0] }}))
+                                {{ setVariable(False, 'resp', 'request' + elem[1] | string + '()') }}
+                            {% endif %}
+                            {% endfor %}    
+
+                            webSocket.sendTXT(num, resp);  
+                            {% endif %}
+                        }
+                    }
+                    {{ setVariable(False, 'i++') }}
+                }
+            }
+            {% elif template['numevents'] == 0 %}
+
+            {{ setVariable(False, 'i', '0') }}
+            while(!done && i<ws_requestsNumber) {
+                if(ws_endpoint[i].equals(payload)) {
+                    if(ia_doc[ip_s].isNull()) {
+                        {{ setVariable(False, 'obj_ia', 'ia_doc.createNestedArray(ip_s).createNestedObject()') }}
+                        {{ setVariable(False, 'obj_ipia', 'ipia_arr.createNestedObject()') }}
+                        {{ setVariable(False, 'obj_ipia["ip"]', 'ip_s') }}
+                        {{ setVariable(False, 'obj_ipia["num"]', 'num') }}
+                        {{ setVariable(False, 'ipia_doc[ip_s]', 'num') }}
+                    }
+                    else {
+                        {{ setVariable(False, 'j', '0') }}
+                        while(!conn && j<ia_doc[ip_s].size()) {
+                            if(!ia_doc[ip_s][j][ws_requests[i]].isNull())
+                                {{ setVariable(False, 'conn', 'true') }}
+                            {{ setVariable(False, 'j++') }}    
+                        }
+                        if(!conn)
+                            {{ setVariable(False, 'obj_ia', 'ia_doc[ip_s].createNestedObject()') }}  
+                    }
+                    
+                    if(conn) {
+                        {{ setVariable(False, 'done', 'true') }}
+                        webSocket.sendTXT(num, "Connection already established");
+                    }
+                    else {
+                        {{ setVariable(False, 'done', 'true') }}
+                        webSocket.sendTXT(num, "Connection confirmed");
+
+                        {% if capacity['actions'] > 0 %}
+                        // verify if the endpoint of this connection request refers to an Action
+                        {{ defineVariable('bool', 'isAction', 'false') }}
+                        {{ setVariable(False, 'j', '0') }}
+                        while(!done && j<ws_actionsNumber) {
+                            if(ws_requests[i].equals(ws_actions[j])) {
+                                {{ setVariable(False, 'done', 'true') }}
+                                {{ setVariable(False, 'obj_ia[ws_requests[i]]', 'false') }}
+                                {{ setVariable(False, 'isAction', 'true') }}
+                            }
+                            {{ setVariable(False, 'j++') }}
+                        }
+
+                        if(!isAction) {
+                            {{ setVariable(False, 'done', 'true') }}
+                            {{ setVariable(False, 'obj_ia[ws_requests[i]]', 'true') }}  
+                            
+                            {% for elem in reqPropertyWS %}
+                            {% if loop.first %}
+                            if(ws_requests[i].equals({{ elem[0] }}))
+                                {{ setVariable(False, 'resp', 'request' + elem[1] | string + '()') }}
+                            {% else %}
+                            else if(ws_requests[i].equals({{ elem[0] }}))
+                                {{ setVariable(False, 'resp', 'request' + elem[1] | string + '()') }}
+                            {% endif %}
+                            {% endfor %}
+
+                            webSocket.sendTXT(num, resp);  
+                        }
+                        {% else %}
+                        {{ setVariable(False, 'done', 'true') }}
+                        {{ setVariable(False, 'obj_ia[ws_requests[i]]', 'true') }}  
+                        
+                        {% for elem in reqPropertyWS %}
+                        {% if loop.first %}
+                        if(ws_requests[i].equals({{ elem[0] }}))
+                            {{ setVariable(False, 'resp', 'request' + elem[1] | string + '()') }}
+                        {% else %}
+                        else if(ws_requests[i].equals({{ elem[0] }}))
+                            {{ setVariable(False, 'resp', 'request' + elem[1] | string + '()') }}
+                        {% endif %}
+                        {% endfor %}
+
+                        webSocket.sendTXT(num, resp);  
+                        {% endif %}
+                    }
+                }
+                {{ setVariable(False, 'i++') }}
+            }
+            {% else %}
+
             if(!done)
                 webSocket.sendTXT(num, "Connection refused"); 
+            {% endif %}
 
+            {% if template['numevents'] > 0 %}
             {{ setVariable(False, 'serializeJson(e_doc, Serial)') }}
             Serial.println();
             {{ setVariable(False, 'serializeJson(ipe_doc, Serial)') }}
             Serial.println();
+            {% endif %}
+            {% if global['isWS'] %}
+            {{ setVariable(False, 'serializeJson(ia_doc, Serial)') }}
+            {{ setVariable(False, 'serializeJson(ipia_doc, Serial)') }}
+            Serial.println();
+            {% endif %}
         }
         break;
 
         case WStype_TEXT:
         { 
+            {% if template['numevents'] > 0 and global['isWS'] %}
+            {% if capacity['maxSchema'] * 2 > capacity['maxInputSchema'] %}
             DynamicJsonDocument resp_doc({{ capacity['maxSchema'] * 2}});
+            {% else %}
+            DynamicJsonDocument resp_doc({{ capacity['maxInputSchema'] }});
+            {% endif %}
+            {% elif template['numevents'] > 0 %}
+            DynamicJsonDocument resp_doc({{ capacity['maxSchema'] * 2}});
+            {% else %}
+            DynamicJsonDocument resp_doc({{ capacity['maxInputSchema'] }});
+            {% endif %}
+            {% if template['numevents'] > 0 %}
             {{ defineVariable('bool', 'parsingDone', 'false') }}
             {{ defineVariable('int', 'validInput', '0') }}
             {{ defineVariable('String', 't_name', 'iv') }}
             {{ defineVariable('String', 'validate', 'iv') }}
             {{ defineVariable('String', 'message', 'iv') }}
+            {% else %}
+            {{ defineVariable('bool', 'parsingDone', 'false') }}
+            {% endif %}
 
             {{ setVariable(False, 'ip', 'webSocket.remoteIP(num)') }}
             {{ setVariable(False, 'ip_s', 'ip.toString()') }}
@@ -1820,6 +2137,7 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t* pl, size_t length) {
                 webSocket.sendTXT(num, "deserializeJson failed");
             }
             else {
+                {% if template['numevents'] > 0 %}
                 {{ defineVariable('String', 'message', 'iv') }}
                 {{ setVariable(False, 'serializeJson(resp_doc, message)') }}
                 {{ setVariable(False, 'i', '0') }}
@@ -1890,14 +2208,84 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t* pl, size_t length) {
                     }
                     {{ setVariable(False, 'i++') }}
                 }
+                {% endif %}
+                {% if template['numevents'] > 0 and capacity['actions'] > 0 %}
+                if(!parsingDone) {
+                    {{ setVariable(False, 'i', '0') }}
+                    while(!parsingDone && i<ia_doc[ip_s].size()) {
+                        {{ setVariable(False, 'j', '0') }}
+                        while(!parsingDone && j<ws_actionsNumber) { 
+                            if(!ia_doc[ip_s][i][ws_actions[j]].isNull()) {
+                                if(!ia_doc[ip_s][i][ws_actions[j]]) {
+                                    {{ setVariable(False, 'k', '0') }}
+                                    while(!parsingDone && k<ws_actionsNumber) {
+                                        switch(k) {
+                                            {% for i in range(1, capacity['actions']+1) %}
+                                            case {{ i }}: {
+                                                {{ setVariable(False, 'parsingDone', 'true') }}
+                                                {{ setVariable(False, 'ia_doc[ip_s][i][ws_actions[j]]', 'true') }}
+                                                {{ setVariable(False, 'resp', 'request' + (i+3+template['numproperties']) | string + '(payload)') }}
+                                                webSocket.sendTXT(num, resp);
+                                            }
+                                            break;
+
+                                            {% endfor %}
+                                        }
+                                        {{ setVariable(False, 'k++') }}
+                                    }
+                                }
+                            }
+                            {{ setVariable(False, 'j++') }}  
+                        }        
+                        {{ setVariable(False, 'i++') }} 
+                    }
+                }
+                {% elif template['numevents'] == 0 %}
+                {{ setVariable(False, 'i', '0') }}
+                while(!parsingDone && i<ia_doc[ip_s].size()) {
+                    {{ setVariable(False, 'j', '0') }}
+                    while(!parsingDone && j<ws_actionsNumber) { 
+                        if(!ia_doc[ip_s][i][ws_actions[j]].isNull()) {
+                            if(!ia_doc[ip_s][i][ws_actions[j]]) {
+                                {{ setVariable(False, 'k', '0') }}
+                                while(!parsingDone && k<ws_actionsNumber) {
+                                    switch(k) {
+                                        {% for i in range(1, capacity['actions']+1) %}
+                                        case {{ i }}: {
+                                            {{ setVariable(False, 'parsingDone', 'true') }}
+                                            {{ setVariable(False, 'ia_doc[ip_s][i][ws_actions[j]]', 'true') }}
+                                            {{ setVariable(False, 'resp', 'request' + (i+3+template['numproperties']) | string + '(payload)') }}
+                                            webSocket.sendTXT(num, resp);
+                                        }
+                                        break;
+
+                                        {% endfor %}
+                                    }
+                                    {{ setVariable(False, 'k++') }}
+                                }
+                            }
+                        }
+                        {{ setVariable(False, 'j++') }}  
+                    }        
+                    {{ setVariable(False, 'i++') }} 
+                }
+                {% endif %}
+                
                 if(!parsingDone) 
                     webSocket.sendTXT(num, "Invalid message");
             }
 
+            {% if template['numevents'] > 0 %}
             {{ setVariable(False, 'serializeJson(e_doc, Serial)') }}
             Serial.println();
             {{ setVariable(False, 'serializeJson(ipe_doc, Serial)') }}
             Serial.println();
+            {% endif %}
+            {% if capacity['actions'] > 0 %}
+            {{ setVariable(False, 'serializeJson(ia_doc, Serial)') }}
+            {{ setVariable(False, 'serializeJson(ipia_doc, Serial)') }}
+            Serial.println();
+            {% endif %}
         }
         break;
         {% for ws in template['websocket'] %}

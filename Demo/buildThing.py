@@ -1,6 +1,10 @@
 # coding=utf-8
-import os
 import click
+import os
+import sys
+import subprocess as sp
+import shlex
+import yaml
 from jinja2 import Template, FileSystemLoader, Environment
 import functools
 import json
@@ -153,12 +157,12 @@ def searchName(nameList, name):
 
 
 def addForm(ctx, opType, interactionTypeS, interactionTypeTD='', interactionName='', index=0):
-    numOperationType = 0
+    numOperationType = 2
     if(interactionTypeS == 'Thing'):
         ctx.obj['td'].setdefault('forms', [])
         click.echo("\nHint: Thing Operation Type has four possible values ('%s', '%s', '%s', '%s'). You can choose a subset or all of them" % (opType[0], opType[1], opType[2], opType[3]))
         numOperationType = click.prompt('Press 1 for insert a subset of Thing Operation Types or 2 for insert all of them', type=click.IntRange(1,2))
-    else:
+    elif(interactionTypeS != 'Action'):
         ctx.obj['td'][interactionTypeTD][interactionName].setdefault('forms', [])
         click.echo("Hint: %s Operation Type has only two possible values ('%s', '%s'). You can choose both or one of them" % (interactionTypeS, opType[0], opType[1]))
         numOperationType = click.prompt('Press 1 for insert one %s %d Operation Type or 2 for insert both of them' % (interactionTypeS, index), type=click.IntRange(1,2))
@@ -170,37 +174,79 @@ def addForm(ctx, opType, interactionTypeS, interactionTypeTD='', interactionName
                 inp = searchNameTD(ot, 'Thing', i, opType)
                 ot.append(inp)
             ctx.obj['td']['forms'].append({'href': '', 'contentType': 'application/json', 'op': ot}) 
+            if(click.confirm('\nAdd WebSocket protocol for Thing Operations?', default=False)):
+                ctx.obj['td']['forms'].append({'href': '', 'contentType': 'application/json', 'op': ot})  
+                websocket = True
         else:    
             inp = click.prompt('%s %d Operation Type' % (interactionTypeS, index), type=click.Choice(opType))
             ot.append(inp)
-            ctx.obj['td'][interactionTypeTD][interactionName]['forms'].append({'href':'', 'contentType': 'application/json', 'op': ot})
+            ctx.obj['td'][interactionTypeTD][interactionName]['forms'].append({'href': '', 'contentType': 'application/json', 'op': ot})
+            if(click.confirm('\nAdd WebSocket protocol for %s Operations?' % interactionTypeS, default=False)):
+                ctx.obj['td'][interactionTypeTD][interactionName]['forms'].append({'href': '', 'contentType': 'application/json', 'op': ot})
+                websocket = True
     elif(numOperationType == 2):
         if(interactionTypeS == 'Thing'):
             ctx.obj['td']['forms'].append({'href': '', 'contentType': 'application/json', 'op': opType})  
-        else:                       
-            ctx.obj['td'][interactionTypeTD][interactionName]['forms'].append({'href': '', 'contentType': 'application/json', 'op': opType})
+            if(click.confirm('\nAdd WebSocket protocol for Thing Operations?', default=False)):
+                ctx.obj['td']['forms'].append({'href': '', 'contentType': 'application/json', 'op': opType})  
+                websocket = True
+        else:      
+            if(interactionTypeS != 'Action'):                 
+                ctx.obj['td'][interactionTypeTD][interactionName]['forms'].append({'href': '', 'contentType': 'application/json', 'op': opType})
+            if(click.confirm('\nAdd WebSocket protocol for %s Operations?' % interactionTypeS, default=False)):
+                ctx.obj['td'][interactionTypeTD][interactionName]['forms'].append({'href': '', 'contentType': 'application/json', 'op': opType})
+                websocket = True
 
 
 def addTerm(ctx, form, interactionTypeS, interactionTypeTD='', interactionName=''):
-    terms = []
+    termsHTTP = []
+    termsWS = []
     question = ''
+    websocket = False
+    http = False
+    ws = False
     if(form):
-        if(interactionTypeS == 'Action'):
-            question = 'Add additional Form Term?'
-        else:
-            question = '\nAdd additional Form Term?'
+        question = '\nAdd additional Form Term?'
     else:
         question = '\nAdd additional %s Term?' % interactionTypeS
+    if(form):
+        if(interactionTypeS == 'Thing'):
+            if(len(ctx.obj['td']['forms']) == 2):
+                websocket = True
+        else:
+            if(len(ctx.obj['td'][interactionTypeTD][interactionName]['forms']) == 2):
+                websocket = True        
     while(click.confirm(question, default=False)):
+        if(websocket):
+            hw = click.prompt('\nPress 1 to insert an HTTP Protocol Term or 2 to insert a WebSocket Protocol Term', type=click.IntRange(1,2))
+            if(hw == 1):
+                http = True
+            else:
+                ws = True    
         termName = ''
         termAlreadyExists = True
         while(termAlreadyExists):
             termName = click.prompt('Term name', type=SWN_STRING)
-            if(termName.lower() in terms):
-                click.echo('Error: Term already exists\n')
-            else:
-                termAlreadyExists = False    
-        terms.append(termName.lower()) 
+            if(websocket):
+                if(http):
+                    if(termName.lower() in termsHTTP):
+                        click.echo('Error: Term already exists\n')
+                    else:
+                        termAlreadyExists = False    
+                elif(ws):
+                    if(termName.lower() in termsWS):
+                        click.echo('Error: Term already exists\n')
+                    else:
+                        termAlreadyExists = False    
+            else:                
+                if(termName.lower() in termsHTTP):
+                    click.echo('Error: Term already exists\n')
+                else:
+                    termAlreadyExists = False    
+        if(http):
+            termsHTTP.append(termName.lower()) 
+        elif(ws):
+            termsWS.append(termName.lower())    
         elementType = ''
         if(form):
             click.echo('\nHint: Term elements MUST be STRINGs')
@@ -211,9 +257,15 @@ def addTerm(ctx, form, interactionTypeS, interactionTypeTD='', interactionName='
         termValue = click.prompt('Term Element', type=elementType)
         if(form):
             if(interactionTypeS == 'Thing'):
-                ctx.obj['td']['forms'][0][termName] = termValue
+                if(ws):
+                    ctx.obj['td']['forms'][1][termName] = termValue
+                else:
+                    ctx.obj['td']['forms'][0][termName] = termValue
             else:
-                ctx.obj['td'][interactionTypeTD][interactionName]['forms'][0][termName] = termValue
+                if(ws):
+                    ctx.obj['td'][interactionTypeTD][interactionName]['forms'][1][termName] = termValue
+                else:
+                    ctx.obj['td'][interactionTypeTD][interactionName]['forms'][0][termName] = termValue    
         else:
             if(interactionTypeS == 'Thing'):
                 ctx.obj['td'][termName] = termValue     
@@ -872,6 +924,94 @@ def writeFile(filePath, fileContent):
     of.close()
 
 
+def prepareArduinoEnvironment(ctx):
+    click.echo('Hint: Before compiling or flashing, be sure that the ESP8266 board which the Embedded-C File will be compiled on is connected to the Serial Port')
+    click.echo('The compile and flash operations are made up with arduino-cli software')
+    home = os.path.expanduser('~')
+    cwd = os.getcwd()
+    # verify that arduino-cli is installed
+    commandFound = False
+    for path in os.environ["PATH"].split(os.pathsep):
+        exe_file = os.path.join(path, 'arduino-cli')
+        if os.path.isfile(exe_file) and os.access(exe_file, os.X_OK):
+            commandFound = True
+            break
+    # install arduino-cli    
+    if(not(commandFound)):
+        os.chdir(home) 
+        c = 'curl -fsSL https://raw.githubusercontent.com/arduino/arduino-cli/master/install.sh'
+        click.echo()
+        pr1 = sp.Popen(shlex.split(c), universal_newlines=True, check=True, stdout=sp.PIPE)
+        pr2 = sp.Popen(['sh'], universal_newlines=True,  check=True, stdin=pr1.stdout)
+        pr2.wait()
+    # verify that the arduino-cli configuration file is created
+    configFile = home + '/.arduino15/arduino-cli.yaml'
+    if(not(os.path.exists(configFile))):  
+        c = 'arduino-cli config init'
+        pr = sp.Popen(shlex.split(c), universal_newlines=True, stdout=sp.PIPE)
+        click.echo(pr.communicate()[0])
+    # verify that the esp8266 core is installed in arduino-cli    
+    coreUrl = 'https://arduino.esp8266.com/stable/package_esp8266com_index.json'
+    yamlDict = yaml.load(open(configFile, 'r'), Loader=yaml.FullLoader)   
+    coreFound = False
+    for item in yamlDict['board_manager']['additional_urls']:
+        if(item == coreUrl):
+            coreFound = True
+            break
+    if(not(coreFound)):
+        yamlDict['board_manager']['additional_urls'].append(coreUrl)
+        with open(configFile, 'w') as yamlFile:
+            yaml.dump(yamlDict, yamlFile)     
+    # update core index        
+    c = 'arduino-cli core update-index'
+    pr = sp.Popen(shlex.split(c), universal_newlines=True, stdout=sp.PIPE)
+    while True:
+        output = pr.stdout.readline()
+        if output == '' and pr.poll() is not None:
+            break
+        if output:
+            click.echo(output.strip())
+    # install esp8266 core
+    c = 'arduino-cli core install esp8266:esp8266'    
+    pr = sp.Popen(shlex.split(c), universal_newlines=True, stdout=sp.PIPE)
+    while True:
+        output = pr.stdout.readline()
+        if output == '' and pr.poll() is not None:
+            break
+        if output:
+            click.echo(output.strip())
+    # install mandatory libraries
+    c = 'arduino-cli lib install "WebSockets"'
+    pr = sp.Popen(shlex.split(c), universal_newlines=True, stdout=sp.PIPE)
+    pr.wait()
+    c = 'arduino-cli lib install "ArduinoJson"'
+    pr = sp.Popen(shlex.split(c), universal_newlines=True, stdout=sp.PIPE)
+    pr.wait()
+    click.echo('\nHint: Each libraries used in the Embedded-C File MUST be installed')
+    click.echo('It is necessary to provide the exact name of the library to install')
+    click.echo('The path of arduino-cli libraries is %s/Arduino/libraries/' % home)
+    if((ctx.obj is not None) and (len(ctx.obj['template']['libraries']) > 0)):
+        for lib in ctx.obj['template']['libraries']:
+            click.echo('\n%s' % lib.upper())
+            libName = lib.split('.')[0]
+            c = 'arduino-cli lib search %s' % libName
+            pr = sp.Popen(shlex.split(c), universal_newlines=True, stdout=sp.PIPE)
+            output = pr.communicate()[0]
+            inp = ''
+            if('No libraries matching your search' in output):
+                click.echo('The Library Name used in the skecth is different from the Library Binary Name')
+                inp = click.prompt('Exact Library Name', type=str)
+            else:
+                click.echo(output)    
+                inp = click.prompt('Choose Libray Name from the list ', type=str, default=lib, show_default=True)
+            c = 'arduino-cli lib install "%s"' % inp
+            pr = sp.Popen(shlex.split(c), universal_newlines=True, stdout=sp.PIPE)
+            click.echo(pr.communicate()[0])
+            input("Press Enter to continue...")    
+    os.chdir(cwd)    
+    environmentPrepared = True
+
+
 # CUSTOM TYPES
 SWN_STRING = StartWithoutNumberStringParamType()
 OBJ_STRING = ObjectStringParamType()
@@ -898,6 +1038,10 @@ thingActions = []
 actionFunctions = []
 thingEvents = []
 eventConditions = []
+websocket = False
+
+# arduino-cli 
+environmentPrepared = False
 
 # option in comune ai diversi comandi
 def common_options(f):
@@ -922,7 +1066,7 @@ def compute_properties(ctx, param, value):
 # cli è una callback del gruppo definito precedentemente
 def cli(ctx, **kwargs):
     """WoT module for build TDs and executable scripts for embedded systems"""
-    click.echo('This module allow you to build custom Thing Descriptions and executable scripts for expose Thing on embedded systems')
+    click.echo('This module allow you to build custom Thing Descriptions and executable scripts for expose Things on Embedded Systems')
     click.echo('Use --help option to see documentation\n')
     if(ctx.invoked_subcommand is None):
         click.confirm('Use the wizard?', default=True, abort=True)
@@ -1083,6 +1227,7 @@ def start(ctx, **kwargs):
             # ACTION FORM          
             ctx.obj['td']['actions'][actionName].setdefault('forms', [])
             ctx.obj['td']['actions'][actionName]['forms'].append({'href': '', 'contentType': 'application/json', 'op': 'invokeaction'})
+            addForm(ctx, 'invokeaction', 'Action', 'actions', actionName, a)
             # ACTION FORM ADDITIONAL TERMS 
             addTerm(ctx, True, 'Action', 'actions', actionName) 
             # ACTION FUNCTION INFORMATIONS
@@ -1133,7 +1278,7 @@ def start(ctx, **kwargs):
                 click.echo('You have to provide only the code enclosed by braces on one line, neither Function name or inputs.')
                 click.echo('This elements are retrived from the information you gave before.')
                 click.echo('In the Thing Event Section it is possibile to add the Thing Action where insert the if-condition and the relative code to handle the Event logic.')
-                actionFunctions[a-1]['body'] = click.prompt('Function Body', type=str) 
+                actionFunctions[a-1]['body'] = click.prompt('\nFunction Body', type=str) 
                 actionFunctions[a-1]['source'] = 'cli'
             # ACTION SAFETY
             if(click.confirm('\nAction %d is safe?' % a, default=False)):
@@ -1175,7 +1320,7 @@ def start(ctx, **kwargs):
                     '\ncan include every relational and logic operator like standard conditions in programming languages.'
                     '\nTo send messages through WebSocket it is necessarly to use sendTXT() method of WebSocketServer library.')
             click.echo(Hint)
-            click.echo('Example: ''property1_name <= 0''. IF-keyword and round brackets are not necessary')
+            click.echo('Example: ''if(property1_name <= 0)''. IF-keyword and round brackets are not necessary')
             event = {}
             event['condition'] = click.prompt('Event %d Condition' % e, type=str)
             an = click.prompt('Number of Actions in which the Event Condition will triggered', type=click.IntRange(1, len(thingActions)))
@@ -1206,7 +1351,8 @@ def start(ctx, **kwargs):
     filePath = ctx.obj['td']['title'].lower() + '/' + ctx.obj['td']['title'].lower() + '.json'
     output = json.dumps(ctx.obj['td'], indent=4)
     writeFile(filePath, output)
-    if(click.confirm('\nBuild Embedded-C File starting from this Thing Description?', default=True)):
+    click.echo('\n\nBUILDING')
+    if(click.confirm('Build Embedded-C File starting from this Thing Description?', default=True)):
         click.echo()
         ctx.invoke(build)
     else:
@@ -1221,6 +1367,7 @@ def build(ctx):
     global thingProperties
     global thingActions
     global thingEvents
+    global websocket
     if((ctx.obj is None) or ('td' not in ctx.obj)):
         correctJsonFile = False
         while(not(correctJsonFile)):
@@ -1234,8 +1381,17 @@ def build(ctx):
         ctx.obj['td'] = json.load(open(fileName))
         if('properties' in ctx.obj['td']):
             thingProperties = list(ctx.obj['td']['properties'].keys())
+            for pName in thingProperties:
+                if(len(ctx.obj['td']['properties'][pName]['forms']) == 2):
+                    websocket = True
+                    break
         if('actions' in ctx.obj['td']):    
             thingActions = list(ctx.obj['td']['actions'].keys())
+            if(not(websocket)):
+                for aName in thingActions:
+                    if(len(ctx.obj['td']['actions'][aName]['forms']) == 2):
+                        websocket = True
+                        break
         if('events' in ctx.obj['td']):    
             thingEvents = list(ctx.obj['td']['events'].keys())
         for i in range(0, len(thingActions)):
@@ -1309,7 +1465,7 @@ def build(ctx):
     inp = click.prompt('\nWebServer Port', type=NN_INT, default=80, show_default=True)
     ctx.obj['template']['portserver'] = str(inp)
     # WEBSOCKET PORT
-    if('events' in ctx.obj['td']):
+    if('events' in ctx.obj['td'] or websocket):
         inp = click.prompt('\nWebSocket Port', type=NN_INT, default=81, show_default=True)
         ctx.obj['template']['portsocket'] = str(inp)    
     # ADDITIONAL LIBRARIES
@@ -1447,14 +1603,14 @@ def build(ctx):
     ctx.obj['template']['numevents'] = len(thingEvents)
     # THING PROPERTIES
     ctx.obj['template'].setdefault('properties', [])
-    for i in range(0, ctx.obj['template']['numproperties']):
+    for i in range(0, len(thingProperties)):
         p = handleTemplateTypes(ctx, 'properties', thingProperties[i])
         ctx.obj['template']['properties'].append(p)         
     o = 0 
     for i in range(0, len(thingProperties)):    
         if(ctx.obj['td']['properties'][thingProperties[i]]['type'] == 'object'):
             o = o+1    
-    ctx.obj['template']['numop'] = o
+    ctx.obj['template']['numop'] = o  
     # THING ACTIONS
     ctx.obj['template'].setdefault('actions', []) 
     ctx.obj['template']['actions'] = actionFunctions
@@ -1475,11 +1631,11 @@ def build(ctx):
                     t = {}
                     t['name'] = key
                     t['value'] = ctx.obj['td']['events'][e['name']][data][key]['value']
-                    ctx.obj['template']['events'][i][data].append(t)   
+                    ctx.obj['template']['events'][i][data].append(t)       
     # WEBSOCKET MESSAGE TYPES     
     if(len(thingEvents) > 0):           
         click.echo('\nHint: This application handle only three WebSocket Types in WebSocketEvent function for messages exchanged on the WebSocket channel: DISCONNECTED, CONNECTED and TEXT')
-        click.echo('You have to insert only types that are allowed by WebSocket library and the relative logic on one line.')
+        click.echo('You have to insert only types that are allowed by WebSocket library and the relative logic on one line')
         click.echo("The code will be insert inside the relative SWITCH-CASE section in WebSocketEvent function. It is not necessary to insert the latter 'break' in the SWITCH-CASE sections")
         nameList = []
         ctx.obj['template'].setdefault('websocket', [])
@@ -1500,6 +1656,93 @@ def build(ctx):
     output = template.render(td=ctx.obj['td'], template=ctx.obj['template'])    
     filePath = ctx.obj['td']['title'].lower() + '/' + ctx.obj['td']['title'].lower() + '.ino'
     writeFile(filePath, output)
+    click.echo('\n\nCOMPILING')
+    if(click.confirm('Compile the Embedded-C File?', default=True)):
+        prepareArduinoEnvironment(ctx)
+        click.echo()
+        ctx.invoke(compile)
+    else:
+        pass 
+
+
+@cli.command()
+@click.pass_context
+def compile(ctx):
+    '''Compile Embedded-C File'''
+    global environmentPrepared
+    if(not(environmentPrepared)):
+        prepareArduinoEnvironment(ctx)
+    click.echo('\nStart compiling...\n') 
+    sketchDir = ''
+    if((ctx.obj is None) or ('td' not in ctx.obj)):
+        sketchDir = click.prompt('Insert the path of the directory where the Embedded-C File to compile is located', type=click.Path(exists=True, readable=True, resolve_path=True))
+        ctx.ensure_object(dict)
+        ctx.obj['sketchdir'] = sketchDir
+    else:
+        sketchDir = ctx.obj['td']['title'].lower()   
+    click.echo()     
+    c = 'arduino-cli compile --fqbn esp8266:esp8266:nodemcuv2 %s' % sketchDir
+    pr = sp.Popen(shlex.split(c), universal_newlines=True, stdout=sp.PIPE)
+    while True:
+        output = pr.stdout.readline()
+        if output == '' and pr.poll() is not None:
+            break
+        if output:
+            click.echo(output.strip())
+    click.echo('\n\nFLASHING')        
+    if(click.confirm('Flash the Embedded-C File?', default=True)):
+        click.echo()
+        ctx.invoke(flash)
+
+
+@cli.command()
+@click.pass_context
+def flash(ctx):
+    '''Flash Embedded-C File'''
+    global environmentPrepared
+    if(not(environmentPrepared)):
+        prepareArduinoEnvironment(ctx)
+    click.echo('\nStart flashing...\n') 
+    sketchDir = ''
+    if(ctx.obj is None):
+        sketchDir = click.prompt('Insert the path of the directory where the Embedded-C File to flash is located', type=click.Path(exists=True, readable=True, resolve_path=True))
+        ctx.ensure_object(dict)
+    else:
+        if('sketchdir' in ctx.obj):
+            sketchDir = ctx.obj['sketchdir']
+        elif('td' in ctx.obj):    
+            sketchDir = ctx.obj['td']['title'].lower()
+    click.echo('\nList of serial ports connected to boards:')
+    c = 'arduino-cli board list'      
+    pr = sp.Popen(shlex.split(c), universal_newlines=True, stdout=sp.PIPE)
+    click.echo(pr.communicate()[0])
+    serialPort = click.prompt('Serial Port to flash', type=str)
+    click.echo()
+    c = 'arduino-cli compile --fqbn esp8266:esp8266:nodemcuv2 %s' % sketchDir
+    pr = sp.Popen(shlex.split(c), universal_newlines=True, stdout=sp.PIPE)
+    while True:
+        output = pr.stdout.readline()
+        if output == '' and pr.poll() is not None:
+            break
+        if output:
+            click.echo(output.strip())
+    click.echo()
+    c = 'arduino-cli upload -p %s --fqbn esp8266:esp8266:nodemcuv2 %s' % (serialPort, sketchDir)
+    pr = sp.Popen(shlex.split(c), universal_newlines=True, stdout=sp.PIPE)
+    while True:
+        output = pr.stdout.readline()
+        if output == '' and pr.poll() is not None:
+            break
+        if output:
+            click.echo(output.strip())
+    if(click.confirm('\nOpen serial monitor?', default=False)):
+        click.echo('Hint: The serial monitor will be open throw screen library')
+        click.echo('To close the serial monitor use the combination Ctrl+A Ctrl+D')
+        baudRate = 115200
+        if(not(click.confirm('\nUse the default baud rate (115200)?', default=True))):
+            baudRate = click.prompt('Baud rate', type=int)
+        c = 'gnome-terminal --tab -- bash -c "screen %s %d"' % (serialPort, baudRate)
+        sp.Popen(shlex.split(c), universal_newlines=True, stdout=sp.PIPE) 
 
 
 if __name__ == "__main__":
@@ -1509,6 +1752,3 @@ if __name__ == "__main__":
     # se si inserisce un'opzione prima del comando, allora viene gestita dalla cli, 
     # se viene inserita dopo, viene gestita dal comando stesso
     cli()
-
-    # QUANDO SI INSERISCONO OGGETTI, VERIFICARE SE VALIDATE JSON DA ERRORE, SE SI L'UTENTE DEVE REINSERIRE I DATI
-    # CONTROLLARE NOMI DOPPIONI IN LIBRERIE, VARIABILI GLOBALI, FUNZIONI E TIPI WEBSOCKET
