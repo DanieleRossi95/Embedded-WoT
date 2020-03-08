@@ -1,7 +1,7 @@
 \babel@toc {italian}{}
 \babel@toc {italian}{}
 \thispagestyle {empty}
-\contentsline {chapter}{Introduzione}{1}{chapter*.1}
+\contentsline {chapter}{Introduzione}{vii}{chapter*.1}
 \let \cftchapfont \Large \bfseries 
 \let \cftchappagefont \Large \bfseries 
 \vspace {0.4cm}
@@ -23,19 +23,39 @@
 \contentsline {subsection}{\numberline {2.1.7}WoT Servient}{29}{subsection.2.1.7}
 \contentsline {section}{\numberline {2.2}Implementazioni concrete del WoT Servient}{32}{section.2.2}
 \contentsline {subsection}{\numberline {2.2.1}WoT Arduino}{33}{subsection.2.2.1}
-\contentsline {subsubsection}{Utilizzo}{34}{section*.3}
+\contentsline {subsubsection}{Utilizzo}{34}{section*.12}
 \contentsline {subsection}{\numberline {2.2.2}Arduino RDF Server}{35}{subsection.2.2.2}
-\contentsline {subsubsection}{Utilizzo}{36}{section*.4}
+\contentsline {subsubsection}{Utilizzo}{36}{section*.13}
 \let \cftchapfont \Large \bfseries 
 \let \cftchappagefont \Large \bfseries 
 \vspace {0.4cm}
-\contentsline {chapter}{\relax \fontsize {17.28}{22}\selectfont II\hspace {\fontdimen 2\font }\hspace {\fontdimen 2\font }Embedded WoT Servient}{40}{chapter*.5}
+\contentsline {chapter}{\relax \fontsize {17.28}{22}\selectfont II\hspace {\fontdimen 2\font }\hspace {\fontdimen 2\font }Embedded WoT Servient}{40}{chapter*.14}
 \vspace {0.2cm}
 \let \cftchapfont \bfseries 
 \let \cftchappagefont \bfseries 
 \contentsline {chapter}{\numberline {3}Progettazione}{41}{chapter.3}
 \contentsline {section}{\numberline {3.1}Obiettivo}{41}{section.3.1}
-\contentsline {chapter}{Conclusioni}{43}{chapter*.6}
-\contentsline {chapter}{\numberline {A}Prima Appendice}{45}{appendix.Alph1}
-\contentsline {chapter}{\numberline {B}Seconda Appendice}{47}{appendix.Alph2}
-\contentsline {chapter}{Bibliografia}{49}{appendix*.7}
+\contentsline {section}{\numberline {3.2}Requisiti}{42}{section.3.2}
+\contentsline {subsection}{\numberline {3.2.1}Requisiti funzionali}{42}{subsection.3.2.1}
+\contentsline {subsection}{\numberline {3.2.2}Requisiti tecnici}{43}{subsection.3.2.2}
+\contentsline {section}{\numberline {3.3}Architettura}{44}{section.3.3}
+\contentsline {subsection}{\numberline {3.3.1}Componenti}{44}{subsection.3.3.1}
+\contentsline {section}{\numberline {3.4}Scelte progettuali}{47}{section.3.4}
+\contentsline {chapter}{\numberline {4}Implementazione}{49}{chapter.4}
+\contentsline {section}{\numberline {4.1}Tecnologie}{49}{section.4.1}
+\contentsline {subsection}{\numberline {4.1.1}Python}{50}{subsection.4.1.1}
+\contentsline {subsection}{\numberline {4.1.2}Click}{51}{subsection.4.1.2}
+\contentsline {subsection}{\numberline {4.1.3}Jinja2}{52}{subsection.4.1.3}
+\contentsline {subsection}{\numberline {4.1.4}Arduino-cli}{54}{subsection.4.1.4}
+\contentsline {subsection}{\numberline {4.1.5}ESP8266WebServer}{55}{subsection.4.1.5}
+\contentsline {subsection}{\numberline {4.1.6}WebSockets}{56}{subsection.4.1.6}
+\contentsline {subsection}{\numberline {4.1.7}ArduinoJson}{57}{subsection.4.1.7}
+\contentsline {section}{\numberline {4.2}Moduli}{57}{section.4.2}
+\contentsline {subsection}{\numberline {4.2.1}Thing CLI}{58}{subsection.4.2.1}
+\contentsline {subsection}{\numberline {4.2.2}Template}{61}{subsection.4.2.2}
+\contentsline {chapter}{\numberline {5}Validazione}{63}{chapter.5}
+\contentsline {section}{\numberline {5.1}Caso d'uso: Smart Parking}{63}{section.5.1}
+\contentsline {section}{\numberline {5.2}Implementazione del caso d'uso}{66}{section.5.2}
+\contentsline {subsection}{\numberline {5.2.1}Grafici}{68}{subsection.5.2.1}
+\contentsline {chapter}{Conclusioni}{71}{chapter*.25}
+\contentsline {chapter}{Bibliografia}{73}{chapter*.26}

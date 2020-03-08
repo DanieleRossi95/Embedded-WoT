@@ -49,7 +49,9 @@
 \usepackage{titlecaps}
 \usepackage{chngcntr}
 \usepackage{afterpage}
-
+\usepackage{caption}
+%
+\captionsetup[table]{name=Frammento}
 %
 \counterwithout{footnote}{chapter}
 \newcommand\blankpage{
@@ -154,21 +156,37 @@ INDICE}}
 \listoffigures                          %crea l'elenco delle figure
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%non numera l'ultima pagina sinistra
 \clearpage{\pagestyle{empty}\cleardoublepage}
-\renewcommand*{\listtablename}{Elenco dei listati di codice}
+\renewcommand*{\listtablename}{Elenco dei frammenti di codice}
 \listoftables                           %crea l'elenco delle tabelle
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \clearpage{\pagestyle{empty}\cleardoublepage}
 \chapter*{Introduzione}                 %crea l'introduzione (un capitolo
 %   non numerato)
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%imposta l'intestazione di pagina
-\rhead[\fancyplain{}{\bfseries
+\lhead[\fancyplain{}{\bfseries
 	INTRODUZIONE}]{\fancyplain{}{\bfseries\thepage}}
-\lhead[\fancyplain{}{\bfseries\thepage}]{\fancyplain{}{\bfseries
+\rhead[\fancyplain{}{\bfseries\thepage}]{\fancyplain{}{\bfseries
 		INTRODUZIONE}}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%aggiunge la voce Introduzione
 %   nell'indice
 \addcontentsline{toc}{chapter}{Introduzione}
-Questa \`e l'introduzione.
+
+Nonostante la sua tutt'altro che recente nascita, solo negli ultimi anni il settore dell'IoT ha assistito ad una importante espansione che, molto probabilmente, sarà destinata a durare per i prossimi anni avvenire. Se nel 2015, il numero di dispositivi connessi era di 15.41 miliardi, attualmente se ne contano circa 30, con una proiezione di 75.44 miliardi entro il 2025\cite{K1}.
+
+Tra le principali critiche mosse al settore dell'Internet of Thing (IoT) possiamo sicuramente includere la difficile interoperabilità tra i numerosissimi prodotti esistenti che possiedono protocolli e formati differenti e che spesso non sono in grado di dialogare tra di loro.
+
+Al giorno d'oggi, il campo dell'IoT è riuscito a compiere passi molto importanti per gestire al meglio il limite dell'interoperabilità, ovvero è stata introdotta la tecnologia 5G per fornire connessioni che siano sempre più affidabili e sicure. I fattori in comune che hanno portato all'avvicinamento di questi due campi sono sicuramente la necessità di nuove applicazioni per il futuro dell'IoT e la costante evoluzione del settore della tecnologia 5G\cite{K2}.
+
+Grazie all'applicazione e allo sviluppo del paradigma del Web of Things (WoT), si è cercato di gestire questo importante limite. Nello specifico, è stato proprio grazie all'utilizzo di standard e tecnologie web già ampiamente consolidate ed adatte alla costruzione di applicazioni fortemente scalabili, che è stato possibile affrontare il problema della difficile interoperabilità tra i prodotti esistenti all'interno del mondo dell' IoT. La standardizzazione promossa fin dal 2015 dal World Wide Consortium (W3C) ha cercato di ridurre la vasta frammentazione presente all'interno dell'IoT concentrandosi su componenti complementari che permettono di far integrare tra di loro differenti piattaforme e domini applicativi. Al sapiente lavoro di standardizzazione partecipano non solo i membri del W3C ma diversi collaboratori provenienti da importanti aziende tecnologiche a livello mondiale.
+
+Lo scopo delle seguente tesi è la progettazione e l'implementazione dello stack software WoT Servient per sistemi embedded, seguendo con precisione l'architettura proposta del W3C. La piattaforma si compone di un'interfaccia a linea di comando attraverso la quale l'utente è in grado di definire Thing Descriptions, le quali verranno usate come basi per la creazione di script eseguibili dai sistemi di questo tipo. I microcontrollori, in questo modo, assumeranno il ruolo di Thing ed esporranno le loro funzionalità agli utenti con cui interagiranno.
+
+In questo elaborato sono esposte le varie tappe di studio e di lavoro svolto per la realizzazione di questo stack software.
+
+Nella prima parte (capitoli 1 e 2) viene esposto lo stato dell'arte. Il capitolo 1 contiene una panoramica sull'IoT con cenni storici, la sua evoluzione, le sue caratteristiche e le sue criticità. Nel capitolo 2 si analizzerà il W3C WoT, illustrandone l'utilità e  l'architettura del W3C WoT, mostrando i suoi casi d'uso, gli elementi principali e l'implementazione del Servient. 
+
+La seconda parte dell'elaborato (capitoli 3, 4 e 5) si focalizzerà sul sistema sviluppato. Nel capitolo 3 verrà presentata l'idea che ha dato origine a questo progetto, i requisiti funzionali e tecnici e la sua architettura. Il capitolo 4 riguarderà la presentazione del dettaglio delle tecnologie e delle librerie adottate ed i moduli software realizzati. Infine nel capitolo 5 si presenterà un caso d'uso su cui si è validata l'implementazione del sistema oggetto di questo lavoro.
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \pagenumbering{arabic}     				%mette i numeri arabi
 \def\HS{\hspace{\fontdimen2\font}}    
@@ -212,7 +230,7 @@ Unendo le parole e i concetti di "Internet" e "Things", si ottiene la nuova tipo
 
 Il concetto dell'Internet of Things come lo conosciamo oggi è il risultato di un lungo processo di raffinazione e espansione che è stato portato avanti nel corso di decenni. 
 
-La prima comparsa del termine risale al 1999 e la sua paternità è da attribuire a Kevin Ashton, cofondatore e direttore esecutivo di Auto-ID Center (consorzio di ricerca con sede al Massachusetts Institute of Technology), il quale, all'epoca, si riferiva solo ed esclusivamente a quei dispositivi connessi che potevano essere identificati in modo univoco tramite la tecnologia Radio-Frequency IDentification (RFID). 
+La prima comparsa del termine risale al 1999 e la sua paternità è da attribuire a Kevin Ashton, cofondatore e direttore esecutivo di Auto-ID Center (consorzio di ricerca con sede al Massachusetts Institute of Technology), il quale, all'epoca, si riferiva solo ed esclusivamente a quei dispositivi connessi che potevano essere identificati in modo univoco tramite la tecnologia Radio-Frequency IDentification (RFID)\cite{K3}. 
 
 Con il passare del tempo, grazie anche allo sviluppo delle reti di sensori wireless (WSNs), le capacità sensoristiche e computazionali dei dispositivi sono aumentate, facendoli diventare sempre più intelligenti e autonomi. L'aumento della loro complessità ha fatto sì che anche le reti divenissero sempre più sofisticate e performanti, intaccando l'intera infrastruttura IoT e rendendo il nostro grado di interazione con gli oggetti sempre più fluido, intuitivo e immersivo. 
 
@@ -326,6 +344,7 @@ A questo punto si può procedere in due modi: il primo è quello di definire da ze
 \clearpage{\pagestyle{empty}\cleardoublepage}
 
 \chapter{W3C Web of Things}
+\label{chap:WoT}
 
 Il World Wide Web Consortium (W3C) è una comunità internazionale
 i cui membri, uno staff a tempo pieno e il pubblico, lavorano insieme per
@@ -788,7 +807,7 @@ Se volessimo fare un parallelismo tra i componenti di Arduino RDF Server e quell
 
 In conclusione, le due implementazioni risultano essere incomplete, poiché offrono soltanto funzionalità di base e non supportano l'intero set di specifiche del Web of Things. Attualmente, esse non vengono aggiornate già da alcuni anni. La prima dal 2016, mentre la seconda dal 2017. 
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%non numera l'ultima pagina sinistra
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%non 
 \afterpage{\blankpage}
 
 \newgeometry{right=2.5cm}         
@@ -807,11 +826,512 @@ In conclusione, le due implementazioni risultano essere incomplete, poiché offro
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \clearpage{\pagestyle{empty}\cleardoublepage}
 \chapter{Progettazione}
+\label{chap:Prog}
+
+Questo capitolo offre una panoramica della fase di progettazione del software Embedded WoT Servient. In particolare, dopo aver definito l'obiettivo ed i requisiti principali, viene descritta l'architettura del sistema. Di ogni componente, quindi, vengono illustrate nel dettaglio le caratteristiche e le funzionalità, oltre alla descrizione del ruolo assunto all'interno dell'architettura.
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 \section{Obiettivo}
 
+Lo scopo del progetto è lo studio e la realizzazione dello stack software WoT Servient per sistemi embedded (es. Arduino, NodeMCU ecc.), rispettando le specifiche ed i componenti della sua architettura, descritta nel \hyperref[chap:WoT]{capitolo 2}.
 
+La ragione che ha portato allo sviluppo di questo lavoro di tesi è stata la presa di coscienza della mancanza di un'implementazione del WoT Servient per questa tipologia di sistemi che risulti essere completa, funzionante, coerente con le specifiche del Web of Things e aggiornata alle ultime tecnologie.
+
+La difficoltà nella realizzazione di un sistema come il WoT Servient risiede nel fatto di riuscire a semplificare ed ad ottimizzare la complessa struttura di funzionalità che offre, rendendola compatibile e soprattutto eseguibile da quella categoria di sistemi le cui capacità computazionali, risorse e autonomia risultano limitate, che prende il nome di sistemi embedded.
+
+Alla base di questo progetto si è presa in esame l'implementazione del WoT Servient di Eclipse Foundation thingweb.node-wot\footnote{\url{https://github.com/eclipse/thingweb.node-wot}}, sviluppata con il linguaggio di programmazione JavaScript. La si è scelta, non perché sia compatibile con i sistemi in questione, infatti non lo è, ma perché rappresenta la prima implementazione del WoT Servient ufficialmente riconosciuta dal WoT, costantemente aggiornata e per questi motivi, viene presa come modello per tutti i lavori che si svolgono in questo ambito. Di questa applicazione, si sono analizzati i componenti, la loro struttura interna e il modo in cui si interfacciano con l'utente, trasportandoli, poi, nel mondo dei microcontrollori.
+
+Un requisito fondamentale del sistema in oggetto è la facilità d'uso nell'interazione con l'utente finale. Infatti, con pochi semplici passi, deve essere possibile navigare al suo interno, comprendere ed eseguire le sue funzionalità.
+
+Per questo motivo, oltre alle funzionalità tipiche del WoT Servient, ne sono state implementate di nuove, come ad esempio la creazione automatica dello script da far eseguire al microcontrollore e l'inserimento di funzioni da file C esterni, tutte con lo stesso fine di rendere le attività più complicate facili e trasparenti per l'utente.
+
+Nelle sezioni seguenti si utilizzeranno i termini sketch o file di scripting per fare riferimento al file, contenente la logica della Thing, in esecuzione sui sistemi embedded, mentre per riferirsi a questi ultimi si useranno alternativamente i termini microcontrollori o board/schede di prototipazione.
+
+\section{Requisiti}
+
+Ora si andranno a descrivere i requisiti funzionali e tecnici che l'applicazione deve soddisfare.
+
+\subsection{Requisiti funzionali}
+
+L'implementazione del WoT Servient deve fornire le seguenti funzionalità:
+
+\begin{itemize}[itemsep=0pt,partopsep=1pt,parsep=5pt]
+	\item \textbf{Creazione Thing Description}\\
+	L'utente deve poter essere in grado di definire l'insieme dei meta-dati che andranno a costituire la TD esposta dalla Thing. Oltre alla possibilità di inserire i meta-dati standard, cioè quelli stabiliti dalle specifiche del W3C, all'utente è permesso anche inserirne degli altri, a completamento o a supporto dei precedenti.
+	\item \textbf{Esposizione Thing Description}\\
+	La Thing deve essere processata e renderizzata leggendo la sua TD.
+	L'utente deve poter accedere e interagire con le sue Interaction Affordances, per cui, in dettaglio, deve poter leggere il contenuto delle sua proprietà, invocare le azioni e ricevere gli eventi in tempo reale.
+	\item \textbf{Creazione file di scripting}\\
+	L'utente, una volta definita la TD, deve poter creare il file di scripting (sketch) nel linguaggio Embedded-C compatibile con i sistemi embedded, contenente la logica dell'applicazione, che verrà eseguito dalla Thing.
+	\item \textbf{Compilazione file di scripting}\\
+	L'utente, una volta creato il file di scripting, lo deve poter compilare sulla specifica board scelta come Thing, così da verificare la presenza di eventuali errori sintattici e/o semantici da correggere.
+	\item \textbf{Flashing file di scripting}\\
+	L'utente, una volta compilato lo sketch, deve poterlo caricare (upload) come firmware e farlo eseguire al microcontrollore,il quale, assumerà a tutti gli effetti il ruolo di Thing e sarà in grado di parsare e gestire tutte le richieste provenienti dai Consumers.
+\end{itemize}
+
+\subsection{Requisiti tecnici}
+Ora si andranno ad approfondire i requisiti del sistema da un punto di vista tecnico:
+
+\begin{itemize}[itemsep=0pt,partopsep=1pt,parsep=5pt]
+	\item \textbf{Visualizzazione Thing Description}\\
+	La TD deve poter essere processata tramite le tecnologie del Web e le API RESTful, per garantire l'interoperabilità dell'applicazione. Per questo motivo è necessario che la Thing sia connessa in rete, che abbia un indirizzo IP e un URL in modo da poter essere raggiungibile attraverso una chiamata GET (tramite ad esempio un browser). Lo stesso ragionamento si estende a sua volta anche alle Interaction Affordances, per cui deve essere possibile accedere alle proprietà e agli eventi tramite richieste GET ed invocare le azioni mediante richieste POST.	
+	\item \textbf{Protocol Bindings}\\
+	Dato che le interazioni con la Thing devono avvenire tramite le tecnologie del Web, è necessario fornire un binding con i protocolli compatibili con questo tipo di tecnologie e che permettono lo scambio di messaggi tra entità connesse alla rete Internet, come ad esempio l'HTTP e le WebSocket.
+	\item \textbf{Semantica}\\
+	I meta-dati delle Thing si devono basare su ontologie note e adeguate alla tipologia di entità che rappresentano.
+\end{itemize}
+
+\section{Architettura}
+
+In questa sezione viene presa in esame l'architettura dell'Embedded WoT Servient, analizzandone i diversi componenti e i flussi delle principali funzionalità offerte.
+
+\begin{figure}[h]                       %crea l'ambiente figura; [h] sta
+	%   per here, cioè la figura va qui
+	\begin{center}                          %centra nel mezzo della pagina
+		%   la figura		
+		\includegraphics[width=13cm]{A.png}%inserisce una figura larga Xcm
+		%se si vuole usare va scommentata
+		%
+		%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%inserisce la legenda ed etichetta
+		%   la figura con \label{fig:prima}
+		\caption[Architettura dell'Embedded WoT Servient]{Architettura dell'Embedded WoT Servient}
+	\end{center}
+\end{figure}
+
+\subsection{Componenti}
+
+L'unico componente del sistema con cui l'utente interagisce è la \textbf{Thing CLI} (command-line interface). La Thing CLI è un'interfaccia a riga di comando che, tramite una procedura guidata completamente interattiva, permette all'utente di definire la logica della Thing, in particolare di:
+
+\begin{itemize}[itemsep=0pt,partopsep=1pt,parsep=1pt]
+	\item inserire i meta-dati della Thing Description e salvarla in un file JSON
+	\item inserire le proprietà, specificando per ciascuna il nome ed il tipo
+	\item inserire le azioni, specificando per ognuna il nome, l'insieme dei parametri in input (nome e tipo), il tipo di output ed il corpo della funzione invocata 
+	\item inserire gli eventi, specificandone il nome ed opzionalmente gli schemi di sottoscrizione, notifica e cancellazione a cui i relativi messaggi devono sottostare
+	\item inserire l'SSID e la password della rete a cui la Thing si dovrà connettere
+	\item inserire le porte per l'accesso ad Internet e al canale WebSocket
+	\item inserire librerie, costanti, variabili e funzioni addizionali e codice generico al file di scripting, sia come integrazione delle funzionalità già offerte dalla Thing, sia per aggiungerne di nuove
+	\item inserire il corpo delle funzioni sia tramite riga di comando che da file
+	\item inserire nuovi tipi di messaggi da poter essere scambiati lungo il canale WebSocket
+	\item compilare il file di scripting sulla board 
+	\item caricare il file di scripting compilato sulla board per la sua esecuzione
+\end{itemize}
+
+Le azioni appena elencate sono a disposizione dell'utente ed è lui che decide quali eseguire e quali no semplicemente dandone il consenso o il dissenso. 
+
+Le parti di implementazione del Server Web, delle API REST e delle WebSocket, di creazione del file di scripting, di esecuzione dei comandi per la sua compilazione e il suo caricamento sono completamente trasparenti all'utente e vengono avviate, una per una, mano a mano che egli esegue l'azione corrispondente.
+
+\begin{itemize}[itemsep=0pt,partopsep=1pt,parsep=5pt]
+	\item \textbf{Server Web}\\
+	Il sistema embedded espone la Thing attraverso un Server Web raggiungibile tramite un URL. L'URL è composto dall'indirizzo IP del server seguito dal nome che l'utente ha attribuito alla Thing. Nella root (\verb"/") del server viene visualizzata la TD in formato JSON. Ad ogni Interaction Affordance viene fatto corrispondere un endpoint concatendando l'URL della root del server al tipo (\textit{properties} per le proprietà, \textit{actions} per le azioni e \textit{events} per gli eventi) e al nome dell'interazione. Il server rimane in attessa su ciascuno di questi endpoint e nel momento in cui riceve una richiesta da parte di un client, la processa e invia al mittente la risposta insieme al codice di successo o di errore dell'operazione (200 OK o 405 Method Not Allowed). Le risposte del server sono tutte in formato JSON e per le proprietà si accettano solo chiamate GET, mentre per le azioni solo chiamate POST.
+	\item \textbf{WebSocket}\\
+	Il protocollo WebSocket viene utilizzato principalmente per la gestione degli eventi. E' stata scelta questa tecnologia poiché si adatta bene alla comunicazione asincrona tipica degli eventi. La Thing, infatti, espone un Server WebSocket che resta in ascolto sui vari endpoint degli eventi. Nel momento in cui un Consumer si sottoscrive ad un particolare evento, inviando un messaggio di richiesta di sottoscrizione, il server aprirà un canale di comunicazione riservato e lo terrà aperto finché non cadrà la connessione o il client non si disconnetterà. Ogniqualvolta si verifichi l'evento a cui il Consumer si è sottoscritto, il server gli invierà un messaggio di notifica attraverso il canale aperto precedentemente. Per garantire l'interoperabilità dei protocolli, tramite WebSocket sono state supportate anche le richieste verso le proprietà e le azioni, come avviene con l'HTTP.
+	\item \textbf{Template Engine}\\
+	Mediante il Template Engine viene generato il codice contenuto nel file di scripting nel linguaggio di programmazione Embedded-C (un misto tra C e Java). Questo tipo di linguaggio è quello che si utilizza generalmente per la programmazione dei microcontrollori come Arduino ed è il linguaggio di default dell'interfaccia Arduino IDE\footnote{\url{https://www.arduino.cc/en/main/software}}. Nel corso dell'interazione con la Thing CLI, l'utente sceglie quali sono le funzionalità che la sua Thing dovrà avere, la Thing CLI, poi, le comunica al template engine, il quale genera la parte di codice che le implementa. Il codice corrispondente alle funzionalità che l'utente non sceglie non verrà generato di conseguenza.
+	\item \textbf{Arduino-cli}\\
+	Arduino-cli è un'interfaccia a riga di comando, come lo si evince dal nome, utilizzata per compilare e caricare il file di scripting sui sistemi embedded. Oltre ad avere queste due funzionalità, l'interfaccia permette di installare i driver per le varie tipologie di sistemi embedded, di installare le librerie incluse negli sketch, di verificare quali board sono connesse e su quali porte ecc. Questi strumenti sono importanti, soprattutto perché per compilare uno sketch, è necessario avere installato tutte le librerie chiamate al suo interno, mentre per caricarlo su una board, è necessario aver installato i suoi driver.
+\end{itemize}
+
+\section{Scelte progettuali}
+
+Il sistema embedded scelto per sviluppare e testare l'applicazione oggetto di questo lavoro di tesi è il NodeMCU (tecnologia ESP8266). Questa scelta ha vincolato, di conseguenza, la tipologia di librerie e di codice generati dal template engine e contenuti nel file di scripting, per essere compatibili con il sistema hardware del NodeMCU.
+ 
+\begin{figure}[h]                       %crea l'ambiente figura; [h] sta
+	%   per here, cioè la figura va qui
+	\begin{center}                          %centra nel mezzo della pagina
+		%   la figura		
+		\includegraphics[width=5cm]{NMCU.jpg}%inserisce una figura larga Xcm
+		%se si vuole usare va scommentata
+		%
+		%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%inserisce la legenda ed etichetta
+		%   la figura con \label{fig:prima}
+		\caption[Microcontrollore NodeMCU]{Microcontrollore NodeMCU}
+	\end{center}
+\end{figure}
+
+Il linguaggio per la programmazione di microcontrollori scelto, come è stato accennato nella sezione precedente, è l'Embedded-C di Arduino IDE. 
+
+I Protocol Bindings scelti per la gestione delle richieste Web sono l'HTTP e le WebSocket, mentre come Scripting API sono state preferite le API REST. 
+
+La visibilità e l'accesso alla Thing sono rimasti circoscritti alla sola rete Internet locale, senza quindi avere la possibilità di essere consumata al di fuori.
+
+\afterpage{\blankpage}
+
+\chapter{Implementazione}
+
+L'implementazione del WoT Servient ha richiesto l'integrazione di diversi componenti al fine di fornire le funzionalità illustrate nel capitolo precedente. Di seguito, verranno descritte le tecnologie utilizzate ed i moduli sviluppati, specificandone i motivi della scelta e le modalità di integrazione. Allo stesso tempo, si analizzeranno i problemi implementativi più significativi specificando come sono stati risolti.
+
+\section{Tecnologie}
+
+Trattandosi di un progetto ``full-stack'' sono risultate necessarie numerose tecnologie. La componente principale del sistema Servient è la Thing CLI, l'interfaccia a linea di comando con la quale l'utente interagisce, implementata tramite il linguaggio di programmazione Python v3.6.x e la libreria Click\footnote{\url{https://palletsprojects.com/p/click/}} v7.x. La Thing CLI si interfaccia con il template engine Jinja2\footnote{\url{https://palletsprojects.com/p/jinja/}} v2.10.x e con la piattaforma arduino-cli\footnote{\url{https://arduino.github.io/arduino-cli/}} v0.9.x, la quale, a sua volta, interagisce con la scheda di prototipazione NodeMCU v1.0 (ESP-12E Module). Le librerie di Arduino utilizzate sono principalmente tre: ESP8266WebServer\footnote{\url{https://github.com/esp8266/Arduino/tree/master/libraries/ESP8266WebServer}}, WebSockets\footnote{	\url{https://github.com/Links2004/arduinoWebSockets}} v2.1.x e ArduinoJson\footnote{\url{https://arduinojson.org/}} v6.14.x.
+
+\subsection{Python}
+
+Tra i motivi che mi hanno portato alla scelta del linguaggio Python ci sono sicuramente la sua facilità d'uso, i suoi costrutti intuitivi, il numeroso insieme di librerie di cui dispone, le quali lo rendono un linguaggio versatile, adatto allo sviluppo di qualsiasi applicazione. E' un linguaggio multi-paradigma, per cui supporta la programmazione orientata agli oggetti, strutturata e funzionale. Ha un forte sistema di tipi che viene eseguito a runtime, per cui non occorre assegnare i tipi alle variabili essendo inferiti dal compilatore. E' un linguaggio interpretato ed il suo interprete supporta la modalità d'uso interattiva (REPL) attraverso la quale è possibile inserire codice direttamente da un terminale, visualizzando immediatamente il risultato. Usa un sistema di garbage collection per la liberazione automatica della memoria. 
+
+E' un linguaggio in continua evoluzione, versione dopo versione vengono aggiunti nuovi costrutti e nuove funzionalità, soprattutto anche grazie alla sua community. 
+
+Le principali librerie di Python che ho utilizzato insieme a \verb"click" e \verb"jinja2" sono:
+
+\begin{itemize}[itemsep=0pt,partopsep=1pt,parsep=5pt]
+	\item \textbf{os}\\
+	Questo modulo offre una serie di funzionalità dipendenti dal sistema operativo. Le funzionalità che ho utilizzato riguardano il parsing dei percorsi di file e cartelle, tra cui la verifica della loro esistenza, la creazione di cartelle, il cambio della cartella di lavoro e il recupero delle variabili d'ambiente.
+	\item \textbf{sys}\\
+	Questo modulo fornisce l'accesso sia a variabili, sia a funzioni che interagiscono con l'interprete di Python. E' stato impiegato per la gestione della terminazione del programma principale a seguito di errori nell'inserimento dei dati. Gli errori riguardano ad esempio il fallimento della validazione della TD o la mancata terminazione con successo dei processi di compilazione e caricamento dello sketch.
+	\item \textbf{json e jsonschema}\\
+	Della libreria \verb"json" è stato utilizzato il metodo \verb"load" per convertire un file o una stringa in formato json in un dictionary e il metodo \verb"dump" per l'operazione opposta. La libreria \verb"jsonschema", invece, è servita per validare la Thing Description specificata dall'utente rispetto allo schema JSON stabilito dal W3C. L'utente, infatti, può proseguire nella definizione della Thing solamente nel caso in cui la TD sia valida.
+	\item \textbf{subprocess e shlex}\\
+	Il modulo \verb"subprocess" è stato utilizzato per eseguire comandi bash tramite Python, mentre il modulo \verb"shlex" è stato impiegato per parsare correttamente i comandi bash e renderli eseguibili dalle shell UNIX. Si è usufruito dei due moduli per eseguire i comandi dell'interfaccia arduino-cli in modo trasparente per l'utente.
+\end{itemize}
+
+\subsection{Click}
+
+La libreria Click permette di creare interfacce a linea di comando, altamente configurabili, con l'utilizzo di relativamente poche istruzioni. I principali punti di forza sono: la possibilità di definire comandi innestati, la generazione automatica della pagina di help e il supporto del caricamento lazy dei sotto-comandi a runtime. \`E una libreria strutturata a classi, in cui si possono definire tipi e comandi personalizzati, ma anche decoratori per i comandi stessi.
+I metodi che mette a disposizione sono semplici e molto intuitivi, eccone alcuni che ho utilizzato per la realizzazione della Thing CLI:
+
+\begin{itemize}[itemsep=0pt,partopsep=1pt,parsep=1pt]
+	\item \verb"@click.group()": consente la definizione di un gruppo di comandi
+	\item \verb"@click.command()": permette di definire uno specifico comando
+	\item \verb"click.invoke(nome_comando)": consente di invocare il comando passato tra parentesi
+	\item \verb"@click.pass_context": passa il contesto da un comando ad un altro all'interno di un gruppo di comandi
+	\item \verb"click.prompt()": permette l'inserimento di dati (input) da tastiera  
+	\item \verb"click.confirm()": rappresenta una scelta per l'utente, il quale la può confermare o rifiutare
+	\item \verb"click.echo(stringa)": stampa a schermo la stringa in input (funziona come una semplice \verb"print()" di Python)
+\end{itemize}
+
+I metodi preceduti dalla \verb"@" rappresentano delle macro. Ad ogni comando deve essere associata una funzione chiamata callback, la quale viene invocata nel momento in cui si digita il comando corrispondente sul terminale e si clicca INVIO. Click permette anche di chiamare un comando all'interno di un altro inserendo nel codice del chiamante il metodo \verb"invoke()" e passandogli il comando chiamato. \`E possibile, infine, associare delle opzioni e argomenti ad un determinato comando, rispettivamente, attraverso i metodi \verb"click.option()" e \verb"click.argument()", ma non li ho utilizzati nell'implementazione del Servient.
+
+Per creare una CLI, innanzitutto occorre definire la callback generale che incorpora i vari comandi e solo successivamente le callback di ogni comando. Grazie a questa gerarchia, all'interno del metodo \verb"main" dell'applicazione è necessario invocare solamente la callback generale, a cui poi spetterà il compito di chiamare gli altri comandi.
+
+\subsection{Jinja2}
+
+Jinja2 è un template engine compatibile con il linguaggio Python, di cui condivide la sintassi di alcuni costrutti. Viene utilizzato principalmente da framework per applicazioni Web come Flask\footnote{\url{https://palletsprojects.com/p/flask/}}. Supporta l'ereditarietà dei template, in quanto è possibile usare uno stesso layout o uno simile per tutti i template del sistema, possiede una sandbox e supporta completamente la codifica Unicode. Nonostante venga impiegato maggiormente per creare file in HTML, XML o in altri formati di markup, Jinja2 può essere utilizzato per creare qualsiasi tipo di file dato che il file in output non necessita di un'estensione specifica.
+
+Un file di template è costituito da una parte statica e da una parte dinamica. La prima rimane sempre fissa, non viene modificata nelle diverse esecuzioni del template, mentre la seconda, come lo si evince dal nome, cambia a seconda del tipo di istanza con cui si fa la resa del template. Solitamente, nella parte dinamica sono presenti variabili e/o espressioni che vengono rimpiazzate con dei valori specifici nel momento della resa del template. La componente dinamica di Jinja2 è rappresentata da una variabile racchiusa tra parentesi graffe doppie, in questo modo: \verb"{{ nome_variabile }}".
+
+L'interazione con Jinja2 richiede tre fasi principali:
+
+\begin{enumerate}[itemsep=0pt,partopsep=1pt,parsep=3pt]
+	\item Nella prima fase si deve caricare il file di template all'interno dell'ambiente di esecuzione tramite la classe \verb"loader" e poi successivamente lo si richiama tramite il metodo \verb"get_template()".
+	\item Nella seconda fase si istanziano le variabili di template con i valori corrispondenti.
+	\item Nella terza fase, infine, si fa la resa del template tramite il metodo \verb"render()", a cui si devono passare in input le variabili istanziate nella fase precedente. Si devono passare tutte le variabili di cui il template fa uso, come in un dizionario: le chiavi sono i nomi delle variabili, mentre i valori possono essere di qualsiasi tipo ma solitamente sono oggetti poiché hanno una capacità espressiva più elevata dei tipi base e consentono di ridurre il numero di variabili da dover passare. Il risultato della terza fase è la stringa che si ottiene dalla sostituzione delle variabili con i valori effettivi, la quale può essere salvata in un file. Questo processo prendere il nome di rendering.
+\end{enumerate}
+
+In Jinja2, infine, sono presenti alcuni dei costrutti tipici dei linguaggi di programmazione, come ad esempio l'\verb"if", il ciclo \verb"for" e le funzioni che prendono il nome di macro.
+
+\subsection{Arduino-cli}
+
+Arduino-cli, come ho specificato nel \hyperref[chap:Prog]{capitolo 3}, è un'interfaccia a riga di comando sviluppata da Arduino per i sistemi embedded. E' un container di comandi e per ognuno di loro è dedicata una pagina di documentazione, la quale può essere visionata tramite il comando \verb"help". Supporta la maggior parte delle tipologie di microcontrollori e delle librerie a loro dedicate. E' la controparte a riga di comando dell'IDE di Arduino,
+
+\vspace{0.5cm}
+
+\begin{figure}[h]                       %crea l'ambiente figura; [h] sta
+	%   per here, cioè la figura va qui
+	\begin{center}                          %centra nel mezzo della pagina
+		%   la figura		
+		\includegraphics[width=11cm]{AC.png}%inserisce una figura larga Xcm
+		%se si vuole usare va scommentata
+		%
+		%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%inserisce la legenda ed etichetta
+		%   la figura con \label{fig:prima}
+		\caption[Interfaccia di arduino-cli]{Interfaccia di arduino-cli}
+	\end{center}
+\end{figure}
+
+I comandi principali che mette a disposizione dell'utente sono:
+
+\begin{itemize}[itemsep=0pt,partopsep=1pt,parsep=3pt]
+	\item \verb"init": inizializza l'ambiente di Arduino e genera il file di configurazione \textit{arduino-cli.yaml}
+	\item \verb"compile": effettua la compilazione dello sketch nella board specificata. 
+	\item \verb"upload": effettua il flashing dello sketch nella board connessa alla porta specificata.
+	\item \verb"core": permette di visualizzare i core (driver) per i microcontrollori installati e di installarne di nuovi. Questo comando svolge una funzione molto importante, infatti è possibile compilare e caricare uno sketch in uno specifico sistema solo se si posseggono i relativi driver.
+	\item \verb"lib": gestisce le librerie di Arduino, consente di installare nuove librerie e di visualizzare la lista di quelle installate
+	\item \verb"board": visualizza i tipi di board e su quali porte sono connesse e la lista di tutte le board compatibili con l'interfaccia
+\end{itemize} 
+
+\subsection{ESP8266WebServer}
+
+ESP8266WebServer è la libreria compatibile con la tipologia di board NodeMCU, impiegata per implementare il Web Server. 
+
+Per definire un Web Server, innanzitutto, è necessario stabilire il numero della porta sulla quale esporlo ed i vari endpoint sui quali rimanere in attesa di richieste da parte dei client. Un endpoint viene definito tramite il metodo\\\verb"on(endpoint, tipo_di_richiesta, handler)", il quale prende in input tre parametri: l'URL della richiesta su cui rimanere in attesa, il tipo di richiesta, ad esempio \verb"HTTP_GET" o \verb"HTTP_POST", e l'handler. L'handler è una funzione che viene invocata per gestire la richiesta e al suo interno deve essere presente il messaggio di risposta, che viene inviato al client tramite il metodo\\ \verb"send(codice_http, tipo_risposta, risposta)". Il primo parametro costituisce il codice HTTP della risposta, ad esempio \verb"200" per indicare il sucesso o \verb"400" per indicare un errore, il secondo rappresenta il tipo della risposta (content-type) che può essere \verb"application/json" o \verb"text/plain" ad esempio e infine, il terzo parametro contiene il messaggio di risposta che viene inviato al client.
+
+Definiti questi parametri, è possibile far avviare il server e connetterlo ad Internet in modo da poter gestire tutte le richieste definite precedentemente. Per avviare un server si utilizza il metodo \verb"begin()", mentre per gestire le richieste si utilizza il metodo \verb"handleClient()".
+
+La libreria ESP8266WebServer si base sul protocollo HTTP al livello applicazione e sul protocollo TCP/IP al livello trasporto.
+
+\subsection{WebSockets}
+
+WebSockets è una libreria per microcontrollori che permette, come lo si evince dal nome, di gestire canali di comunicazione sfruttando il protocollo WebSocket, sia lato server che lato client.
+
+Come per il Server Web, anche per il Server WebSocket occorre definire la porta sulla quale esporlo, ma qui non abbiamo la gestione delle richieste GET o POST come avviene per il Web Server, poiché al loro posto si rimane in ascolto di eventi.
+
+Gli eventi sono dei messaggi che vengono intercettati dal server e processati in base al loro tipo. Esistono diversi tipi di messaggi WebSocket, tra i principali abbiamo:
+
+\begin{itemize}[itemsep=0pt,partopsep=1pt,parsep=3pt]
+	\item \verb"WStype_CONNECTED": questo messaggio viene inviato dal client la prima volta che si connette al server WebSocket. Nel momento in cui verrà ricevuto dal server, esso aprirà il canale WebSocket e lo terrà aperto finché il client si disconnette o cade la connessione.
+	\item \verb"WStype_DISCONNECTED": questo messaggio viene ricevuto dal server nel caso in cui un client, con cui ha aperto un canale di comunicazione, si dovesse disconnettere.
+	\item \verb"WStype_TEXT": questo tipo è il più diffusso, infatti identifica tutti quei messaggi che vengono scambiati tra client e server durante le loro interazioni.
+	\item \verb"WStype_PING" e \verb"WStype_PONG" corrispondono rispettivamente ad un messaggio di PING e di PONG. Solitamente un messaggio di PING viene inviato automaticamente dal mittente prima di un qualsiasi scambio di messaggi con il destinatario oppure viene inviato dal client ogni tot intervalli di tempo per mantenere il canale attivo.
+\end{itemize}	
+	
+Per avviare un server WebSocket	si utilizza il metodo \verb"begin()", come avviene per il server Web e successivamente si definisce la funzione che intercetta e processa gli eventi attraverso il comando \verb"onEvent(funzione_gestione_eventi)" e lo si fa mettere in ascolto di eventi tramite il metodo \verb"loop()". La funzione di gestione degli eventi viene chiamata ogniqualvolta si riceve un messaggio e al suo interno è definito un costrutto \verb"switch-case", il quale intercetta il tipo di messaggio, si sposta nel ramo \verb"case" corrispondente e infine lo processa. Per memorizzare l'elenco dei client connessi, il server mantiene una tabella in cui associa all'IP di ogni client un id numerico. Questo id è progressivo e viene incrementato mano a mano che si aggiungono client.
+
+Il server può rispondere al client inviandogli un messaggio attraverso il metodo \verb"sendTXT(num, messaggio)", dove \verb"num" è l'id del client. Il messaggio può essere solo di tipo stringa.
+
+\subsection{ArduinoJson}
+
+ArduinoJson è la libreria che consente ai sistemi embedded di parsare dati in formato JSON. Ho dovuto utilizzare questa libreria poiché la Thing Description e tutti i messaggi scambiati tra Thing e Consumers sono di questo formato. 
+
+Tramite questa libreria si possono definire oggetti e array di tipo JSON, solo però a partire da un documento JSON, il quale deve essere dichiarato precedentemente e che corrisponde ad un dictionary di Python.
+
+Sono forniti anche metodi per la serializzazione di documenti JSON in formato stringa e deserializzazione di stringhe in documenti JSON.
+
+\section{Moduli}
+
+Per l'implementazione del sistema Embedded WoT Servient sono stati realizzati due moduli: il primo contiene la definizione della Thing CLI, mentre il secondo è costituito dal file di template per generare il codice in esecuzione sulla Thing.
+
+\subsection{Thing CLI}
+
+La Thing CLI mette a disposizione dell'utente quattro comandi, ognuno dei quali implementa una funzione specifica: \verb"start", \verb"build", \verb"compile" e \verb"flash".
+
+\vspace{0.5cm}
+
+\begin{table}[h]                       %crea l'ambiente figura; [h] sta
+	%   per here, cioè la figura va qui
+	\begin{center}                          %centra nel mezzo della pagina
+		%   la figura		
+		\includegraphics[width=13cm]{TC.png}%inserisce una figura larga Xcm
+		%se si vuole usare va scommentata
+		%
+		%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%inserisce la legenda ed etichetta
+		%   la figura con \label{fig:prima}
+		\caption[Interfaccia Thing CLI]{Interfaccia Thing CLI}
+	\end{center}
+\end{table} 
+
+Attraverso il comando \verb"start", l'utente può avviare la procedura guidata di definizione della TD e di tutte le informazioni necessarie al file di template per generare il codice del file di scripting. Come prima informazione l'utente dovrà inserire il nome della Thing, il quale poi verrà visualizzato nell'URL della home del server web. Successivamente dovrà inserire sia i meta-dati globali della Thing, sia quelli specifici di ogni Interaction Affordance. I meta-dati più importanti sono quelli contenuti nell'array \verb"forms", in cui vanno inseriti: l'endpoint dell'interaction, il tipo di contenuto della richiesta (per tutte le richieste è \verb"application/json") e il tipo di operazioni supportate per quella richiesta. Il tipo di operazioni supportare variano da risorsa a risorsa, ad esempio per una proprietà è possibile leggere e scrivere il suo contenuto specificando, rispettivamente, il meta-dato \verb"readproperty" e \verb"writeproperty", per un'azione è possibile invocarla con \verb"invokeaction", mentre per un evento è possibile sottoscriversi con \verb"subscribeevent" e cancellarsi con \verb"unsubscribeevent". 
+
+Per quanto riguarda le proprietà, è necessario specificarne il tipo. I tipi supportati sono: \verb"boolean", \verb"integer", \verb"number", \verb"string", \verb"null", \verb"array" e \verb"object". Lo stesso vale anche per i parametri in input e l'output delle funzioni invocate dalle azioni e per i campi degli schemi degli eventi (sottoscrizione, dati e cancellazione). Ogni tipo poi ha associati dei sotto-campi specifici, ad esempio il valore massimo e minimo di un array, le proprietà di un oggetto, il tipo degli elementi di un array ecc. A questo scopo è stata implementata una funzione che prende in input il tipo base e dinamicamente permette all'utente di inserire i relativi sotto-campi.
+
+Sono stati implementati dei tipi di dato personalizzati per far fronte ai tipi specifici del formato JSON, come ad esempio stringhe il cui primo carattere non sia un numero, interi non negativi, interi diversi da zero, oggetti JSON e così via. Per definire un tipo personalizzato utilizzando la libreria Click, è necessario ridefinire il metodo \verb"convert()" della classe \verb"click.ParamType", il quale viene invocato dalla libreria per verificare se un dato ha o meno quel tipo specificato, se non lo ha si restituisce un errore. In questo caso l'utente dovrà ri-inserire un nuovo dato del tipo corretto.
+
+\vspace{0.5cm}
+
+\begin{table}[h]                       %crea l'ambiente figura; [h] sta
+	%   per here, cioè la figura va qui
+	\begin{center}                          %centra nel mezzo della pagina
+		%   la figura		
+		\includegraphics[width=14cm, height=4cm]{TP.png}%inserisce una figura larga Xcm
+		%se si vuole usare va scommentata
+		%
+		%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%inserisce la legenda ed etichetta
+		%   la figura con \label{fig:prima}
+		\caption[Esempio di definizione di un tipo di dato personalizzato per la libreria Click]{Esempio di definizione di un tipo di dato personalizzato per la libreria Click}
+	\end{center}
+\end{table} 
+
+Per quanto riguarda le funzioni associate alle azioni, sono stati implementati due metodi di inserimento del loro codice. Il primo è il più immediato e consiste nel far inserire all'utente le istruzioni, una dopo l'altra, in un'unica riga della CLI, mentre il secondo consiste nel caricare un file in Embedded-C dove precedentemente sono state definite una o più funzioni e inserendo il nome di quella da associare all'azione, viene prelevato il suo codice e viene assegnato automaticamente all'azione in oggetto. 
+
+Terminato l'inserimento di tutti i meta-dati delle TD si chiede all'utente se vuole generare il file di scripting o terminare l'interazione con l'interfaccia. In entrambi in casi, comunque, viene generato un file JSON contenente la TD appena definita. I meta-dati sono memorizzati in un dictionary di Python incluso nel contesto (\verb"ctx") dell'interfaccia Click e dato che il contesto non si perde tra un comando e l'altro ma viene passato ad ognuno di loro, i dati memorizzati al suo interno possono essere acceduti in qualunque momento.
+
+Nel caso in cui l'utente continui l'interazione con la CLI, gli verrà chiesto di inserire le informazioni necessarie al template engine per generare il file di scripting. Se l'utente, invece, avesse già a disposizione una TD memorizzata in un file JSON, potrebbe saltare la procedura precedente e attraverso il comando \verb"build" darlo in input alla CLI, la quale estrarrà i dati e li memorizzerà nel dictionary corrispondente.
+
+Le ultime due operazione che l'utente può svolgere sono la compilazione e il flashing del file di scripting sulla board NodeMCU tramite i comandi \verb"compile" e \verb"flash". Per esporre queste due funzionalità viene sfruttata l'interfaccia arduino-cli, i cui comandi vengono eseguiti in background in modo trasparente per l'utente. La procedura di interazione con arduino-cli si articola nel modo seguente:
+
+\begin{enumerate}[itemsep=0pt,partopsep=1pt,parsep=5pt]
+	\item In primo luogo si verifica se l'interfaccia arduino-cli è disponibile ed in caso contrario si procede all'installazione dell'ultima versione rilasciata.
+	\item In secondo luogo si controlla se sono presenti i driver per il NodeMCU ed in caso negativo si prosegue come sopra.
+	\item Come terzo punto si chiede all'utente di installare le librerie aggiuntive, rispetto a quelle di default (ESP8266WebServer, WebSockets e ArduinoJson), che ha utilizzato nel file di scripting.
+	\item Infine si procede alla compilazione e/o al flashing del codice. Importante: l'operazione di flashing necessita che la board sia connessa tramite una porta seriale.
+\end{enumerate}
+
+\subsection{Template}
+
+Il file di template prende in input due variabili, più precisamente due dictionary: il primo contiene le informazioni della TD, mentre il secondo include quelle relative alle librerie presenti nel file di scripting.   
+
+Il file di template segue la struttura degli sketch scritti attraverso l'IDE di Arduino, quindi all'inizio si includono le librerie e si definiscono le variabili globali, poi si implementano i due metodi principali di un programma per Arduino, \verb"setup()" e \verb"loop()" e infine si definiscono le funzioni. 
+
+Prima di includere le librerie, si effettua una fase di pre-processing sui dati contenuti nella TD che consiste nell'andare a modificare gli endpoint di ogni Interaction Affordance per farli essere dinamici in base all'indirizzo IP che viene assegnato al server web nel momento in cui si connette alla rete. 
+
+Terminata questa fase, si procede all'inclusione, prima delle librerie di default, poi di quelle aggiunte dall'utente, le quali, essendo memorizzate in un array, vengono inserite una per una tramite un ciclo \verb"for". Successivamente si definiscono le variabili relative al ssid e alla password della rete Wi-Fi a cui il server si dorvrà connettere, ai tipi di protocolli utilizzati (http e ws), ai numeri delle porte su cui esporre il server web e WebSockets, al nome attribuito alla Thing e i documenti JSON per gestire le proprietà di tipo complesso (oggetto o array) e gli eventi WebSocket.
+
+Le proprietà, le azioni e gli eventi, come avviene per le librerie, sono memorizzati all'interno di array così da avere la possibilità di iterare tra i loro elementi tramite cicli \verb"for". Per ogni proprietà si definisce il nome, il tipo e il valore iniziale. Per le azioni, il nome, il numero di input e lo schema per ognuno di loro. Per gli eventi, infine, si dichiara il nome ed i vari schemi di sottoscrizione, notifica e cancellazione. 
+
+A questo punto si dichiarano gli endpoint delle varie richieste su cui sia il Server Web che WebSocket si mettono in ascolto e si definiscono anche gli oggetti corrispondenti ai due server. 
+
+Con l'inserimento delle richieste e degli oggetti server termina la definizione delle variabili e si passa alla compilazione dei metodi \verb"setup()" e \verb"loop()".
+
+Il codice del \verb"setup()" viene eseguito solamente una volta dal microcontrollore e come prima istruzione. Nel \verb"setup()" si connette il server ad Internet, si dichiara la variabile di tipo stringa a cui viene assegnata la TD, la quale verrà esposta sulla home del server, si configura il server per la gestione degli endpoint tramite il metodo \verb"on()" e alla fine si avviano i due server.
+
+Il codice del \verb"loop()" invece viene eseguito di continuo dalla board e contiene, di default, solamente due istruzioni: la chiamata al metodo \verb"handleClient()", in modo tale che il server web possa gestire tutte le richieste in arrivo dai client e al metodo \verb"loop()", affinché anche il server WebSocket possa fare altrettanto.
+
+All'interno dei metodi \verb"setup()" e \verb"loop()", l'utente può inserire istruzioni aggiuntive tramite la Thing CLI.
+
+Terminata questa fase, si passa alla dichiarazione degli handler per gestire le richieste e delle funzioni associate alla azioni. Possono essere presenti ulteriori funzioni aggiunte dall'utente tramite la Thing CLI a completamento o a supporto delle funzionalità della Thing. Tra le funzioni, poi, ne è presente una, \verb"handleInputType()", che ha il compito di verificare la correttezza del contenuto delle richieste POST per invocare le azioni. Controlla se, per ogni parametro da passare in input all'azione, il valore corrispondente presente nel messaggio di richiesta del client ha il tipo corretto. Se la verifica non va a buon fine, l'azione non viene invoacata. Gli input delle azioni vengono inviati dal client all'interno del corpo della richiesta e non come parametri nell'URL.
+
+Come ultimo passaggio, si definisce la funzione di gestione dei messaggi WebSocket.
+
+Ovviamente, se l'utente decide di non inserire nessuna proprietà, nessuna azione o nessun evento, la parte corrispondente non viene generata nel file di scripting.
+
+In conclusione, per le Interaction Affordances è stato supportato sia il protocollo HTTP, sia il protocollo WebSocket, tranne che per gli eventi, nel confronto dei quali non è stato possibile implementare il protocollo HTTP di longpolling poiché le tecnologie a disposizione non lo hanno permesso.
+
+\afterpage{\blankpage}
+
+\chapter{Validazione}
+
+In questo capitolo verrà presentato il caso d'uso dello smart parking, sul quale è stata validata la piattaforma dell'Embedded WoT Servient descritta nei capitoli precedenti. Inizialmente verrà descritto lo scenario e le tecnologie impiegate e successivamente si porrà l'attenzione sulla sua implementazione concreta sviluppata tramite il WoT Servient.
+
+\section{Caso d'uso: Smart Parking}
+
+Lo smart parking è l'utilizzo della tecnologia e dell'Internet of Things per individuare quali spazi sono occupati e quali disponibili in un parcheggio, col fine di creare una mappa dei parcheggi in tempo reale. Esso si colloca all'interno del concetto della Smart City.
+
+Gli obiettivi dello smart parking sono:
+
+\begin{itemize}[itemsep=0pt,partopsep=1pt,parsep=5pt]
+	\item aiutare i guidatori a trovare parcheggio facilmente e velocemente
+	(es. tramite mobile apps)
+	\item mettere a disposizione informazioni che aiutano i vigili o altri incaricati a identificare le eventuali violazioni
+	\item aiutare le persone a scegliere mezzi di trasporto alternativi nel caso in cui i parcheggi siano esauriti
+	\item ridurre la congestione del traffico
+	\item migliorare le condizioni ambientali: emissione di gas tossici e
+	qualità dell'aria
+\end{itemize}
+
+\begin{figure}[h]                       %crea l'ambiente figura; [h] sta
+	%   per here, cioè la figura va qui
+	\begin{center}                          %centra nel mezzo della pagina
+		%   la figura		
+		\includegraphics[width=13cm]{SP.png}%inserisce una figura larga Xcm
+		%se si vuole usare va scommentata
+		%
+		%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%inserisce la legenda ed etichetta
+		%   la figura con \label{fig:prima}
+		\caption[Smart Parking]{Smart Parking}
+	\end{center}
+\end{figure} 
+
+L'architettura dello smart parking è composta da quattro elementi: sensori, protocolli di rete, sistemi software e piattaforme Cloud.
+
+L'obiettivo dei sensori è quello di verificare che un'area di parcheggio sia disponibile oppure no e comunicarlo al sistema di parcheggio tramite un
+gateway, in modo tale che il guidatore ne sia notificato. Esistono diverse tipologie di sensori, tra i quali, i più importanti sono: le videocamere, gli smartphone, i sensori ultrasonici, ad infrarossi, radar, magnetometri e geomagnetici.
+
+I protocolli di rete rappresentano lo strumento per trasferire le informazioni raccolte dai sensori al sistema di parcheggio. Nello smart parking esistono due tipologie di protocolli di rete, una è rivolta
+agli utenti e l'altra viene utilizzata dai sensori (in alcuni casi se ne ha soltanto una utilizzata da entrambi).
+
+L'architettura di rete deve essere in grado di supportare i centinaia di
+migliaia di utenti che potenzialmente possono accedere alla rete e deve
+rispettare le seguenti caratteristiche: basso consumo di energia, minimo
+ritardo e affidabilità nella trasmissione dei dati. I principali protocolli di rete sono: protocolli wireless per IoT (LPWAN e LR-WPAN come LoRa, NB-IoT e ZigBee), il WiFi, la tecnologia Bluetooth, i protocolli cellulari (3G/4G) e cablati (Ethernet, USB e comunicazione seriale).
+
+La componente rappresentata dai sistemi software è di vitale importanza poiché consente di manipolare le informazioni ricevute dai sensori. Le soluzioni software non devono svolgere soltanto il compito di
+immagazzinamento dei dati ma deve soprattutto fornire dei servizi che
+possano aiutare gli utenti a risparmiare carburante, tempo e denaro.
+
+Le principali funzioni svolte da un sistema software devono essere:
+
+\begin{itemize}[itemsep=0pt,partopsep=1pt,parsep=5pt]
+	\item verifica della disponibilità di un parcheggio (libero, occupato, prenotato)
+	\item prenotazione di un parcheggio
+	\item pagamento della sosta
+	\item comunicazione eventuali violazioni
+	\item prolungamento della sosta
+\end{itemize}
+
+Non meno importanti sono le fasi di analisi e predizione dei dati, attraverso le quali gli sviluppatori del sistema di parcheggio possono verificare l'uso che ne fanno gli automobilisti, identificare quali sono i loro feedback e se è necessario, modificare o aggiungere funzionalità per migliorare l'interazione con l'utente finale.
+
+Il modo migliore per immagazzinare e analizzare l'enorme quantità di
+informazioni raccolte dal sistema software è tramite le piattaforme cloud.
+
+Le piattaforme cloud permettono di centralizzare le informazioni provenienti da diversi provider di parcheggi così da veicolare una richiesta da parte di un utente a tutti i provider connessi. Il cloud agisce anche da intermediario tra i sensori e le applicazioni.
+
+I fattori che contribuiscono all'uso delle piattaforme cloud sono: la capacità di storage, la capacità di calcolo, la capacità di comunicazione (di scambio dei dati tra le varie piattaforme), la scalabilità, la disponibilità (i dati memorizzati su cloud sono sempre disponibili) e l'interoperabilità.
+
+\section{Implementazione del caso d'uso}
+
+Per implementare il caso d'uso dello smart parking sono stati impiegati tre tipi di sensori: l'HC-SR04 a ultrasuoni, l'Adafruit VL53L0X e lo Sharp IR a infrarossi. Tutti e tre sono sensori di distanza e tramite l'impostazione di una soglia in centimetri, verificano se un'automobile la oltrepassa oppure no. Se un'automobile la oltrepassa significa che è parcheggiata ed il parcheggio corrispondente risulterà occupato, mentre se nessuna macchina oltrepassa la soglia, il parcheggio risulterà libero.
+
+\vspace{0.5cm}
+
+\begin{figure}[h]                       %crea l'ambiente figura; [h] sta
+	%   per here, cioè la figura va qui
+	\begin{center}                          %centra nel mezzo della pagina
+		%   la figura		
+		\includegraphics[width=14cm]{SENSORS.png}%inserisce una figura larga Xcm
+		%se si vuole usare va scommentata
+		%
+		%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%inserisce la legenda ed etichetta
+		%   la figura con \label{fig:prima}
+		\caption[I tre sensori, da sinistra verso destra: l'HC-SR04, l'Adafruit VL53L0X e lo Sharp IR]{I tre sensori, da sinistra verso destra: l'HC-SR04, l'Adafruit VL53L0X e lo Sharp IR}
+	\end{center}
+\end{figure} 
+
+La logica dell'applicazione è stata suddivisa in due parti: la prima parte si occupa della gestione dello smart parking ed interagisce con i sensori, mentre la seconda parte si occupa dell'esposizione della Thing sulla rete Internet. Le due parti vengono eseguite da due microcontrollori differenti, per la prima è stato utilizzato un Arduino UNO, mentre per la seconda un NodeMCU. I motivi di questa scelta sono principalmente due: il primo è dovuto al fatto che i tre sensori supportano una tensione di 5V disponibile solo sul modello Arduino UNO e il secondo è che solamente il NodeMCU ha il modulo Wi-Fi integrato per la connessione ad Internet, indispensabile per esporre una Thing.  
+
+Ogni sensore gestisce un parcheggio e verifica se è libero oppure se è occupato da un'automobile. Lo stato di un parcheggio viene visualizzato sia in un display LCD posizionato all'entrata del parcheggio (A -$>$ disponibile, O -$>$ occupato), sia nella Thing Description esposta dalla Thing. La logica della Thing è stata implementata tramite il sistema Embedded WoT Servient oggetto di questo lavoro di tesi.
+
+Nella TD sono state definite quattro proprietà di tipo oggetto, la prima corrisponde al numero di slot disponibili, mentre le restanti tre identificano i tre parcheggi. Ognuna di queste tre proprietà ha due campi: lo stato del parcheggio, un booleano che è \verb"true" se il parcheggio è disponibile ed è \verb"false" nel caso opposto e la soglia del sensore identificata da un numero intero. Ogni sensore ha un diverso range di misurazione, per cui le soglie hanno dei valori massimi e minimi che vanno rispettati. Oltre a queste proprietà sono state aggiunte tre azioni, le quali permettono all'utente la modifica delle soglie dei vari parcheggi. 
+
+\vspace{0.5cm}
+
+\begin{table}[h]                       %crea l'ambiente figura; [h] sta
+	%   per here, cioè la figura va qui
+	\begin{center}                          %centra nel mezzo della pagina
+		%   la figura		
+		\includegraphics[width=5cm]{TDSP.png}%inserisce una figura larga Xcm
+		%se si vuole usare va scommentata
+		%
+		%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%inserisce la legenda ed etichetta
+		%   la figura con \label{fig:prima}
+		\caption[Elenco delle proprietà definite nella TD esposta dalla Thing]{Elenco delle proprietà definite nella TD esposta dalla Thing}
+	\end{center}
+\end{table} 
+
+Le comunicazioni tra l'Arduino UNO e il NodeMCU avvengono tramite seriale e hanno luogo in entrambe le direzioni, cioè dall'Arduino UNO al NodeMCU e viceversa. L'Arduino UNO comunica al NodeMCU il cambio di stato di un parcheggio e le soglie iniziali, mentre il NodeMCU comunica all'Arduino le eventuali modifiche delle soglie da parte dell'utente. 
+
+\newpage
+
+\subsection{Grafici}
+
+Per calcolare l'accuratezza dei tre sensori sono stati effettuati due tipi di test: 
+
+\begin{enumerate}
+	\item Nel primo test si è impostato un valore di soglia pari a 6 per tutti e tre i sensori e sono state condotte 10 simulazioni per ogni parcheggio. Per ogni simulazione si è verificato il corretto funzionamento del sensore.
+	\item Nel secondo test si sono variate le soglie dei sensori e si sono eseguite 10 simulazioni su ogni parcheggio, per ogni diverso valore della soglia. I valori di soglia scelti sono stati: 5, 10, 20.
+\end{enumerate}
+
+I risultati dei due test sono stati raccolti nei seguenti grafici. I valori sono in percentuale.
+
+\vspace{0.5cm}
+
+\begin{figure}[h]                       %crea l'ambiente figura; [h] sta
+	%   per here, cioè la figura va qui
+	\begin{center}                          %centra nel mezzo della pagina
+		%   la figura		
+		\includegraphics[width=12cm]{T1.png}%inserisce una figura larga Xcm
+		%se si vuole usare va scommentata
+		%
+		%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%inserisce la legenda ed etichetta
+		%   la figura con \label{fig:prima}
+		\caption[Test 1]{Validazione-Test 1}
+	\end{center}
+\end{figure} 
+
+\newpage
+
+\begin{figure}[h]                       %crea l'ambiente figura; [h] sta
+	%   per here, cioè la figura va qui
+	\begin{center}                          %centra nel mezzo della pagina
+		%   la figura		
+		\includegraphics[width=12cm]{T2.png}%inserisce una figura larga Xcm
+		%se si vuole usare va scommentata
+		%
+		%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%inserisce la legenda ed etichetta
+		%   la figura con \label{fig:prima}
+		\caption[Test 2]{Validazione-Test 2}
+	\end{center}
+\end{figure} 
+
+Come si può notare dal primo grafico, il sensore HC-SR04 è il più accurato, infatti ha restituito sempre il valore corretto, al secondo posto si posiziona lo Sharp IR con un valore errato, mentre al terzo l'Adafruit VL53L0X con ben due valori errati. Dal secondo grafico, invece, si evince che al crescere del valore di soglia, l'accuratezza dei sensori aumenta.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%per fare le conclusioni
 \clearpage{\pagestyle{empty}\cleardoublepage}
@@ -824,30 +1344,20 @@ CONCLUSIONI}]{\fancyplain{}{\bfseries\thepage}}
 CONCLUSIONI}}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%aggiunge la voce Conclusioni
                                         %   nell'indice
-\addcontentsline{toc}{chapter}{Conclusioni} Queste sono le
-conclusioni.\\
-In queste conclusioni voglio fare un riferimento alla
-bibliografia: questo \`e il mio riferimento \cite{K3,K4}.
+\addcontentsline{toc}{chapter}{Conclusioni} 
+
+In questo elaborato è stata presentata la realizzazione della piattaforma Embedded WoT Servient per l'esposizione di Thing, basate sullo standard del W3C, su sistemi embedded. 
+In primo luogo è stata necessaria una fase preliminare di studio degli aspetti tecnologici relativi al mondo dell'IoT e del problema dell'interoperabilità, per poi passare ad un'analisi dettagliata dell'architettura del WoT proposta dal W3C. A ciò è seguita la fase di progettazione ed implementazione dei vari componenti che costituiscono il sistema nella sua interezza.
+
+Il lavoro svolto si è rivelato molto lungo e impegnativo, infatti si trattava di realizzare un progetto molto complesso, in cui si voleva far approdare l'articolata architettura del WoT Servient, composta da un elevato numero di funzionalità avanzate, nel mondo dei sistemi embedded, dove il concetto che risuona più spesso è la limitatezza di risorse e di capacità computazionali. Oltre a questo, si voleva proporre un sistema altamente intuitivo e facilmente fruibile, con il quale l'utente potesse interagire con il minor numero di passaggi possibile.  
+
+Per quanto riguarda il prossimo futuro, l'intenzione è quella di passare da un'interfaccia a riga di comando ad un'interfaccia grafica, sicuramente più intuitiva e accessibile e di fornire il supporto ad ulteriori tipi di microcontrollori.
+
+Il lavoro non deve essersi considerato definitivamente concluso, infatti sarà necessario mantenerlo costantemente allineato con l'evoluzione dei documenti e degli standard del W3C. Infatti capita spesso che vengono effettuate modifiche sostanziali all'architettura tra una versione e l'altra degli standard. 
+
+\clearpage{\pagestyle{empty}\cleardoublepage}
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%imposta l'intestazione di pagina
-\renewcommand{\chaptermark}[1]{\markright{\thechapter \ #1}{}}
-\lhead[\fancyplain{}{\bfseries\thepage}]{\fancyplain{}{\bfseries\rightmark}}
-\appendix                               %imposta le appendici
-\chapter{Prima Appendice}               %crea l'appendice
-In questa Appendice non si \`e utilizzato il comando:\\
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%\verb"" Ã¨ equivalente all'
-                                        %   ambiente verbatim,
-                                        %   ma si utilizza all'interno
-                                        %   di un discorso.
-\verb"\clearpage{\pagestyle{empty}\cleardoublepage}", ed infatti
-l'ultima pagina 8 ha l'intestazione con il numero di pagina in
-alto.
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%imposta l'intestazione di pagina
-\rhead[\fancyplain{}{\bfseries \thechapter \:Prima Appendice}]
-{\fancyplain{}{\bfseries\thepage}}
-\chapter{Seconda Appendice}             %crea l'appendice
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%imposta l'intestazione di pagina
-\rhead[\fancyplain{}{\bfseries \thechapter \:Seconda Appendice}]
-{\fancyplain{}{\bfseries\thepage}}
 \begin{thebibliography}{90}             %crea l'ambiente bibliografia
 \rhead[\fancyplain{}{\bfseries \leftmark}]{\fancyplain{}{\bfseries
 \thepage}}
@@ -856,9 +1366,10 @@ alto.
 \addcontentsline{toc}{chapter}{Bibliografia}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%provare anche questo comando:
 %%%%%%%%%%%\addcontentsline{toc}{chapter}{\numberline{}{Bibliografia}}
-\bibitem{K1} Primo oggetto bibliografia.
-\bibitem{K2} Secondo oggetto bibliografia.
-\bibitem{K3} Terzo oggetto bibliografia.
+\bibitem{K1} Satista. \textit{Internet of Things (IoT) connected devices installed base worldwide from 2015 to 2025} (2016). [ultima visita 07.03.2020]. URL: \url{https://www.statista.com/statistics/471264/iot-number-of-connected-devices-worldwide/}.
+\bibitem{K2} Shancang Li, Li Da Xu, Shanshan Zhao, \textit{5G Internet of Things: A Survey}. In: Journal of Industrial Information Integration,
+Volume 10. Pagine 1-9. ISSN 2452-414X (2018). 
+\bibitem{K3} Shancang Li, Li Da Xu, Shanshan Zhao, \textit{The internet of things: a survey}. In: Information Systems Frontiers. Pagine. 243-256 (2015).
 \bibitem{K4} Radatz J., Geraci A., Katki F. \textit{IEEE standard glossary of
 software engineering terminology}. In: IEEE Std 610.12-1990 (1990). 
 \bibitem{K5} Noura M., Atiquzzaman M., Gaedke M. \textit{Interoperability in Internet of Things: Taxonomies and Open Challenges}. In: Mobile Networks and Applications 24, 796$-$809 (2019).
@@ -882,6 +1393,5 @@ Aharon D. \textit{The internet of things: mapping the value beyond the hype}. In
 \clearpage{\pagestyle{empty}\cleardoublepage}
 \chapter*{Ringraziamenti}
 \thispagestyle{empty}
-Qui possiamo ringraziare il mondo intero!!!!!!!!!!\\
-Ovviamente solo se uno vuole, non \`e obbligatorio.
+
 \end{document}
