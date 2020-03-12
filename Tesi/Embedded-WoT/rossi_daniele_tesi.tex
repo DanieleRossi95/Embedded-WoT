@@ -93,19 +93,27 @@ Laurea Magistrale in Informatica }}
 \end{center}
 \vspace{15mm}
 \begin{center}
-	{\LARGE{\bf TITOLO}}\\
+	{\LARGE{\bf Progettazione e sviluppo}}\\
 	\vspace{3mm}
-	{\LARGE{\bf DELLA}}\\
+	{\LARGE{\bf di una piattaforma abilitante}}\\
 	\vspace{3mm}
-	{\LARGE{\bf TESI}}\\
+	{\LARGE{\bf del Web of Things}}\\
+	\vspace{3mm}
+	{\LARGE{\bf per dispositivi embedded}}\\
 \end{center}
-\vspace{40mm}
+\vspace{25mm}
 \par
 \noindent
 \begin{minipage}[t]{0.47\textwidth}
 	{\large{\bf Relatore:\\
 	Chiar.mo Prof.\\
-	Marco Di Felice}}
+	Marco Di Felice\\
+	\newline
+	Correlatori:\\
+	Dott.\\
+	Lorenzo Gigli\\
+	Dott.\\
+	Luca Sciullo}}
 \end{minipage}
 \hfill
 \begin{minipage}[t]{0.47\textwidth}\raggedleft
@@ -131,9 +139,10 @@ Laurea Magistrale in Informatica }}
 \large                                  %aumenta la grandezza del carattere
                                         %   a 14pt
 \em                                     %emfatizza (corsivo) il carattere
-Questa \`e la \textsc{Dedica}:\\
-ognuno pu\`o scrivere quello che vuole, \\
-anche nulla \ldots                      %\ldots lascia tre puntini
+A me che non ho mai smesso di crederci,\\
+Alla mia famiglia per avermi insegnato a non mollare mai,\\
+A Vanessa che ha condiviso con me questa ulteriore esperienza,\\
+A mia nonna che sarebbe stata fiera di me \ldots                      %\ldots lascia tre puntini
 \newpage                                %va in una pagina nuova
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \end{titlepage}
@@ -171,19 +180,17 @@ INDICE}}
 %   nell'indice
 \addcontentsline{toc}{chapter}{Introduzione}
 
-Nonostante la sua tutt'altro che recente nascita, solo negli ultimi anni il settore dell'IoT ha assistito ad una importante espansione che, molto probabilmente, sarà destinata a durare per i prossimi anni avvenire. Se nel 2015, il numero di dispositivi connessi era di 15.41 miliardi, attualmente se ne contano circa 30, con una proiezione di 75.44 miliardi entro il 2025\cite{K1}.
+Il settore dell'IoT nasce nei primi anni dello scorso decennio. Inizialmente i suoi margini di applicazione erano pressoché limitati a causa della ridotta disponibilità di dispositivi compatibili con questo settore e a causa della complessa interoperabilità tra di essi. Il panorama è cambiato soltanto recentemente. Si è assistito negli ultimi anni ad una importante processo di espansione che, molto probabilmente, sarà destinato a durare per i prossimi anni avvenire. Se nel 2015, il numero di dispositivi connessi era di 15.41 miliardi, attualmente se ne contano circa 30, con una proiezione di 75.44 miliardi entro il 2025\cite{K1}.
 
-Tra le principali critiche mosse al settore dell'Internet of Thing (IoT) possiamo sicuramente includere la difficile interoperabilità tra i numerosissimi prodotti esistenti che possiedono protocolli e formati differenti e che spesso non sono in grado di dialogare tra di loro.
+Tra le principali critiche mosse al settore dell'Internet of Thing (IoT) possiamo sicuramente includere la difficile interoperabilità tra i numerosissimi prodotti esistenti che si basano spesso su protocolli e formati differenti e che non sono in grado di interagire tra di loro.
 
-Al giorno d'oggi, il campo dell'IoT è riuscito a compiere passi molto importanti per gestire al meglio il limite dell'interoperabilità, ovvero è stata introdotta la tecnologia 5G per fornire connessioni che siano sempre più affidabili e sicure. I fattori in comune che hanno portato all'avvicinamento di questi due campi sono sicuramente la necessità di nuove applicazioni per il futuro dell'IoT e la costante evoluzione del settore della tecnologia 5G\cite{K2}.
+Al giorno d'oggi, il campo dell'IoT è riuscito a compiere passi molto importanti per far fronte ai vari limiti presenti all'interno dei suoi campi di applicazione. Uno di questi è sicuramente legato al problema della connettività. A questo proposito, osservando le importanti migliorie apportate dall'applicazione della tecnologia 5G in altri settori come ad esempio alla rete mobile, si è pensato di introdurre la suddetta tecnologia nel campo dell'IoT. Dalla sua applicazione si sono riscontrati miglioramenti riguardanti la fruizione di servizi a banda larga e a bassa latenza\cite{K2}.
 
-Grazie all'applicazione e allo sviluppo del paradigma del Web of Things (WoT), si è cercato di gestire questo importante limite. Nello specifico, è stato proprio grazie all'utilizzo di standard e tecnologie web già ampiamente consolidate ed adatte alla costruzione di applicazioni fortemente scalabili, che è stato possibile affrontare il problema della difficile interoperabilità tra i prodotti esistenti all'interno del mondo dell' IoT. La standardizzazione promossa fin dal 2015 dal World Wide Consortium (W3C) ha cercato di ridurre la vasta frammentazione presente all'interno dell'IoT concentrandosi su componenti complementari che permettono di far integrare tra di loro differenti piattaforme e domini applicativi. Al sapiente lavoro di standardizzazione partecipano non solo i membri del W3C ma diversi collaboratori provenienti da importanti aziende tecnologiche a livello mondiale.
+Come precedentemente affermato, la connettività non è l'unico limite presente nel mondo dell'IoT. L'interoperabilità rappresenta sicuramente un ulteriore punto di riflessione. Grazie all'applicazione e allo sviluppo del paradigma del Web of Things (WoT), si è cercato di gestire questo importante limite. Nello specifico, è stato proprio grazie all'utilizzo di standard e tecnologie web già ampiamente consolidate, che è stato possibile affrontare il problema della difficile interoperabilità tra i prodotti esistenti all'interno del mondo dell'IoT. La standardizzazione promossa fin dal 2015 dal World Wide Consortium (W3C) ha cercato di ridurre la vasta frammentazione presente all'interno dell'IoT concentrandosi su componenti complementari che permettano di far integrare tra di loro differenti piattaforme e domini applicativi. Al sapiente lavoro di standardizzazione partecipano non solo i membri del W3C ma diversi collaboratori provenienti da importanti aziende tecnologiche a livello mondiale.
 
-Lo scopo delle seguente tesi è la progettazione e l'implementazione dello stack software WoT Servient per sistemi embedded, seguendo con precisione l'architettura proposta del W3C. La piattaforma si compone di un'interfaccia a linea di comando attraverso la quale l'utente è in grado di definire Thing Descriptions, le quali verranno usate come basi per la creazione di script eseguibili dai sistemi di questo tipo. I microcontrollori, in questo modo, assumeranno il ruolo di Thing ed esporranno le loro funzionalità agli utenti con cui interagiranno.
+Lo scopo della seguente tesi è la progettazione e l'implementazione dello stack software WoT Servient per sistemi IoT, seguendo con precisione l'architettura proposta del W3C. La piattaforma si compone di un'interfaccia a linea di comando attraverso la quale l'utente è in grado di definire Thing Descriptions, le quali verranno usate come basi per la creazione di script eseguibili dai sistemi di questo tipo. I microcontrollori, in questo modo, assumeranno il ruolo di Thing ed esporranno le loro funzionalità agli utenti con cui interagiranno. A seguire viene descritta la struttura dell'elaborato.
 
-In questo elaborato sono esposte le varie tappe di studio e di lavoro svolto per la realizzazione di questo stack software.
-
-Nella prima parte (capitoli 1 e 2) viene esposto lo stato dell'arte. Il capitolo 1 contiene una panoramica sull'IoT con cenni storici, la sua evoluzione, le sue caratteristiche e le sue criticità. Nel capitolo 2 si analizzerà il W3C WoT, illustrandone l'utilità e  l'architettura del W3C WoT, mostrando i suoi casi d'uso, gli elementi principali e l'implementazione del Servient. 
+Nella prima parte (capitoli 1 e 2) viene esposto lo stato dell'arte. Il capitolo 1 contiene una panoramica sull'IoT con cenni storici, la sua evoluzione, le sue caratteristiche e le sue criticità. Nel capitolo 2 si analizzerà il W3C WoT, illustrandone l'utilità e  l'architettura e mostrando i suoi casi d'uso, gli elementi principali e l'implementazione del Servient. 
 
 La seconda parte dell'elaborato (capitoli 3, 4 e 5) si focalizzerà sul sistema sviluppato. Nel capitolo 3 verrà presentata l'idea che ha dato origine a questo progetto, i requisiti funzionali e tecnici e la sua architettura. Il capitolo 4 riguarderà la presentazione del dettaglio delle tecnologie e delle librerie adottate ed i moduli software realizzati. Infine nel capitolo 5 si presenterà un caso d'uso su cui si è validata l'implementazione del sistema oggetto di questo lavoro.
 
@@ -212,11 +219,11 @@ La seconda parte dell'elaborato (capitoli 3, 4 e 5) si focalizzerà sul sistema s
 \rhead[\fancyplain{}{\bfseries\leftmark}]{\fancyplain{}{\bfseries\thepage}}
 \lhead[\fancyplain{}{\bfseries\thepage}]{\fancyplain{}{\bfseries\rightmark}}
 
-Con il termine Internet of Things (IoT) si indica un paradigma in cui la rete Internet viene integrata con oggetti fisici. Nell'IoT, la rete Internet non è più una semplice collezione di contenuti multimediali, ma viene estesa al mondo fisico, real-time, trasformandosi in una rete di oggetti di ogni genere e dimensione: auto, smartphone, videocamere, applicazioni per la casa, giocattoli, strumenti medici, sistemi industriali, animali, persone, edifici ecc. Tutti questi oggetti sono connessi tra loro e comunicano scambiandosi informazioni. Attraverso l'integrazione con la rete Internet, essi vengono "potenziati", acquisiscono intelligenza e nuove funzionalità così da essere in grado di svolgere nuovi compiti. Gli oggetti appartenenti a questa nuova classe prendono il nome di \textit{smart things} o semplicemente \textit{Things}.
+Con il termine Internet of Things (IoT) si indica un paradigma in cui la rete Internet viene integrata con oggetti fisici. Nell'IoT, la rete Internet non è più una semplice collezione di contenuti multimediali, ma viene estesa al mondo fisico, real-time, trasformandosi in una rete di oggetti di ogni genere e dimensione: auto, smartphone, videocamere, applicazioni per la casa, giocattoli, strumenti medici, sistemi industriali, animali, persone, edifici ecc. Tutti questi oggetti sono connessi tra loro e comunicano scambiandosi informazioni. Attraverso l'integrazione con la rete Internet, essi vengono "potenziati", acquisiscono intelligenza e nuove funzionalità così da essere in grado di svolgere nuovi compiti. Gli oggetti appartenenti a questa nuova classe prendono il nome di \textit{smart things} o semplicemente di \textit{Things}.
 
 Una \textit{smart thing}, quindi, è un oggetto fisico che viene potenziato digitalmente tramite una o più delle seguenti caratteristiche:
 
-\begin{itemize}[itemsep=0pt,partopsep=1pt,parsep=2pt]                    	
+\begin{itemize}[itemsep=0pt,partopsep=1pt,parsep=2pt]                    
 	\item sensori (temperatura, luce, movimento, ecc.)
 	\item attuatori (schermi, motori, ecc.)
 	\item computazione (capacità di eseguire programmi e logica)
@@ -228,7 +235,7 @@ Una \textit{smart thing}, quindi, è un oggetto fisico che viene potenziato digit
 
 Unendo le parole e i concetti di "Internet" e "Things", si ottiene la nuova tipologia di rete Internet globale costituita da oggetti fisici in grado di fare sensing, attuare azioni, eseguire calcoli, comunicare e scambiare informazioni, che è proprio l'Internet of Things. 
 
-Il concetto dell'Internet of Things come lo conosciamo oggi è il risultato di un lungo processo di raffinazione e espansione che è stato portato avanti nel corso di decenni. 
+Il concetto dell'Internet of Things come lo conosciamo oggi è il risultato di un lunga fase di studio e di ricerca protrattasi per più di un decennio. 
 
 La prima comparsa del termine risale al 1999 e la sua paternità è da attribuire a Kevin Ashton, cofondatore e direttore esecutivo di Auto-ID Center (consorzio di ricerca con sede al Massachusetts Institute of Technology), il quale, all'epoca, si riferiva solo ed esclusivamente a quei dispositivi connessi che potevano essere identificati in modo univoco tramite la tecnologia Radio-Frequency IDentification (RFID)\cite{K3}. 
 
@@ -271,37 +278,38 @@ Al giorno d'oggi, le Thing possono variare da semplici prodotti muniti di Auto-I
 
 \section{Architettura dell'IoT}
 
-Un requisito fondamentale del paradigma IoT è quello di rendere le Thing presenti in rete interconnesse tra loro, in grado di comunicare e scambiare informazioni. Il suo soddisfacimento, però, viene complicato dalla miriade di Thing presenti in commercio, ognuna con uno specifico hardware e uno specifico software che, il più delle volte, le rendono incompatibili e incapaci di comunicare. Oltre a questo, si aggiunge il fatto che Thing diverse possono essere utilizzate per uno stesso scenario poiché, ad esempio, eseguono la stessa funzione. Quindi deve essere presente un sistema di regole che stabilisca in che modo le diverse tecnologie si relazionino le une con le altre e quale configurazione scegliere nel deployment dei differenti scenari. Questo sistema di regole prende il nome di architettura dell'IoT.
+Un requisito fondamentale del paradigma IoT è quello di rendere le Thing presenti in rete interconnesse tra loro, in grado di comunicare e scambiare informazioni. Il suo soddisfacimento, però, viene complicato dalla miriade di Thing presenti in commercio, ognuna con uno specifico hardware e uno specifico software che sono causa di frammentazione e di scarsa interoperabilità. Oltre a questo, si aggiunge il fatto che Thing diverse possono essere utilizzate per uno stesso scenario poiché, ad esempio, eseguono la stessa funzione. Quindi deve essere presente un sistema di regole che stabilisca in che modo le diverse tecnologie si relazionino le une con le altre e quale configurazione scegliere nel deployment dei differenti scenari. L'architettura dell'IoT si focalizza principalmente nella definizione delle regole sopra citate.
 
-L'architettura dell'IoT è costiuita da quattro livelli, ognuno dei quali specifica una diversa funzionalità\cite{K2}:
+L'architettura dell'IoT è costituita da quattro livelli, ognuno dei quali specifica una diversa funzionalità\cite{K2}:
 
 \begin{enumerate}[itemsep=0pt,partopsep=1pt,parsep=2pt]  
 	\item \textbf{Livello di Sensing}\\
-	Fanno parte di questo livello i sistemi hardware e i loro sensori. Questi ultimi sono in grado di collezionare dati provenienti dall'ambiente esterno, come ad esempio: temperatura, umidità, qualità dell'aria, velocità, rumore, pressione, movimento ecc. In alcuni casi possono avere una minima capacità di storage al fine di memorizzare un certo numero di misurazioni. Queste misurazioni, poi, sono convertite in segnali comprensibili alla Thing a esso collegata.\\ 
+	Fanno parte di questo livello i sistemi hardware e i loro sensori. Questi ultimi sono in grado di collezionare dati provenienti dall'ambiente esterno, come ad esempio: temperatura, umidità, qualità dell'aria, velocità, rumore, pressione, movimento ecc. In alcuni casi possono avere una minima capacità di storage al fine di memorizzare un certo numero di misurazioni. Queste misurazioni, poi, sono convertite in segnali comprensibili alla Thing ad essi collegata.\\ 
 	Nel determinare il livello di sensing di un'applicazione IoT bisogna tener conto di diversi fattori, tra cui il costo, la dimensione, le risorse e il consumo di energia dei sensori, la politica di deployment, l'eterogeneità, la tipologia di comunicazione e di rete (es. ZigBee, Z-Wave, Bluetooth, WiFi, Ethernet ecc).
 	\item \textbf{Livello di Rete}\\
-	In questo livello viene definita la configurazione della rete all'interno della quale sono connesse le Thing. In primo luogo, la tecnologia di rete deve essere tale da supportare la comunicazione machine-to-machine (M2M), altrimenti le Thing non potrebbero comunicare e scambiare dati tra loro. Si deve mantenere un Quality of Service (QoS) standard, in modo tale che le prestazioni della rete non crollino a causa dell'elevato numero di Thing connesse o dell'elevato traffico. Deve essere sempre possibile scoprire automaticamente e mappare le nuove Thing che si connettono alla rete. E infine, si deve garantire la sicurezza dei dati che viaggiano in rete, soprattutto perché essi possono contenere informazioni confidenziali, sia che si tratti di applicazioni per privati, sia di applicazioni aziendali. Questo ultimo punto è il più complesso da gestire per due motivi principali: il primo, è che l'aggiunta di un livello di sicurezza aumenta la complessità dell'intera applicazione e il secondo, è che l'implementazione del protocollo di sicurezza al livello di Thing viene limitata fortemente dalla ridotta capacità computazionale che hanno alcune di esse. Per cui o si fornisce una sicurezza di base o la si sposta al livello applicativo.
+	In questo livello viene definita la configurazione della rete all'interno della quale sono connesse le Thing. In primo luogo, la tecnologia di rete deve essere tale da supportare la comunicazione machine-to-machine (M2M), altrimenti le Thing non potrebbero comunicare e scambiare dati tra loro. Si deve mantenere un Quality of Service (QoS) standard, in modo tale che le prestazioni della rete non siano limitate dall'elevato numero di Thing connesse o dall'elevato traffico. Deve essere sempre possibile scoprire automaticamente e mappare le nuove Thing che si connettono alla rete. E infine, si deve garantire la sicurezza dei dati che viaggiano in rete, soprattutto perché essi possono contenere informazioni confidenziali, sia che si tratti di applicazioni per privati, sia di applicazioni aziendali. Questo ultimo punto è il più complesso da gestire per due motivi principali: il primo, è che l'aggiunta di un livello di sicurezza aumenta la complessità dell'intera applicazione e il secondo, è che l'implementazione del protocollo di sicurezza al livello di Thing viene limitata fortemente dalla ridotta capacità computazionale che hanno alcune di esse. Per cui o si fornisce una sicurezza di base o la si sposta al livello applicativo.
 	\item \textbf{Livello di Servizio}\\
-	Fanno parte di questo livello le tecnologie middleware. Esse offrono tutta una serie di servizi (es. API) che vengono eseguiti direttamente in rete e che si posizionano ad un livello superiore rispetto alle Thing. Infatti, questa tipologia di servizi sono dedicati alla raccolta, gestione e analisi dei dati prodotti dalle Thing (es. dati che provengono dalle attività di sensing), al fine di fornire strumenti di controllo ali utenti o alle applicazioni.
+	Fanno parte di questo livello le tecnologie middleware. Esse offrono tutta una serie di servizi (es. API) che vengono eseguiti direttamente in rete e che si posizionano ad un livello superiore rispetto alle Thing. Infatti, questa tipologia di servizi è dedicata alla raccolta, gestione e analisi dei dati prodotti dalle Thing (es. dati che provengono dalle attività di sensing), al fine di fornire strumenti di controllo ali utenti o alle applicazioni.
 	\item \textbf{Livello di Applicazione}\\
-	Il livello di applicazione è l'ultimo livello dell'architettura dell'IoT, si trova al livello più elevato di astrazione ed è rappresentato dall'interfaccia dell'intero sistema IoT a cui l'utente può accedere, sulla quale sono esposti i metodi di interazione con il sistema sottostante (costituito da servizi, rete e sensori). L'interfaccia permette all'utente di accedere ai servizi forniti dalle differenti Thing presenti nel sistema IoT, cosa che non potrebbe fare in assenza, dato che, il più delle volte, esse appartengono a fornitori diversi e di conseguenza possono non rispettare gli stessi protocolli e standard. Quindi, in conclusione, l'interfaccia rende compatibili tra loro Thing eterogenee e fornisce meccanismi che facilitano la loro gestione e la loro interconnessione. 
+	Il livello di applicazione è l'ultimo livello dell'architettura dell'IoT, si trova al livello più elevato di astrazione ed è rappresentato dall'interfaccia dell'intero sistema IoT a cui l'utente può accedere; qui sono esposti i metodi di interazione con il sistema sottostante (costituito da servizi, rete e sensori). 
+	Ogni Thing attraverso la suddetta interfaccia permette all'utente di accedere ai propri servizi. In assenza di tale interfaccia, l'utente è impossibilitato a fruire dei servizi offerti dalla Thing.  
+	In conclusione, l'interfaccia rende compatibili tra loro Thing eterogenee e fornisce meccanismi che facilitano la loro gestione e interconnessione. 
 \end{enumerate}
 
 \section{Interoperabilità nell'IoT}
 
-Il livello di applicazione dell'infrastruttura dell'IoT ci ha introdotto il concetto di compatibilità tra Thing. Soltanto Thing compatibili tra loro sono in grado di comunicare e scambiare informazioni. Ora la domanda che ci si pone è la seguente: come si fa a rendere Thing diverse compatibili tra loro? Ed è dalla ricerca della risposta a questa domanda che nasce il problema dell'interoperabilità.
-\\ 
+Il livello di applicazione dell'infrastruttura dell'IoT ci ha introdotto il concetto di compatibilità tra Thing. Per compatibilità tra Thing si intende l'utilizzo degli stessi protocolli e standard. Soltanto Thing compatibili sono in grado di comunicare e scambiare informazioni. Ora la domanda che ci si pone è la seguente: come si fa a rendere Thing diverse compatibili tra loro?
 
 L'associazione internazionale IEEE (Institute of Electrical and Electronics Engineers) ha definito l'interoperabilità come \textit{"la capacità di due o più sistemi o componenti di scambiarsi informazioni e di saper interpretare e utilizzare le informazioni scambiate"}\cite{K4}. 
 
-Esistono diversi livelli di interoperabilità\cite{K5}, all'incirca uno per ogni livello dell'interfaccia dell'IoT. Ora di seguito li andremo ad esaminare.
+Esistono diversi livelli di interoperabilità\cite{K5}, circa uno per ogni livello IoT precedentemente descritto. Ora di seguito li andremo ad esaminare.
 
 \begin{itemize}[itemsep=0pt,partopsep=1pt,parsep=5pt] 
 	\item \textbf{Interoperabilità di dispositivo}\\
 	L'interoperabilità al livello di dispositivo riguarda la capacità di rendere dispositivi eterogenei (con hardware, software, protocolli e standard di comunicazione differenti) capaci di scambiare informazioni e così di fare in modo che ogni genere di dispositivo possa essere integrato in una qualsiasi piattaforma IoT. \\
-	Si distinguono due categorie principali di dispositivi: high-end e low-end. I dispositivi high-end (es. Raspberry Pi o smartphone) hanno sufficienti risorse e capacità computazionali da poter essere considerati a tutti gli effetti dei mini-calcolatori, mentre i dispositivi low-end (es. RFID-tag, sensori, attuatori, Arduino), al contrario, hanno ridotte capacità computazionali e risorse, in termini di durata della batteria, velocità del processore, RAM e protocolli di comunicazione e per entrambe le categorie, ogni caratteristica varia da dispositivo a dispositivo.
+	Si distinguono due categorie principali di dispositivi: high-end e low-end. I dispositivi high-end (es. Raspberry Pi o smartphone) hanno sufficienti risorse e capacità computazionali da poter essere considerati a tutti gli effetti dei mini-calcolatori, mentre i dispositivi low-end (es. RFID-tag, sensori, attuatori, Arduino), al contrario, hanno ridotte capacità computazionali e risorse in termini di durata della batteria, velocità del processore, RAM e protocolli di comunicazione e per entrambe le categorie, ogni caratteristica varia da dispositivo a dispositivo.
 	\item \textbf{Interoperabilità di rete}\\
-	Si sale di complessità, ora non si considerano più i dispositivi come entità isolate ma come entità interconnesse in rete. Nell'interoperabilità di rete non si fa riferimento ad un'unica rete ma a più reti (rete di reti), dove ad ognuna delle quali è connesso un dispositivo diverso. L'obiettivo è quello di far comunicare tra loro sistemi connessi a reti diverse (ad esempio tramite gateway) e fare in modo che lo scambio di messaggi sia il più possibile senza interruzioni. L'interoperabilità di rete, quindi, si dovrà occupare della gestione degli indirizzi di rete, del routing, del QoS, dell'ottimizzazione delle risorse, della sicurezza ecc.
+	Ad un livello di astrazione maggiore non si considerano più i dispositivi come entità isolate ma come entità interconnesse in rete. Nell'interoperabilità di rete non si fa riferimento ad un'unica rete ma a più reti (rete di reti), dove ad ognuna delle quali è connesso un dispositivo diverso. L'obiettivo è quello di far comunicare tra loro sistemi connessi a reti diverse (ad esempio tramite gateway) e fare in modo che lo scambio di messaggi sia il più possibile senza interruzioni. L'interoperabilità di rete, quindi, si dovrà occupare della gestione degli indirizzi di rete, del routing, del QoS, dell'ottimizzazione delle risorse, della sicurezza ecc.
 \end{itemize}
 
 \newpage
@@ -336,7 +344,7 @@ Esistono diversi livelli di interoperabilità\cite{K5}, all'incirca uno per ogni 
 
 Senza interoperabilità, gli sviluppatori avranno l'obbligo di adattare le loro applicazioni alle specifiche delle piattaforme che andranno ad utilizzare, costringendoli in questo modo a rimanere confinati all'interno della stessa o delle stesse tipologie di piattaforme compatibili con i loro use case. Per di più, le funzionalità di queste piattaforme sono spesso limitate ai pochi utilizzi pensati e proposti dal loro produttore.
 
-L'importanza dell'interoperabilità nell'IoT è stata enfatizzata sia dall'accademia che dal settore industriale. La strada che si è scelto di percorrere è quella della standardizzazione, cioè la definizione di standard che rappresentino la base di riferimento da seguire per la realizzazione di tecnologie fra loro compatibili.
+L'importanza dell'interoperabilità nell'IoT è stata enfatizzata sia dall'accademia, sia dal settore industriale. La strada che si è scelto di percorrere è quella della standardizzazione, cioè la definizione di standard che rappresentino la base di riferimento da seguire per la realizzazione di tecnologie fra loro compatibili.
 
 A questo punto si può procedere in due modi: il primo è quello di definire da zero nuovi standard ad-hoc, specifici per le tecnologie del mondo dell'IoT, mentre il secondo è quello di sfruttare standard già esistenti e adattarli a questo mondo. Il metodo scelto dal Web of Things è proprio quest'ultimo, con l'idea di utilizzare gli standard, i protocolli e i blueprint del Web.  	 
 
@@ -348,9 +356,9 @@ A questo punto si può procedere in due modi: il primo è quello di definire da ze
 
 Il World Wide Web Consortium (W3C) è una comunità internazionale
 i cui membri, uno staff a tempo pieno e il pubblico, lavorano insieme per
-sviluppare gli standard web\cite{K7}. Nel 2015, il W3C ha istituito un Working Group per lavorare alla standardizzazione del WoT. Lo scopo del gruppo è stato, ed è tuttora, quello di contrastare la frammentazione dell'IoT attraverso una serie di componenti standard (meta-dati, API, ecc.) che consentono una facile integrazione tra piattaforme IoT e domini applicativi\cite{K8}. 
+sviluppare gli standard web\cite{K7}. Nel 2015, il W3C ha istituito un Working Group per lavorare alla standardizzazione del WoT. Lo scopo del gruppo è stato, ed è tuttora, quello di contrastare la frammentazione dell'IoT attraverso una serie di componenti standard (meta-dati, API, ecc.) che consentano una facile integrazione tra piattaforme IoT e domini applicativi\cite{K8}. 
 
-Il lavoro del W3C è stato reso necessario anche dal fatto che, nel corso degli anni, non si è riusciti a definire uno standard o un protocollo universale abbastanza forte da indirizzare i produttori e gli sviluppatori di sistemi IoT verso un'unica direzione, nonostante le continue proposte da parte di diversi organismi di standardizzazione, alleanze industriali e venditori in generale.
+Il lavoro del W3C è stato reso necessario anche dal fatto che, nel corso degli anni, non si è riusciti a definire uno standard o un protocollo universale condiviso da indirizzare i produttori e gli sviluppatori di sistemi IoT verso un'unica direzione, nonostante le continue proposte da parte di diversi organismi di standardizzazione, alliance industriali e venditori in generale.
 
 Il Web of Things parte da una Thing fisica e la virtualizza, cioè ne crea una copia esatta virtuale (\textit{digital twin}) accessibile dall'utente tramite le tecnologie del web. L'utente accede direttamente alla copia virtuale senza che si debba preoccupare della posizione fisica della Thing stessa o di quali protocolli siano stati utilizzati per accedervi.
 
@@ -358,11 +366,11 @@ Il Web of Things parte da una Thing fisica e la virtualizza, cioè ne crea una co
 
 \section{Architettura del WoT}
 
-Di seguito si andrà a descrivere l'architettura del WoT e le sue componenti. Nel farlo si farà riferimento alle ultime pubblicazioni (\textit{draft}) del W3C pubblicate nel 2020\cite{K9}, tenendo presente però che sono documenti in continua evoluzione (ed in parte incompleti) e possono subire dei cambiamenti importanti sia da un punto di vista strutturale che di contenuto.
+Di seguito si andrà a descrivere l'architettura del WoT e le sue componenti. Nel farlo si farà riferimento alle ultime pubblicazioni (\textit{draft}) del W3C pubblicate nel 2020\cite{K9}, tenendo presente però che sono documenti in continua evoluzione (ed in parte incompleti) e possono subire dei cambiamenti importanti sia da un punto di vista strutturale sia di contenuto.
 
-A grandi linee, il fine dell'architettura del WoT è quello di descrivere ciò che esiste piuttosto di dire cosa deve essere implementato, non viene definito nessuna tecnologia o implementazione concerta. Per questo motivo si descrive un'architettura astratta, basata su un insieme di requisiti derivanti da vari casi d'uso (use-case), ognuno per un diverso dominio applicativo. Questi requisiti sono classificati in base all'ambito di applicazione in diverse "categorie" chiamate \textit{building blocks}, che possono essere viste come i pilastri che ogni piattaforma che si basa sul Web of Things deve rispettare (processo di standardizzazione). L'architettura del WoT li descrive uno per uno e definisce il modo in cui sono correlati. I building blocks, poi, possono essere mappati su una varietà di deployment concreti.
+A grandi linee, il fine dell'architettura del WoT è quello di descrivere ciò che esiste piuttosto di dire cosa deve essere implementato, non viene definita nessuna tecnologia o implementazione concerta. Per questo motivo viene descritta un'architettura astratta, basata su un insieme di requisiti derivanti da vari casi d'uso (use-case), ognuno per un diverso dominio applicativo. Questi requisiti sono classificati in base all'ambito di applicazione in diverse "categorie" chiamate \textit{building blocks}, che possono essere viste come i pilastri che ogni piattaforma basata sul Web of Things deve rispettare (processo di standardizzazione). L'architettura del WoT li descrive uno per uno e definisce il modo in cui sono correlati. I building blocks, poi, possono essere mappati su una varietà di deployment concreti.
 
-Le varie sezioni dell'architettura possono essere normative o informative e per ognuna lo si andrà a specificare.
+Le varie sezioni dell'architettura possono essere normative o informative e per ognuna di esse viene specificato a quale delle due categorie appartiene.
 
 \subsection{Casi d'uso}
 
@@ -439,13 +447,13 @@ sistemi, che utilizzano protocolli o standard differenti, in un unico ecosistema
 
 Questa sezione è normativa.
 
-Al centro dell'architettura del WoT c'è il concetto di Thing o Web Thing. Una Thing è un'astrazione di un'entità fisica (es. un dispositivo o una stanza) o virtuale (composizione di una o più Thing, es. una stanza con diversi sensori e attuatori, ognuno dei quali è a sua volta una Thing), descritta tramite un'insieme di meta-dati che seguono un determinato formato e vocabolario standard. Questo insieme di meta-dati prende il nome di \textit{Thing Description} (TD) ed è basato sul formato JSON (JavaScript Object Notation). 
+Al centro dell'architettura del WoT c'è il concetto di Thing o Web Thing. Una Thing è un'astrazione di un'entità fisica (es. un dispositivo o una stanza) o virtuale (composizione di una o più Thing, es. una stanza con diversi sensori e attuatori, ognuno dei quali è a sua volta una Thing), descritta tramite un'insieme di meta-dati che seguono un determinato formato e vocabolario standard. Questo insieme di meta-dati prende il nome di \textit{Thing Description (TD)} ed è basato sul formato JSON (JavaScript Object Notation). 
 
 La Thing Description rappresenta una vera e propria interfaccia che viene processata dai \textit{Consumers} per poter accedere alla Thing stessa. Un Consumer può essere sia una persona fisica, sia un dispositivo elettronico, sia un'altra Thing. Nel momento in cui un Consumer andrà a visualizzare la Thing Description, esso potrà accedere a tutte le funzionalità che la Thing implementa. 
 
-Una Thing, per essere definita tale, da un lato DEVE avere almeno una TD e dall'altro, NON è possibile che più Thing condividano la stessa TD. 
+Una Thing, per essere definita tale, da un lato DEVE avere almeno una TD e dall'altro NON è possibile che più Thing condividano la stessa TD. 
 
-Il verbo utilizzato per indicare l'azione di visualizzazione della TD così da poter essere processata dai Consumers è \textit{esporre}, mentre il verbo che indica l'azione effettuata dai Consumers di accedere alla TD e di eseguire le funzionalità della Thing è \textit{consumare}. Perciò, è possibile consumare solo Thing che sono state esposte e una Thing esposta prende il nome di ExposedThing, mentre una Thing consumata prende il nome di ConsumedThing.
+Il verbo utilizzato per indicare l'azione di visualizzazione della TD così da poter essere processata dai Consumers è \textit{esporre}, mentre il verbo che indica l'azione effettuata dai Consumers nell'accedere alla TD e nell'eseguire le funzionalità della Thing è \textit{consumare}. Perciò, è possibile consumare solo Thing che sono state esposte e una Thing esposta prende il nome di ExposedThing, mentre una Thing consumata prende il nome di ConsumedThing.
 
 \begin{center}
 	\begin{figure}[h]                       %crea l'ambiente figura; [h] sta
@@ -462,13 +470,13 @@ Il verbo utilizzato per indicare l'azione di visualizzazione della TD così da po
 	\end{figure}
 \end{center}
 
-Una Thing dovrà essere hostata in rete, in modo tale che potrà essere acceduta tramite un URI (Uniform Resource Identifier) ed internamente dovrà implementare uno stack software che, tramite l'interfaccia web, ne permetterà l'interazione. 
+Una Thing dovrà essere attivata su un host connesso alla rete, in modo tale che potrà essere acceduta tramite un URI (Uniform Resource Identifier) ed internamente dovrà implementare uno stack software che, tramite l'interfaccia web, ne permetterà l'interazione. 
 
-Un tipico scenario in tal senso è rappresentato da un server HTTP in esecuzione su un dispositivo embedded (es. Arduino) con sensori e attuatori che implementa lo stack sotware ed espone la sua descrizione astratta sul web.
+Un tipico scenario in tal senso è rappresentato da un server HTTP in esecuzione su un dispositivo embedded (es. Arduino), con sensori e attuatori, che implementa lo stack software ed espone la sua descrizione astratta sul web.
 
-Può accadere che la rete locale dove è collegata la Thing non sia raggiungibile dalla rete Internet. Questo può accadere per colpa di dispositivi quali NAT (Network Address Translation) o firewall. Per rimediare a questa situazione il W3C WoT introduce l'entità di intermediario che si posiziona tra Thing e Consumer. 
+Può accadere che la rete locale dove è collegata la Thing non sia raggiungibile dalla rete Internet. Questo può accadere per colpa di dispositivi quali NAT (Network Address Translation) o firewall. Per rimediare a questa situazione il W3C WoT introduce l'entità di intermediario, che si posiziona tra Thing e Consumer. 
 
-L'intermediario agisce come un proxy per la Thing ed ha una sua TD sulla quale è linkata la TD della Thing a cui fa riferimento. Dal lato del Consumer, il fatto che ci sia o meno un intermediario non cambia. La sua presenza è resa trasparente dal fatto che anche lui ha una TD, per cui risulta indistinguibile dal normale concetto di Thing.
+L'intermediario agisce come un proxy per la Thing ed ha una sua TD sulla quale è linkata la TD della Thing a cui fa riferimento. Dal lato del Consumer, il fatto che ci sia o meno un intermediario non cambia nulla. La sua presenza è resa trasparente dal fatto che anch'esso abbia una TD, così da risultare indistinguibile dal normale concetto di Thing.
 
 Gli intermediari possono estendere le funzionalità di una Thing oppure possono creare una Thing virtuale componendo più Thing concrete. 
 
@@ -487,15 +495,17 @@ Gli intermediari possono estendere le funzionalità di una Thing oppure possono c
 	\end{figure}
 \end{center}
 
-Successivamente si andranno ad analizzare i quattro Building Blocks, necessari al fine di implementare sistemi che risultino conformi all'architettura del WoT.
+Di seguito si andranno ad analizzare i quattro Building Blocks, necessari al fine di implementare sistemi che risultino conformi all'architettura del WoT.
+
+\newpage
 
 \subsection{Thing Description}
 
 Questa sezione è informativa.
 
-La WoT Thing Description\cite{K10} è un building block fondamentale e può essere considerata come l'entry point di una Thing (come lo è, ad esempio, la pagina \textit{index.html} di un sito Web). La TD definisce due componenti: un modello di informazione basato su un vocabolario semantico che deve essere rispettato dalla Thing corrispondente e, come si è detto precedentemente, una rappresentazione serializzata basata sul formato dei dati JSON. Sia il modello di informazione che il formato di rappresentazione sono allineati con i Linked Data\cite{K11}, in questo modo le varie implementazioni possono scegliere di utilizzare il formato JSON-LD\cite{K12} e i database a grafo per sfruttare al massimo l'elaborazione dei meta-dati. 
+La WoT Thing Description\cite{K10} è un building block fondamentale e può essere considerata come l'entry point di una Thing (come lo è, ad esempio, la pagina \textit{index.html} di un sito Web). La TD definisce due componenti: un modello di informazione basato su un vocabolario semantico che deve essere rispettato dalla Thing corrispondente e, come si è detto precedentemente, una rappresentazione serializzata basata sul formato dei dati JSON. Sia il modello di informazione sia il formato di rappresentazione sono allineati con i Linked Data\cite{K11}, in questo modo le varie implementazioni possono scegliere di utilizzare il formato JSON-LD\cite{K12} ed i database a grafo per sfruttare al massimo l'elaborazione dei meta-dati. 
 
-E' stato scelto il formato JSON per due motivi principali: il primo è che è ampiamente diffuso nelle applicazioni Web, pe cui non va a incidere sulla curva di apprendimento dei sistemi WoT, il secondo è che è comprensibile dai dispositivi informatici, per cui è particolarmente adatto per applicazioni che implementano comunicazioni machine-to-machine (M2M). Per ora, il formato JSON-LD offre un buon compromesso tra semantica comprensibile alla macchina e usabilità per gli sviluppatori.
+E' stato scelto il formato JSON per due motivi principali: la sua ampia diffusione nelle applicazioni Web, in modo da non incidere sulla curva di apprendimento dei sistemi WoT e la sua capacità di essere facilmente parsabile dai dispositivi informatici. Questa caratteristica lo rende particolarmente adatto per applicazioni che implementano comunicazioni machine-to-machine (M2M). Attualmente, il formato JSON-LD offre un buon compromesso tra semantica comprensibile alla macchina e usabilità per gli sviluppatori.
 
 La TD ha cinque componenti principali: i meta-dati testuali, dei quali ne abbiamo già parlato in precedenza, che descrivono la Thing stessa (es. nome della Thing, ID, descrizioni ecc.), un insieme di \textit{Interaction Affordances} che indicano le modalità con cui si può interagire con la Thing e quali sono le sue funzionalità, una serie di schemi sintattici sui dati per fare in modo che le Thing li comprenda, i \textit{Web links}, utilizzati per esprimere qualsiasi relazione, sia formale che informale, ad altre Thing o ad altri documenti presenti sul web e infine le specifiche sulla sicurezza.
 
@@ -503,19 +513,19 @@ Per quanto riguarda le Interaction Affordances, il W3C ne definisce tre tipi: \t
 
 \begin{itemize}[itemsep=0pt,partopsep=1pt,parsep=1pt]
 	\item \textbf{Proprietà}\\
-	Una proprietà espone lo stato di una Thing (può essere vista come una variabile dei linguaggi di programmazione). Ad una proprietà, si deve sempre poter accedere in lettura, mentre l'accesso in scrittura è opzionale. E' inoltre possibile rendere una proprietà osservabile: in questo caso al Consumer verrà notificato ogni cambiamento di stato della Thing con un messaggio push.\\
-	Esempi di proprietà sono i valori misurati di un sensore (es, temperatura, umidità ecc.), lo stato di un attuatore o i parametri di configurazione.
+	Una proprietà espone lo stato di una Thing (può essere vista come una variabile dei linguaggi di programmazione). Ad una proprietà, si deve sempre poter accedere in lettura, mentre l'accesso in scrittura è opzionale. \`E inoltre possibile rendere una proprietà osservabile: in questo caso al Consumer verrà notificato ogni cambiamento dello stato della Thing con un messaggio push.\\
+	Esempi di proprietà sono: i valori misurati di un sensore (es, temperatura, umidità ecc.), lo stato di un attuatore o i parametri di configurazione.
 	\item \textbf{Azione}\\
-	Un'azione consente di invocare una funzione sulla Thing. La sua invocazione può produrre come effetto un cambiato di uno o più stati di una Thing.\\
+	Un'azione consente di invocare una funzione sulla Thing. La sua invocazione può produrre come effetto un cambiamento di uno o più stati di una Thing.\\
 	Esempi di azioni sono la regolazione della luminosità di una lampadina o la stampa di un documento.
 	\item \textbf{Eventi}\\
 	Un evento corrisponde ad una condizione, la quale, nel momento in cui si verifica, innesca un invio asincrono di messaggi push verso il Consumer. Non viene comunicato lo stato ma vengono comunicati i cambiamenti di stato di una Thing. Solitamente, per poter ricevere i messaggi in seguito al verificarsi di un evento, un Consumer deve prima sottoscriversi all'evento stesso. Di contro, un Consumer può anche decidere di cancellarsi da un evento per non riceverne più i messaggi.\\
-	Un esempio di un evento è l'innesco di un allarme.
+	Un esempio di un evento è il trigger di un allarme.
 \end{itemize}
 
 Di norma, per ogni Interaction Affordance si espone un endpoint (un URI), accedendo al quale si può visionare il valore di uno stato della Thing per le proprietà, invocare una funzione per le azioni e sottoscriversi ad un evento.
 
-Le Thing, generalmente, salvano la propria TD in una directory che agisce da cache, velocizzandone così l'accesso e l'utilizzo da parte dei Consumers e facilitando la gestione dei sensori e attuatori connessi. 
+Le Thing, generalmente, memorizzano la propria TD in una directory che agisce da cache, velocizzandone così l'accesso e l'utilizzo da parte dei Consumers e facilitando la gestione dei sensori e attuatori connessi. 
 
 \newpage
 
@@ -538,15 +548,14 @@ Le Thing, generalmente, salvano la propria TD in una directory che agisce da cac
 
 Questa sezione è informativa.
 
-In una piattaforma IoT può essere presente qualsiasi tipologia di dispositivi, ognuno con un differente set di componenti e di protocolli di comunicazione. Questo perché non esiste un singolo protocollo che vada bene per qualsiasi scenario ed è per questo motivo che il Web of Things si sta focalizzando sullo studio di come rendere dispositivi diversi interoperabili. 
+In una piattaforma IoT può essere presente qualsiasi tipologia di dispositivi, ognuno con un differente set di componenti e di protocolli di comunicazione. Questo perché non esiste un singolo protocollo che vada bene per qualsiasi scenario ed è anche per questo motivo che il Web of Things si sta focalizzando sullo studio di come rendere dispositivi diversi interoperabili. 
 
 L'obiettivo dei Binding Templates\cite{K13} è quello di fornire un insieme di meta-dati e blueprint di comunicazione che specificano il modo in cui si deve interagire con le differenti piattaforme IoT (es. OCF\footnote{\url{https://openconnectivity.org/}}, oneM2M\footnote{\url{http://www.onem2m.org/}}, Mozilla IoT\footnote{\url{https://iot.mozilla.org/}},  ecc.). 
 
-Per ogni tipologia di piattaforma IoT, i Binding Templates illustrano quali siano i protocolli a cui meglio si adatta e per ogni protocollo hanno associati i meta-data che devono essere aggiunti alla TD. Ovviamente, si fa riferimento soltanto a quei protocolli che supportano le tecnologie del Web come ad esempio HTTP, COAP o MQTT. Nella scelta del protocollo di comunicazione si deve tener conto del tipo di architettura sottostante e di quali metodi espone. Esempi di pattern architetturali sono Restful e PubSub, mentre esempi di metodi ad essi collegati sono GET, PUT, POST, DELETE, PUBLISH e SUBSCRIBE. 
+Per ogni tipologia di piattaforma IoT, i Binding Templates illustrano quali siano i protocolli più adatti e per ciascun protocollo associano i meta-dati che saranno, successivamente, aggiunti alla TD. Ovviamente, si fa riferimento soltanto a quei protocolli che supportano le tecnologie del Web come ad esempio HTTP, COAP o MQTT. Nella scelta del protocollo di comunicazione si deve tener conto del tipo di architettura sottostante e di quali metodi vengono esposti. Esempi di pattern architetturali sono Restful e PubSub, mentre esempi di metodi ad essi collegati sono GET, PUT, POST, DELETE, PUBLISH e SUBSCRIBE. 
 
 I Consumers che consumano una TD devono implementare il corrispondente
-Protocol Binding per poter accedere alle funzionalità della Thing e invocarne le funzioni, andando ad includere lo stack tecnologico necessario e la sua
-configurazione in base alle informazioni trovate nella TD stessa.
+Protocol Binding per poter accedere alle funzionalità della Thing e invocarne le funzioni, andando ad includere lo stack tecnologico necessario e la sua configurazione in base alle informazioni trovate nella TD stessa.
 
 \newpage
 
@@ -574,8 +583,7 @@ I meta-dati di comunicazione dei Protocol Bindings si estendono su cinque dimens
 	(o nella loro serializzazione) utilizzati per lo scambio dei dati. I Media
 	Type servono proprio per identificare questi formati.
 	\item \textbf{Transfer Protocol}\\
-	Si tratta dei protocolli standard dello strato Applicazione (HTTP, MQTT, CoAP, ecc.) senza nessun tipo di opzioni specifiche o meccanismi di
-	sotto-protocollo.
+	Si tratta dei protocolli standard dello strato Applicazione (HTTP, MQTT, CoAP, ecc.) senza alcun tipo di opzioni specifiche o meccanismi di sotto-protocollo.
 	\item \textbf{Subprotocol}\\
 	I Transfer Protocol possono avere dei comportamenti particolari che
 	richiedono un'ulteriore specifica per poterci interagire con successo. Questa ulteriore specifica è il sotto-protocollo. Un esempio di sotto-protocollo è la tecnica \textit{long polling} per HTTP che
@@ -612,11 +620,11 @@ Nelle Scripting API sono presenti tre elementi principali:
 
 Questa sezione è informativa.
 
-La sicurezza è un problema trasversale nel WoT e dovrebbe essere considerata in ogni aspetto del design di un sistema, specialmente se nel sistema viaggiano dati sensibili. Le linee guida sulla sicurezza e sulla privacy si estendono a tutti i building blocks discussi precedentemente e per ognuno di essi si specificano quali sono i punti deboli, quali sono i principali attacchi che si possono subire e quali sono le contromisure da adottare.
+La sicurezza è un problema trasversale nel WoT e dovrebbe essere considerata in ogni aspetto del design di un sistema, specialmente se vengono trasferiti dati sensibili. Le linee guida sulla sicurezza e sulla privacy si estendono a tutti i building blocks discussi precedentemente e per ognuno di essi si specificano quali sono i punti deboli, quali sono i principali attacchi che si possono subire e quali sono le contromisure da adottare.
 
-Il documento sulla sicurezza e sulla privacy\cite{K15} ha uno scopo prettamente informativo, infatti non impone nessun modello concreto. Non introduce neanche nuovi meccanismi per la sicurezza, ma fa riferimento a quelli che sono già presenti sul mercato (crittografia a chiave privata, a chiave pubblica, OAuth ecc.). Fornisce anche una serie di test per validare il modello o i modelli di sicurezza scelti.
+Il documento sulla sicurezza e sulla privacy\cite{K15} ha uno scopo prettamente informativo, infatti non impone alcun modello concreto. Non introduce nuovi meccanismi per la sicurezza, ma fa riferimento a quelli che sono già presenti sul mercato (crittografia a chiave privata, a chiave pubblica, OAuth ecc.). Fornisce anche una serie di test per validare il modello o i modelli di sicurezza scelti.
 
-Le principali pratiche di sicurezza per i sistemi WoT sono le seguenti:
+Le principali pratiche di sicurezza per i sistemi WoT sono:
 
 \begin{itemize}[itemsep=0pt,partopsep=1pt,parsep=1pt]
 	\item \textbf{Pratiche di sicurezza nella progettazione di una Thing Description}
@@ -629,7 +637,7 @@ Le principali pratiche di sicurezza per i sistemi WoT sono le seguenti:
 	\item \textbf{Pratiche di sicurezza per la protezione dei dati sensibili nel sistema}
 	\begin{itemize}[itemsep=0pt,partopsep=1pt,parsep=1pt]
 		\item Utilizzare protocolli di comunicazione sicuri, come HTTPS (con TLS), CoAPS (con DTLS) e MQTTS (con TLS)
-		\item Informare gli utenti riguardanti quali informazioni personali possono essere esposte e quali no
+		\item Informare gli utenti riguardo quali informazioni personali possono essere esposte e quali no
 	\end{itemize}
 	\item \textbf{Pratiche di sicurezza per la progettazione di interfacce  di rete WoT}
 	\begin{itemize}[itemsep=0pt,partopsep=1pt,parsep=1pt]
@@ -655,19 +663,19 @@ Ogni sistema WoT si adatta meglio ad uno specifico meccanismo di sicurezza piutt
 	\end{center}
 \end{figure}
 
-Nella Figura 2.5 è mostrata una possibile configurazione di un'architettura del WoT, dove per ogni componente è specificata la struttura dei building blocks.
+Nella Figura 2.5 è mostrata una possibile configurazione di un'architettura del WoT, dove per ogni componente è specificata la struttura dei building blocks che lo compongono.
 
 \subsection{WoT Servient}
 
 Questa sezione è informativa.
 
-Un Servient è uno stack software che implementa i building blocks visti precedentemente. Un Servient è in grado di eseguire, esporre e consumare le Thing e in base al Protocol Binding scelto, può agire sia come client che come server. 
+Un Servient è uno stack software che implementa i building blocks visti precedentemente. Un Servient è in grado di eseguire, esporre e consumare le Thing e in base al Protocol Binding scelto può agire sia come client che come server. 
 
-La comunicazione tra una ConsumedThing e un'ExposedThing implementate da due Servient può essere diretta o indiretta: è diretta nel caso in cui entrambi i Servient utilizzano gli stessi protocolli di rete, risultando così mutualmente accessibili, mentre è indiretta nel caso contrario, cioè quando i Servient utilizzano protocolli diversi o sono connessi a reti differenti che necessitano di un'autorizzazione per potervi accedere (es. firewall).  
+La comunicazione tra una ConsumedThing e un'ExposedThing implementate da due Servient può essere diretta o indiretta. \`E diretta nel caso in cui entrambi i Servient utilizzano gli stessi protocolli di rete, risultando così mutualmente accessibili, mentre è indiretta nel caso contrario, cioè quando i Servient utilizzano protocolli diversi o sono connessi a reti differenti che necessitano di un'autorizzazione per potervi accedere (es. firewall).  
 
 Praticamente, un Servient è costituito dal codice di programmazione scritto dagli sviluppatori del sistema WoT che, prendendo in input la TD, le Scripting API e i Protocol Bindings, definisce la logica della Thing, le istruzioni che faranno parte del suo main loop, il modo in cui devono essere gestite le Interaction Affordances e il comportamento degli eventuali Consumers.
 
-Se nelle sezioni precedenti abbiamo descritto l'architettura astratta del WoT, ora, attraverso il Servient, ne vedremo l'implementazione concreta.
+Se nelle sezioni precedenti abbiamo descritto l'architettura astratta del WoT, ora, attraverso il Servient, ne consideriamo l'implementazione concreta.
 \\
 \begin{figure}[h]                       %crea l'ambiente figura; [h] sta
 	%   per here, cioè la figura va qui
@@ -682,15 +690,13 @@ Se nelle sezioni precedenti abbiamo descritto l'architettura astratta del WoT, o
 	\end{center}
 \end{figure}
 
-Nella Figura 2.6 sono mostrati i moduli che compongono l'architettura di un Servient e anche se alcuni di loro li abbiamo già analizzati nelle sezioni precedenti, mancano ancora alcuni tasselli fondamentali per avere il quadro completo. 
-
-Di seguito verranno specificati, per ogni modulo, il suo ruolo e le sue funzionalità:
+Nella Figura 2.6 sono mostrati i moduli che compongono l'architettura di un Servient. Di seguito verranno specificati, per ogni modulo, il suo ruolo e le sue funzionalità:
 
 \begin{itemize}[itemsep=0pt,partopsep=1pt,parsep=5pt]
 	\item \textbf{Behaviour Implementation}\\
 	Il "comportamento" definisce la logica dell'applicazione eseguita dalla Thing. E' costituito da diversi aspetti: il comportamento autonomo della Thing (es. misurazioni dei sensori e loop di controllo per gli attuatori), gli handler per gestire le Interaction Affordances (ad es. il codice che viene eseguito concretamente quando un'interazione viene attivata), il comportamento del Consumer (che consuma la Thing) e il comportamento dell'Intermediario (es. fare da proxy per una Thing o comporre più entità virtuali).
 	\item \textbf{WoT Runtime}\\
-	La logica della Thing e il suo modello di interazione sono implementati in un sistema a runtime, chiamato WoT Runtime. Esso mantiene l'ambiente di esecuzione per l'implementazione del comportamento della Thing, è in grado sia di esporre e consumare Thing, sia di fetchare, processare, serializzare TD. Solitamente la logica dell'applicazione dovrebbe essere eseguita in un ambiente isolato in modo tale da prevenire accessi non autorizzati a dati sensibili (Private Security Data).\\
+	La logica della Thing e il suo modello di interazione sono implementati in un sistema a runtime, chiamato WoT Runtime. Esso mantiene l'ambiente di esecuzione per l'implementazione del comportamento della Thing, è in grado sia di esporre e consumare Thing, sia di prelevare, processare, serializzare TD. Solitamente la logica dell'applicazione dovrebbe essere eseguita in un ambiente isolato in modo tale da prevenire accessi non autorizzati a dati sensibili (Private Security Data).\\
 	Il WoT Runtime, poi, fornisce una serie di operazioni per gestire il ciclo di vita delle Thing (LCM) o, più precisamente, le loro astrazioni e descrizioni software, e per farlo utilizza un sistema di interfacce interne.\\
 	Gli ulteriori compiti del WoT Runtime sono: l'implementazione dei Protocol Bindings definiti nei Binding Templates e l'interazione con il sistema sottostante della Thing per accedere all'hardware locale (sensori e attuatori) o agli spazi di archiviazione.\\
 	Il WoT Runtime sfrutta le Scripting API per assolvere i suoi compiti.
@@ -698,13 +704,12 @@ Di seguito verranno specificati, per ogni modulo, il suo ruolo e le sue funziona
 	Lo stack dei protocolli di un Servient, da un lato, implementa l'interfaccia delle ExposedThings, mentre dall'altro, viene utilizzato dai Consumer per accedere alle ConsumedThings (Thing remote). \`E il componente che produce i messaggi di protocollo concreti per interagire all'interno della rete.\\
 	I Servient possono implementare più protocolli in modo tale da rendere la piattaforma IoT di riferimento interoperabile con le altre. In questo caso però, per ogni protocollo supportato, deve essere presente la sua specifica nei Protocol Bindings.
 	\item \textbf{System API}\\
-	L?implementazione di un WoT Runtime può accedere all'hardware locale o ai
-	servizi di sistema tramite API proprietarie o altri mezzi. Un dispositivo può trovarsi fisicamente esterno al Servient (dispositivo legacy), ma connesso tramite dei protocolli proprietari. In questo caso, il WoT Runtime può accedere al disposito legacy con questi protocolli e poi esporlo come Thing attraverso le Scripting API. Un Servient può agire come gateway per il dispositivo legacy, ma è un'opzione da considerare solo in caso non possa essere descritto tramite una TD. Questo meccanismo, però, non fa parte dello standard W3C WoT poiché ne limiterebbe la portabilità.
+	L'implementazione di un WoT Runtime può accedere all'hardware locale o ai servizi di sistema tramite API proprietarie o altri mezzi. Un dispositivo può trovarsi fisicamente esterno al Servient (dispositivo legacy), ma connesso tramite dei protocolli proprietari. In questo caso, il WoT Runtime può accedere al disposito legacy con questi protocolli e poi esporlo come Thing attraverso le Scripting API. Un Servient può agire come gateway per il dispositivo legacy, ma è un'opzione da considerare solo in caso non possa essere descritto tramite una TD. Questo meccanismo, però, non fa parte dello standard W3C WoT poiché ne limiterebbe la portabilità.
 \end{itemize}
 
 \section{Implementazioni concrete del WoT Servient}
 
-Nella sezione precedente si sono descritti i componenti dell'architettura del Web of Things e l'implementazione astratta del WoT Servient. 
+Nella sezione precedente sono stati descritti i componenti dell'architettura del Web of Things e l'implementazione astratta del WoT Servient. 
 
 In questa sezione, invece, si andranno ad esaminare due implementazioni concrete open-source del WoT Servient per Arduino, disponibili sui repository GitHub dei rispettivi sviluppatori, così da fare un confronto con l'implementazione oggetto di questo progetto.
 
@@ -716,7 +721,7 @@ Per ogni implementazione viene fornito il link al sito web o al repository degli
 
 WoT Arduino\cite{K18} è un'implementazione del WoT Servient per le schede Arduino UNO con Ethernet Shield (basato sul controller di rete Wiznet W5100) per la connessione in rete. \`E scritta in C++ ed è sviluppata dal W3C/ERCIM (European Research Consortium for Informatics and Mathematics). 
 
-Attraverso questo tool l'Arduino viene convertito in un Web Server configurabile, il quale può interagire con uno o più sensori o attuatori. Le richieste sono in gestite in un formato JSON non standard, in quanto si ha una diversa rappresentazione dei dati in memoria in modo da ridurre lo spazio da loro occupato. Infatti, gli sviluppatori hanno improntato tutto il progetto in tal senso, definendo dei meccanismi e delle strutture dati per diminuire sia la quantità di memoria occupata durante l'esecuzione del sistema che la complessità computazionale, in modo da velocizzare le interazioni tra client e server e tra server ed i suoi sensori o attuatori.
+Attraverso questo tool l'Arduino viene convertito in un Web Server configurabile, il quale può interagire con uno o più sensori o attuatori. Le richieste sono gestite in un formato JSON non standard, in quanto si ha una diversa rappresentazione dei dati in memoria in modo da ridurre lo spazio da loro occupato. Infatti, gli sviluppatori hanno improntato tutto il progetto in tal senso, definendo dei meccanismi e delle strutture dati per diminuire sia la quantità di memoria occupata durante l'esecuzione del sistema sia la complessità computazionale, in modo da velocizzare le interazioni tra client e server e tra server ed i suoi sensori o attuatori.
 
 Gli oggetti in formato JSON sono rappresentati in memoria come nodi di alberi binari bilanciati (AVL).  Essi vengono allocati staticamente tramite l'utilizzo di array poiché l'uso delle funzioni \verb"malloc" e \verb"free" potrebbe causare problemi ai microcontrollori.
 
@@ -743,9 +748,9 @@ La Thing, in questa implementazione, viene gestita tramite un oggetto di tipo \v
 Ad una proprietà si possono assegnare sia valori di tipo base, sia oggetti JSON. Nel caso di un valore di tipo base, lo si può assegnare direttamente all'oggetto \verb"Thing" tramite il metodo \verb"set_property(PROPERTY_NAME, JSON::TYPE(VALUE))", nel caso invece di un oggetto, prima lo si deve dichiarare, poi si devono definire i suoi campi e solo successivamente lo si può assegnare alla Thing.\\Per recuperare il valore di una proprietà si usa il metodo\\\verb"get_property(SYMBOL_TABLE_NAME, PROPERTY_NAME)".
 
 Anche le azioni e gli eventi devono essere registrati come simboli prima di poter essere invocati. Le azioni vengono invocate tramite il metodo\\\verb"int invoke(Symbol action, ResponseFunc response, ...)". Se l'azione non prevede una risposta, allora si deve passare \verb"NULL" come secondo parametro. I parametri successivi sono opzionali e rappresentano i parametri richiesti in input dall'azione. Se l'azione termina con successo, il metodo \verb"invoke" ritornerà un id positivo che verrà inviato all'handler della risposta che è definito nel modo seguente: \verb"void (*ResponseFunc)(unsigned int id, Thing *thing, ...)".\\
-Per lanciare gli eventi, invece, si deve chiamare il metodo\\\verb"void raise_event(Symbol event, ...)", il quale reindirizza la chiamata all'handler definito come segue: \verb"void (*EventFunc)(Symbol event, Thing *thing, ...)".
+Per generare gli eventi, invece, si deve chiamare il metodo\\\verb"void raise_event(Symbol event, ...)", il quale reindirizza la chiamata all'handler definito come segue: \verb"void (*EventFunc)(Symbol event, Thing *thing, ...)".
 
-Per visualizzare la TD si utilizza il comando \verb"print()", mentre per invocare il garbage collector si usa il comando \verb"WebThings::collect_garbage()" fornito dalla libreria \textit{WebThings}. Questa libreria fornisce anche i metodi di gestione delle Interaction Affordances citati precedentemente.
+Per visualizzare la TD si utilizza il comando \verb"print()", mentre per invocare il garbage collector si usa il comando \verb"WebThings::collect_garbage()" fornito dalla libreria \textit{WebThings.h}. Questa libreria fornisce anche i metodi di gestione delle Interaction Affordances citati precedentemente.
 
 All'interno del metodo \verb"setup()" di Arduino si deve, obbligatoriamente, connettere il server alla rete e avviare il protocollo di trasporto tramite \verb"transport.start()" ed esporre la TD. Nel metodo \verb"loop()", invece, si gestiscono la coda degli eventi con \verb"event_queue.dispatch()" e le richieste verso la Thing attraverso il comando \verb"transport.serve()".
 
@@ -803,7 +808,7 @@ Infine, sempre in \textit{Semantic.h}, si devono inserire all'interno dell'array
 
 La TD con i relativi servizi è esposta nella root (\verb"/") del Web Server e può essere acceduta tramite una richiesta GET.
 
-Se volessimo fare un parallelismo tra i componenti di Arduino RDF Server e quelli dell'architettura del WoT, potremmo dire che i servizi del primo corrispondono alle Interaction Affordances del secondo. In particolare, le proprietà e le azioni del WoT sono denominate risorse e funzioni in Arduino RDF Server. Per quanto concerne gli eventi in Arduino RDF Server, essi non sono ancora stati implementati. Il protocollo di comunicazione (Protocol Binding) scelto è CoAP, mentre le Scripting API sono le API Hydra. 
+Se volessimo fare un parallelismo tra i componenti di Arduino RDF Server e quelli dell'architettura del WoT, potremmo dire che i servizi del primo corrispondono alle Interaction Affordances del secondo. In particolare, le proprietà e le azioni del WoT sono denominate risorse e funzioni in Arduino RDF Server. Per quanto concerne gli eventi, in Arduino RDF Server essi non sono ancora stati implementati. Il protocollo di comunicazione (Protocol Binding) scelto è CoAP, mentre le Scripting API sono le API Hydra. 
 
 In conclusione, le due implementazioni risultano essere incomplete, poiché offrono soltanto funzionalità di base e non supportano l'intero set di specifiche del Web of Things. Attualmente, esse non vengono aggiornate già da alcuni anni. La prima dal 2016, mentre la seconda dal 2017. 
 
@@ -838,9 +843,9 @@ Lo scopo del progetto è lo studio e la realizzazione dello stack software WoT Se
 
 La ragione che ha portato allo sviluppo di questo lavoro di tesi è stata la presa di coscienza della mancanza di un'implementazione del WoT Servient per questa tipologia di sistemi che risulti essere completa, funzionante, coerente con le specifiche del Web of Things e aggiornata alle ultime tecnologie.
 
-La difficoltà nella realizzazione di un sistema come il WoT Servient risiede nel fatto di riuscire a semplificare ed ad ottimizzare la complessa struttura di funzionalità che offre, rendendola compatibile e soprattutto eseguibile da quella categoria di sistemi le cui capacità computazionali, risorse e autonomia risultano limitate, che prende il nome di sistemi embedded.
+La difficoltà nella realizzazione di un sistema come il WoT Servient risiede nel fatto di riuscire a semplificare e ad ottimizzare la complessa struttura di funzionalità che offre, rendendola compatibile e soprattutto eseguibile da quella categoria di sistemi le cui capacità computazionali, risorse e autonomia risultano limitate, che prende il nome di sistemi embedded.
 
-Alla base di questo progetto si è presa in esame l'implementazione del WoT Servient di Eclipse Foundation thingweb.node-wot\footnote{\url{https://github.com/eclipse/thingweb.node-wot}}, sviluppata con il linguaggio di programmazione JavaScript. La si è scelta, non perché sia compatibile con i sistemi in questione, infatti non lo è, ma perché rappresenta la prima implementazione del WoT Servient ufficialmente riconosciuta dal WoT, costantemente aggiornata e per questi motivi, viene presa come modello per tutti i lavori che si svolgono in questo ambito. Di questa applicazione, si sono analizzati i componenti, la loro struttura interna e il modo in cui si interfacciano con l'utente, trasportandoli, poi, nel mondo dei microcontrollori.
+Alla base di questo progetto si è presa in esame l'implementazione del WoT Servient di Eclipse Foundation thingweb.node-wot\footnote{\url{https://github.com/eclipse/thingweb.node-wot}}, sviluppata con il linguaggio di programmazione JavaScript. Si è scelto di utilizzare tale implementazione, non perché sia compatibile con i sistemi in questione, infatti non lo è, ma perché rappresenta la prima implementazione del WoT Servient ufficialmente riconosciuta dal WoT, costantemente aggiornata e per questi motivi, viene presa come modello per tutti i lavori che si svolgono in questo ambito. Di questa applicazione, si sono analizzati i componenti, la loro struttura interna e il modo in cui si interfacciano con l'utente, trasportandoli, poi, nel mondo dei microcontrollori.
 
 Un requisito fondamentale del sistema in oggetto è la facilità d'uso nell'interazione con l'utente finale. Infatti, con pochi semplici passi, deve essere possibile navigare al suo interno, comprendere ed eseguire le sue funzionalità.
 
@@ -863,21 +868,23 @@ L'implementazione del WoT Servient deve fornire le seguenti funzionalità:
 	La Thing deve essere processata e renderizzata leggendo la sua TD.
 	L'utente deve poter accedere e interagire con le sue Interaction Affordances, per cui, in dettaglio, deve poter leggere il contenuto delle sua proprietà, invocare le azioni e ricevere gli eventi in tempo reale.
 	\item \textbf{Creazione file di scripting}\\
-	L'utente, una volta definita la TD, deve poter creare il file di scripting (sketch) nel linguaggio Embedded-C compatibile con i sistemi embedded, contenente la logica dell'applicazione, che verrà eseguito dalla Thing.
+	L'utente, una volta definita la TD, deve poter creare il file di scripting (sketch) nel linguaggio Embedded-C compatibile con i sistemi embedded. Lo sketch contiene la logica dell'applicazione e viene eseguito dalla Thing.
 	\item \textbf{Compilazione file di scripting}\\
-	L'utente, una volta creato il file di scripting, lo deve poter compilare sulla specifica board scelta come Thing, così da verificare la presenza di eventuali errori sintattici e/o semantici da correggere.
+	L'utente, una volta creato il file di scripting, deve poterlo compilare sulla specifica board scelta come Thing, così da verificare la presenza di eventuali errori sintattici e/o semantici da correggere.
 	\item \textbf{Flashing file di scripting}\\
-	L'utente, una volta compilato lo sketch, deve poterlo caricare (upload) come firmware e farlo eseguire al microcontrollore,il quale, assumerà a tutti gli effetti il ruolo di Thing e sarà in grado di parsare e gestire tutte le richieste provenienti dai Consumers.
+	L'utente, una volta compilato lo sketch, deve poterlo caricare (upload) come firmware e farlo eseguire al microcontrollore, il quale, assumerà a tutti gli effetti il ruolo di Thing e sarà in grado di parsare e gestire tutte le richieste provenienti dai Consumers.
 \end{itemize}
 
 \subsection{Requisiti tecnici}
 Ora si andranno ad approfondire i requisiti del sistema da un punto di vista tecnico:
 
+\newpage
+
 \begin{itemize}[itemsep=0pt,partopsep=1pt,parsep=5pt]
 	\item \textbf{Visualizzazione Thing Description}\\
 	La TD deve poter essere processata tramite le tecnologie del Web e le API RESTful, per garantire l'interoperabilità dell'applicazione. Per questo motivo è necessario che la Thing sia connessa in rete, che abbia un indirizzo IP e un URL in modo da poter essere raggiungibile attraverso una chiamata GET (tramite ad esempio un browser). Lo stesso ragionamento si estende a sua volta anche alle Interaction Affordances, per cui deve essere possibile accedere alle proprietà e agli eventi tramite richieste GET ed invocare le azioni mediante richieste POST.	
 	\item \textbf{Protocol Bindings}\\
-	Dato che le interazioni con la Thing devono avvenire tramite le tecnologie del Web, è necessario fornire un binding con i protocolli compatibili con questo tipo di tecnologie e che permettono lo scambio di messaggi tra entità connesse alla rete Internet, come ad esempio l'HTTP e le WebSocket.
+	Dato che le interazioni con la Thing devono avvenire tramite le tecnologie del Web, è necessario fornire un binding con i protocolli compatibili con questo tipo di tecnologie, che permettono lo scambio di messaggi tra entità connesse alla rete Internet, come ad esempio l'HTTP e le WebSocket.
 	\item \textbf{Semantica}\\
 	I meta-dati delle Thing si devono basare su ontologie note e adeguate alla tipologia di entità che rappresentano.
 \end{itemize}
@@ -885,6 +892,8 @@ Ora si andranno ad approfondire i requisiti del sistema da un punto di vista tec
 \section{Architettura}
 
 In questa sezione viene presa in esame l'architettura dell'Embedded WoT Servient, analizzandone i diversi componenti e i flussi delle principali funzionalità offerte.
+
+\newpage
 
 \begin{figure}[h]                       %crea l'ambiente figura; [h] sta
 	%   per here, cioè la figura va qui
@@ -911,7 +920,7 @@ L'unico componente del sistema con cui l'utente interagisce è la \textbf{Thing C
 	\item inserire l'SSID e la password della rete a cui la Thing si dovrà connettere
 	\item inserire le porte per l'accesso ad Internet e al canale WebSocket
 	\item inserire librerie, costanti, variabili e funzioni addizionali e codice generico al file di scripting, sia come integrazione delle funzionalità già offerte dalla Thing, sia per aggiungerne di nuove
-	\item inserire il corpo delle funzioni sia tramite riga di comando che da file
+	\item inserire il corpo delle funzioni sia tramite riga di comando sia da file
 	\item inserire nuovi tipi di messaggi da poter essere scambiati lungo il canale WebSocket
 	\item compilare il file di scripting sulla board 
 	\item caricare il file di scripting compilato sulla board per la sua esecuzione
@@ -919,17 +928,17 @@ L'unico componente del sistema con cui l'utente interagisce è la \textbf{Thing C
 
 Le azioni appena elencate sono a disposizione dell'utente ed è lui che decide quali eseguire e quali no semplicemente dandone il consenso o il dissenso. 
 
-Le parti di implementazione del Server Web, delle API REST e delle WebSocket, di creazione del file di scripting, di esecuzione dei comandi per la sua compilazione e il suo caricamento sono completamente trasparenti all'utente e vengono avviate, una per una, mano a mano che egli esegue l'azione corrispondente.
+Le parti di implementazione del Server Web, delle API REST e delle WebSocket, di creazione del file di scripting, di esecuzione dei comandi per la sua compilazione e il suo caricamento sono completamente trasparenti all'utente e vengono avviate, una per una, mano a mano che egli esegue l'azione corrispondente sulla Thing CLI.
 
 \begin{itemize}[itemsep=0pt,partopsep=1pt,parsep=5pt]
 	\item \textbf{Server Web}\\
-	Il sistema embedded espone la Thing attraverso un Server Web raggiungibile tramite un URL. L'URL è composto dall'indirizzo IP del server seguito dal nome che l'utente ha attribuito alla Thing. Nella root (\verb"/") del server viene visualizzata la TD in formato JSON. Ad ogni Interaction Affordance viene fatto corrispondere un endpoint concatendando l'URL della root del server al tipo (\textit{properties} per le proprietà, \textit{actions} per le azioni e \textit{events} per gli eventi) e al nome dell'interazione. Il server rimane in attessa su ciascuno di questi endpoint e nel momento in cui riceve una richiesta da parte di un client, la processa e invia al mittente la risposta insieme al codice di successo o di errore dell'operazione (200 OK o 405 Method Not Allowed). Le risposte del server sono tutte in formato JSON e per le proprietà si accettano solo chiamate GET, mentre per le azioni solo chiamate POST.
-	\item \textbf{WebSocket}\\
+	Il sistema embedded espone la Thing attraverso un Server Web raggiungibile tramite un URL. L'URL è composto dall'indirizzo IP del server seguito dal nome che l'utente ha attribuito alla Thing. Nella root (\verb"/") del server viene visualizzata la TD in formato JSON. Ad ogni Interaction Affordance viene fatto corrispondere un endpoint concatendando l'URL della root del server al tipo (\textit{properties} per le proprietà, \textit{actions} per le azioni e \textit{events} per gli eventi) e al nome dell'interazione. Il server rimane in attesa su ciascuno di questi endpoint e nel momento in cui riceve una richiesta da parte di un client la processa e invia al mittente la risposta insieme al codice di successo o di errore dell'operazione (200 OK o 405 Method Not Allowed). Le risposte del server sono tutte in formato JSON e per le proprietà si accettano solo chiamate GET, mentre per le azioni solo chiamate POST.
+	\item \textbf{Server WebSocket}\\
 	Il protocollo WebSocket viene utilizzato principalmente per la gestione degli eventi. E' stata scelta questa tecnologia poiché si adatta bene alla comunicazione asincrona tipica degli eventi. La Thing, infatti, espone un Server WebSocket che resta in ascolto sui vari endpoint degli eventi. Nel momento in cui un Consumer si sottoscrive ad un particolare evento, inviando un messaggio di richiesta di sottoscrizione, il server aprirà un canale di comunicazione riservato e lo terrà aperto finché non cadrà la connessione o il client non si disconnetterà. Ogniqualvolta si verifichi l'evento a cui il Consumer si è sottoscritto, il server gli invierà un messaggio di notifica attraverso il canale aperto precedentemente. Per garantire l'interoperabilità dei protocolli, tramite WebSocket sono state supportate anche le richieste verso le proprietà e le azioni, come avviene con l'HTTP.
 	\item \textbf{Template Engine}\\
-	Mediante il Template Engine viene generato il codice contenuto nel file di scripting nel linguaggio di programmazione Embedded-C (un misto tra C e Java). Questo tipo di linguaggio è quello che si utilizza generalmente per la programmazione dei microcontrollori come Arduino ed è il linguaggio di default dell'interfaccia Arduino IDE\footnote{\url{https://www.arduino.cc/en/main/software}}. Nel corso dell'interazione con la Thing CLI, l'utente sceglie quali sono le funzionalità che la sua Thing dovrà avere, la Thing CLI, poi, le comunica al template engine, il quale genera la parte di codice che le implementa. Il codice corrispondente alle funzionalità che l'utente non sceglie non verrà generato di conseguenza.
+	Mediante il Template Engine viene generato il codice contenuto nel file di scripting nel linguaggio di programmazione Embedded-C (un misto tra C e Java). Questo tipo di linguaggio è quello che si utilizza generalmente per la programmazione dei microcontrollori come Arduino ed è il linguaggio di default dell'interfaccia Arduino IDE\footnote{\url{https://www.arduino.cc/en/main/software}}. Nel corso dell'interazione con la Thing CLI, l'utente sceglie quali sono le funzionalità che la sua Thing dovrà avere. La Thing CLI, poi, le comunica al template engine, il quale genera la parte di codice che le implementa. Il codice corrispondente alle funzionalità che l'utente non sceglie di conseguenza non verrà generato.
 	\item \textbf{Arduino-cli}\\
-	Arduino-cli è un'interfaccia a riga di comando, come lo si evince dal nome, utilizzata per compilare e caricare il file di scripting sui sistemi embedded. Oltre ad avere queste due funzionalità, l'interfaccia permette di installare i driver per le varie tipologie di sistemi embedded, di installare le librerie incluse negli sketch, di verificare quali board sono connesse e su quali porte ecc. Questi strumenti sono importanti, soprattutto perché per compilare uno sketch, è necessario avere installato tutte le librerie chiamate al suo interno, mentre per caricarlo su una board, è necessario aver installato i suoi driver.
+	Arduino-cli è un'interfaccia a riga di comando, come lo si evince dal nome, utilizzata per compilare e caricare il file di scripting sui sistemi embedded. Oltre ad avere queste due funzionalità, l'interfaccia permette di installare i driver per le varie tipologie di sistemi embedded, di installare le librerie incluse negli sketch, di verificare quali board siano connesse e su quali porte ecc. Questi strumenti sono importanti, soprattutto perché per compilare uno sketch è necessario avere installato tutte le librerie chiamate al suo interno, mentre per caricarlo su una board, è necessario aver installato i suoi driver.
 \end{itemize}
 
 \section{Scelte progettuali}
@@ -959,7 +968,7 @@ La visibilità e l'accesso alla Thing sono rimasti circoscritti alla sola rete In
 
 \chapter{Implementazione}
 
-L'implementazione del WoT Servient ha richiesto l'integrazione di diversi componenti al fine di fornire le funzionalità illustrate nel capitolo precedente. Di seguito, verranno descritte le tecnologie utilizzate ed i moduli sviluppati, specificandone i motivi della scelta e le modalità di integrazione. Allo stesso tempo, si analizzeranno i problemi implementativi più significativi specificando come sono stati risolti.
+L'implementazione del WoT Servient ha richiesto l'integrazione di diversi componenti al fine di fornire le funzionalità illustrate nel capitolo precedente. Di seguito, verranno descritte le tecnologie utilizzate ed i moduli sviluppati, specificandone i motivi della scelta e le modalità di integrazione. Allo stesso tempo si analizzeranno i problemi implementativi più significativi specificando come sono stati risolti.
 
 \section{Tecnologie}
 
@@ -967,7 +976,7 @@ Trattandosi di un progetto ``full-stack'' sono risultate necessarie numerose tec
 
 \subsection{Python}
 
-Tra i motivi che mi hanno portato alla scelta del linguaggio Python ci sono sicuramente la sua facilità d'uso, i suoi costrutti intuitivi, il numeroso insieme di librerie di cui dispone, le quali lo rendono un linguaggio versatile, adatto allo sviluppo di qualsiasi applicazione. E' un linguaggio multi-paradigma, per cui supporta la programmazione orientata agli oggetti, strutturata e funzionale. Ha un forte sistema di tipi che viene eseguito a runtime, per cui non occorre assegnare i tipi alle variabili essendo inferiti dal compilatore. E' un linguaggio interpretato ed il suo interprete supporta la modalità d'uso interattiva (REPL) attraverso la quale è possibile inserire codice direttamente da un terminale, visualizzando immediatamente il risultato. Usa un sistema di garbage collection per la liberazione automatica della memoria. 
+Tra i motivi che mi hanno portato alla scelta del linguaggio Python ci sono sicuramente la sua facilità d'uso, i suoi costrutti intuitivi, il numeroso insieme di librerie di cui dispone, le quali lo rendono un linguaggio versatile, adatto allo sviluppo di qualsiasi applicazione. E' un linguaggio multi-paradigma, per cui supporta la programmazione orientata agli oggetti, strutturata e funzionale. Dispone di un sistema di controllo dei tipi a runtime, per cui non occorre assegnare i tipi alle variabili essendo inferiti dal compilatore. E' un linguaggio interpretato ed il suo interprete supporta la modalità d'uso interattiva (REPL) attraverso la quale è possibile inserire codice direttamente da un terminale, visualizzando immediatamente il risultato. Usa un sistema di garbage collection per la liberazione automatica della memoria. 
 
 E' un linguaggio in continua evoluzione, versione dopo versione vengono aggiunti nuovi costrutti e nuove funzionalità, soprattutto anche grazie alla sua community. 
 
@@ -977,7 +986,7 @@ Le principali librerie di Python che ho utilizzato insieme a \verb"click" e \ver
 	\item \textbf{os}\\
 	Questo modulo offre una serie di funzionalità dipendenti dal sistema operativo. Le funzionalità che ho utilizzato riguardano il parsing dei percorsi di file e cartelle, tra cui la verifica della loro esistenza, la creazione di cartelle, il cambio della cartella di lavoro e il recupero delle variabili d'ambiente.
 	\item \textbf{sys}\\
-	Questo modulo fornisce l'accesso sia a variabili, sia a funzioni che interagiscono con l'interprete di Python. E' stato impiegato per la gestione della terminazione del programma principale a seguito di errori nell'inserimento dei dati. Gli errori riguardano ad esempio il fallimento della validazione della TD o la mancata terminazione con successo dei processi di compilazione e caricamento dello sketch.
+	Questo modulo fornisce l'accesso sia a variabili, sia a funzioni che interagiscono con l'interprete di Python. E' stato impiegato per la gestione della terminazione del programma principale a seguito di errori nell'inserimento dei dati. Gli errori possono riguardare ad esempio il fallimento della validazione della TD o la mancata terminazione con successo dei processi di compilazione e caricamento dello sketch.
 	\item \textbf{json e jsonschema}\\
 	Della libreria \verb"json" è stato utilizzato il metodo \verb"load" per convertire un file o una stringa in formato json in un dictionary e il metodo \verb"dump" per l'operazione opposta. La libreria \verb"jsonschema", invece, è servita per validare la Thing Description specificata dall'utente rispetto allo schema JSON stabilito dal W3C. L'utente, infatti, può proseguire nella definizione della Thing solamente nel caso in cui la TD sia valida.
 	\item \textbf{subprocess e shlex}\\
@@ -1001,7 +1010,7 @@ I metodi che mette a disposizione sono semplici e molto intuitivi, eccone alcuni
 
 I metodi preceduti dalla \verb"@" rappresentano delle macro. Ad ogni comando deve essere associata una funzione chiamata callback, la quale viene invocata nel momento in cui si digita il comando corrispondente sul terminale e si clicca INVIO. Click permette anche di chiamare un comando all'interno di un altro inserendo nel codice del chiamante il metodo \verb"invoke()" e passandogli il comando chiamato. \`E possibile, infine, associare delle opzioni e argomenti ad un determinato comando, rispettivamente, attraverso i metodi \verb"click.option()" e \verb"click.argument()", ma non li ho utilizzati nell'implementazione del Servient.
 
-Per creare una CLI, innanzitutto occorre definire la callback generale che incorpora i vari comandi e solo successivamente le callback di ogni comando. Grazie a questa gerarchia, all'interno del metodo \verb"main" dell'applicazione è necessario invocare solamente la callback generale, a cui poi spetterà il compito di chiamare gli altri comandi.
+Per creare una CLI innanzitutto occorre definire la callback generale che incorpora i vari comandi e solo successivamente le callback di ogni comando. Grazie a questa gerarchia, all'interno del metodo \verb"main" dell'applicazione è necessario invocare solamente la callback generale, a cui poi spetterà il compito di chiamare gli altri comandi.
 
 \subsection{Jinja2}
 
@@ -1014,7 +1023,7 @@ L'interazione con Jinja2 richiede tre fasi principali:
 \begin{enumerate}[itemsep=0pt,partopsep=1pt,parsep=3pt]
 	\item Nella prima fase si deve caricare il file di template all'interno dell'ambiente di esecuzione tramite la classe \verb"loader" e poi successivamente lo si richiama tramite il metodo \verb"get_template()".
 	\item Nella seconda fase si istanziano le variabili di template con i valori corrispondenti.
-	\item Nella terza fase, infine, si fa la resa del template tramite il metodo \verb"render()", a cui si devono passare in input le variabili istanziate nella fase precedente. Si devono passare tutte le variabili di cui il template fa uso, come in un dizionario: le chiavi sono i nomi delle variabili, mentre i valori possono essere di qualsiasi tipo ma solitamente sono oggetti poiché hanno una capacità espressiva più elevata dei tipi base e consentono di ridurre il numero di variabili da dover passare. Il risultato della terza fase è la stringa che si ottiene dalla sostituzione delle variabili con i valori effettivi, la quale può essere salvata in un file. Questo processo prendere il nome di rendering.
+	\item Nella terza fase, infine, si fa la resa del template tramite il metodo \verb"render()", a cui si devono passare in input le variabili istanziate nella fase precedente. Si devono passare tutte le variabili di cui il template fa uso come in un dizionario: le chiavi sono i nomi delle variabili, mentre i valori possono essere di qualsiasi tipo ma solitamente sono oggetti poiché hanno una capacità espressiva più elevata dei tipi base e consentono di ridurre il numero di variabili da dover passare. Il risultato della terza fase è la stringa che si ottiene dalla sostituzione delle variabili con i valori effettivi, la quale può essere salvata in un file. Questo processo prendere il nome di rendering.
 \end{enumerate}
 
 In Jinja2, infine, sono presenti alcuni dei costrutti tipici dei linguaggi di programmazione, come ad esempio l'\verb"if", il ciclo \verb"for" e le funzioni che prendono il nome di macro.
@@ -1070,7 +1079,7 @@ Gli eventi sono dei messaggi che vengono intercettati dal server e processati in
 \begin{itemize}[itemsep=0pt,partopsep=1pt,parsep=3pt]
 	\item \verb"WStype_CONNECTED": questo messaggio viene inviato dal client la prima volta che si connette al server WebSocket. Nel momento in cui verrà ricevuto dal server, esso aprirà il canale WebSocket e lo terrà aperto finché il client si disconnette o cade la connessione.
 	\item \verb"WStype_DISCONNECTED": questo messaggio viene ricevuto dal server nel caso in cui un client, con cui ha aperto un canale di comunicazione, si dovesse disconnettere.
-	\item \verb"WStype_TEXT": questo tipo è il più diffusso, infatti identifica tutti quei messaggi che vengono scambiati tra client e server durante le loro interazioni.
+	\item \verb"WStype_TEXT": questo tipo è il più diffuso, infatti identifica tutti quei messaggi che vengono scambiati tra client e server durante le loro interazioni.
 	\item \verb"WStype_PING" e \verb"WStype_PONG" corrispondono rispettivamente ad un messaggio di PING e di PONG. Solitamente un messaggio di PING viene inviato automaticamente dal mittente prima di un qualsiasi scambio di messaggi con il destinatario oppure viene inviato dal client ogni tot intervalli di tempo per mantenere il canale attivo.
 \end{itemize}	
 	
@@ -1080,7 +1089,7 @@ Il server può rispondere al client inviandogli un messaggio attraverso il metodo
 
 \subsection{ArduinoJson}
 
-ArduinoJson è la libreria che consente ai sistemi embedded di parsare dati in formato JSON. Ho dovuto utilizzare questa libreria poiché la Thing Description e tutti i messaggi scambiati tra Thing e Consumers sono di questo formato. 
+ArduinoJson è la libreria che consente ai sistemi embedded di parsare dati in formato JSON. Ho dovuto utilizzare questa libreria poiché la Thing Description e tutti i messaggi scambiati tra Thing e Consumers seguono questo formato. 
 
 Tramite questa libreria si possono definire oggetti e array di tipo JSON, solo però a partire da un documento JSON, il quale deve essere dichiarato precedentemente e che corrisponde ad un dictionary di Python.
 
@@ -1153,9 +1162,9 @@ Il file di template segue la struttura degli sketch scritti attraverso l'IDE di 
 
 Prima di includere le librerie, si effettua una fase di pre-processing sui dati contenuti nella TD che consiste nell'andare a modificare gli endpoint di ogni Interaction Affordance per farli essere dinamici in base all'indirizzo IP che viene assegnato al server web nel momento in cui si connette alla rete. 
 
-Terminata questa fase, si procede all'inclusione, prima delle librerie di default, poi di quelle aggiunte dall'utente, le quali, essendo memorizzate in un array, vengono inserite una per una tramite un ciclo \verb"for". Successivamente si definiscono le variabili relative al ssid e alla password della rete Wi-Fi a cui il server si dorvrà connettere, ai tipi di protocolli utilizzati (http e ws), ai numeri delle porte su cui esporre il server web e WebSockets, al nome attribuito alla Thing e i documenti JSON per gestire le proprietà di tipo complesso (oggetto o array) e gli eventi WebSocket.
+Terminata questa fase, si procede all'inclusione, prima delle librerie di default, poi di quelle aggiunte dall'utente, le quali, essendo memorizzate in un array, vengono inserite una per una tramite un ciclo \verb"for". Successivamente si definiscono le variabili relative al ssid e alla password della rete Wi-Fi a cui il server si dovrà connettere, ai tipi di protocolli utilizzati (http e ws), ai numeri delle porte su cui esporre il server web e websocket, al nome attribuito alla Thing e i documenti JSON per gestire le proprietà di tipo complesso (oggetti o array) e gli eventi WebSocket.
 
-Le proprietà, le azioni e gli eventi, come avviene per le librerie, sono memorizzati all'interno di array così da avere la possibilità di iterare tra i loro elementi tramite cicli \verb"for". Per ogni proprietà si definisce il nome, il tipo e il valore iniziale. Per le azioni, il nome, il numero di input e lo schema per ognuno di loro. Per gli eventi, infine, si dichiara il nome ed i vari schemi di sottoscrizione, notifica e cancellazione. 
+Le proprietà, le azioni e gli eventi, come avviene per le librerie, sono memorizzati all'interno di array così da avere la possibilità di iterare tra i loro elementi tramite cicli \verb"for". Per ogni proprietà si definisce il nome, il tipo e il valore iniziale. Per le azioni si definisce il nome, il numero di input e lo schema per ognuno di essi. Per gli eventi, infine, si dichiara il nome ed i vari schemi di sottoscrizione, notifica e cancellazione. 
 
 A questo punto si dichiarano gli endpoint delle varie richieste su cui sia il Server Web che WebSocket si mettono in ascolto e si definiscono anche gli oggetti corrispondenti ai due server. 
 
@@ -1163,7 +1172,7 @@ Con l'inserimento delle richieste e degli oggetti server termina la definizione 
 
 Il codice del \verb"setup()" viene eseguito solamente una volta dal microcontrollore e come prima istruzione. Nel \verb"setup()" si connette il server ad Internet, si dichiara la variabile di tipo stringa a cui viene assegnata la TD, la quale verrà esposta sulla home del server, si configura il server per la gestione degli endpoint tramite il metodo \verb"on()" e alla fine si avviano i due server.
 
-Il codice del \verb"loop()" invece viene eseguito di continuo dalla board e contiene, di default, solamente due istruzioni: la chiamata al metodo \verb"handleClient()", in modo tale che il server web possa gestire tutte le richieste in arrivo dai client e al metodo \verb"loop()", affinché anche il server WebSocket possa fare altrettanto.
+Il codice del \verb"loop()" invece viene eseguito di continuo dalla board e contiene, di default, solamente due istruzioni: la chiamata al metodo \verb"handleClient()", in modo tale che il server web possa gestire tutte le richieste in arrivo dai client e la chiamata al metodo \verb"loop()", affinché anche il server WebSocket possa fare altrettanto.
 
 All'interno dei metodi \verb"setup()" e \verb"loop()", l'utente può inserire istruzioni aggiuntive tramite la Thing CLI.
 
@@ -1173,7 +1182,7 @@ Come ultimo passaggio, si definisce la funzione di gestione dei messaggi WebSock
 
 Ovviamente, se l'utente decide di non inserire nessuna proprietà, nessuna azione o nessun evento, la parte corrispondente non viene generata nel file di scripting.
 
-In conclusione, per le Interaction Affordances è stato supportato sia il protocollo HTTP, sia il protocollo WebSocket, tranne che per gli eventi, nel confronto dei quali non è stato possibile implementare il protocollo HTTP di longpolling poiché le tecnologie a disposizione non lo hanno permesso.
+In conclusione, per le Interaction Affordances è stato supportato sia il protocollo HTTP, sia il protocollo WebSocket, tranne che per gli eventi, nel confronto dei quali non è stato possibile implementare il protocollo HTTP di long polling poiché le tecnologie a disposizione non lo hanno permesso.
 
 \afterpage{\blankpage}
 
@@ -1295,7 +1304,7 @@ Le comunicazioni tra l'Arduino UNO e il NodeMCU avvengono tramite seriale e hann
 Per calcolare l'accuratezza dei tre sensori sono stati effettuati due tipi di test: 
 
 \begin{enumerate}
-	\item Nel primo test si è impostato un valore di soglia pari a 6 per tutti e tre i sensori e sono state condotte 10 simulazioni per ogni parcheggio. Per ogni simulazione si è verificato il corretto funzionamento del sensore.
+	\item Nel primo test si è impostato un valore di soglia pari a 6 per tutti e tre i sensori e sono state condotte 10 misurazioni per ogni parcheggio. Per ogni simulazione si è verificato il corretto funzionamento del sensore.
 	\item Nel secondo test si sono variate le soglie dei sensori e si sono eseguite 10 simulazioni su ogni parcheggio, per ogni diverso valore della soglia. I valori di soglia scelti sono stati: 5, 10, 20.
 \end{enumerate}
 
@@ -1331,7 +1340,9 @@ I risultati dei due test sono stati raccolti nei seguenti grafici. I valori sono
 	\end{center}
 \end{figure} 
 
-Come si può notare dal primo grafico, il sensore HC-SR04 è il più accurato, infatti ha restituito sempre il valore corretto, al secondo posto si posiziona lo Sharp IR con un valore errato, mentre al terzo l'Adafruit VL53L0X con ben due valori errati. Dal secondo grafico, invece, si evince che al crescere del valore di soglia, l'accuratezza dei sensori aumenta.
+Come si può notare dal primo grafico, il sensore HC-SR04 è il più accurato, infatti ha restituito sempre il valore corretto, al secondo posto si posiziona lo Sharp IR con un valore errato, mentre al terzo l'Adafruit VL53L0X con ben due valori errati. Dal secondo grafico, invece, si evince che al crescere del valore di soglia, l'accuratezza dei sensori aumenta. 
+
+L'obiettivo di tale sperimentazione non è quello di confrontare tra loro sensori diversi, ma dimostrare la possibilità di gestire sensori eterogenei attraverso la piattaforma Embedded WoT Servient. 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%per fare le conclusioni
 \clearpage{\pagestyle{empty}\cleardoublepage}
@@ -1349,11 +1360,12 @@ CONCLUSIONI}}
 In questo elaborato è stata presentata la realizzazione della piattaforma Embedded WoT Servient per l'esposizione di Thing, basate sullo standard del W3C, su sistemi embedded. 
 In primo luogo è stata necessaria una fase preliminare di studio degli aspetti tecnologici relativi al mondo dell'IoT e del problema dell'interoperabilità, per poi passare ad un'analisi dettagliata dell'architettura del WoT proposta dal W3C. A ciò è seguita la fase di progettazione ed implementazione dei vari componenti che costituiscono il sistema nella sua interezza.
 
-Il lavoro svolto si è rivelato molto lungo e impegnativo, infatti si trattava di realizzare un progetto molto complesso, in cui si voleva far approdare l'articolata architettura del WoT Servient, composta da un elevato numero di funzionalità avanzate, nel mondo dei sistemi embedded, dove il concetto che risuona più spesso è la limitatezza di risorse e di capacità computazionali. Oltre a questo, si voleva proporre un sistema altamente intuitivo e facilmente fruibile, con il quale l'utente potesse interagire con il minor numero di passaggi possibile.  
+Il lavoro svolto si è rivelato molto lungo e impegnativo, data la complessità del progetto, il cui scopo era far approdare l'articolata architettura del WoT Servient nel mondo dei sistemi embedded. 
+La principale difficoltà riscontrata è legata al trasferimento delle funzionalità avanzate dell'architettura del WoT Servient ai sistemi embedded, i quali possiedono risorse limitate e ridotte capacità computazionali. Inoltre, si voleva proporre un sistema altamente intuitivo e facilmente fruibile, con il quale l'utente potesse interagire con il minor numero di passaggi possibile.  
 
-Per quanto riguarda il prossimo futuro, l'intenzione è quella di passare da un'interfaccia a riga di comando ad un'interfaccia grafica, sicuramente più intuitiva e accessibile e di fornire il supporto ad ulteriori tipi di microcontrollori.
+Per quanto riguarda gli sviluppi futuri, l'intenzione è quella di passare da un'interfaccia a riga di comando ad un'interfaccia grafica, sicuramente più intuitiva e accessibile oltre che di identificare altri casi d'uso.
 
-Il lavoro non deve essersi considerato definitivamente concluso, infatti sarà necessario mantenerlo costantemente allineato con l'evoluzione dei documenti e degli standard del W3C. Infatti capita spesso che vengono effettuate modifiche sostanziali all'architettura tra una versione e l'altra degli standard. 
+Il lavoro non deve essere considerato definitivamente concluso, infatti sarà necessario mantenerlo costantemente allineato con l'evoluzione dei documenti e degli standard del W3C. Non sono rare, infatti, modifiche sostanziali all'architettura tra una versione e l'altra degli standard. 
 
 \clearpage{\pagestyle{empty}\cleardoublepage}
 
@@ -1393,5 +1405,19 @@ Aharon D. \textit{The internet of things: mapping the value beyond the hype}. In
 \clearpage{\pagestyle{empty}\cleardoublepage}
 \chapter*{Ringraziamenti}
 \thispagestyle{empty}
+
+Con questo mio ultimo lavoro si conclude un percorso di studi fatto di tanti momenti felici ma anche tanti momenti in cui tenere duro era veramente difficile. Se mi guardo indietro ricordo tutta la fatica per preparare esami davvero complessi ma anche la travolgente gioia ogni volta che tutti i miei sforzi venivano ripagati. Ho conosciuto molte persone che mi hanno accompagnato in tutto il mio periodo di studi condividendo insieme a me lati positivi e lati negativi dell'essere degli instancabili programmatori. Tra questi sicuramente un posto speciale nel cuore ce l'ha Giuseppe. Senza di te Perugia non sarebbe stata la stessa. Grazie per essere stato non solo un compagno di studio e di divertimenti ma sopratutto un leale e sincero amico per la vita. 
+
+Innanzitutto vorrei ringraziare la mia famiglia che ha sempre creduto in me e, anche nei momenti più difficili, mi ha sempre incoraggiato a non mollare mai nonostante le apparentemente insormontabili difficoltà. In particolare ringrazio mio padre Nazzareno senza il cui sostegno, probabilmente oggi non sarei qui. Grazie papà e grazie mamma perché avete creduto in me dandomi la forza necessaria per andare avanti anche con qualche rimprovero, forse necessario. Ho cercato di seguire il vostro esempio dando sempre il massimo come fate voi ogni giorno prendendovi cura di nonno Pietro e nonna Claudia. Nonna Rosa sarebbe molto fiera di voi.
+
+Nonna Rosa, hai visto dove sono arrivato? Mi hai sempre detto ``Studia che poi te lo ritrovi''...avevi proprio ragione! I tuoi insegnamenti sono stati per me fondamentali e hanno contribuito a formare il mio carattere. Grazie perché se sono diventato il ragazzo che sono ora lo devo anche a te. So che mi stai guardando in questo momento, spero tu sia fiera di me e di quello che sono diventato.
+
+Ringrazio te Vanessa, per avermi supportato e sopportato durante tutto il mio percorso universitario. Sei sempre stata dalla mia parte, hai sempre creduto nelle mie possibilità e mi hai trasmesso tanti piccoli insegnamenti di vita. Sono cresciuto molto da quando sei nella mia vita non solo anagraficamente ma anche emotivamente e personalmente. Grazie alle esperienze di vita vissuta insieme, attualmente non potrei pensare alla mio futuro senza di te perché sei diventata una parte integrante di me senza la quale il mio codice crasherebbe. Senza di te Momi, questi sette anni non sarebbero stati gli stessi!
+
+Una menzione speciale la riservo per Bologna. Bologna ha avuto per me sempre una preferenza speciale. Fin dagli inizi, ho sempre avuto la sensazione che fosse fatta per me, che ci fosse stato spazio anche per me...e avevo ragione. Bologna mi ha saputo accogliere senza farmi sentire inadeguato, fuori posto o diverso. 
+ 
+Per concludere, vorrei dedicare due righe a me stesso, un ragazzo spesso molto timido che ha saputo farsi strada in questa nuova avventura bolognese. Non me lo dico molto spesso ma sono fiero del ragazzo che sono ora e di dove sono arrivato. Perseveranza e forza di volontà nella vita ripagano sempre! 
+
+
 
 \end{document}

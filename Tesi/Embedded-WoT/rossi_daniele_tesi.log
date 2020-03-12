@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.14159265-2.6-1.40.18 (TeX Live 2017/Debian) (preloaded format=pdflatex 2020.2.14)  8 MAR 2020 02:15
+This is pdfTeX, Version 3.14159265-2.6-1.40.18 (TeX Live 2017/Debian) (preloaded format=pdflatex 2020.2.14)  12 MAR 2020 18:51
 entering extended mode
  restricted \write18 enabled.
  %&-line parsing enabled.
@@ -571,14 +571,20 @@ LaTeX Font Info:    Try loading font information for U+msb on input line 89.
 
 (/usr/share/texlive/texmf-dist/tex/latex/amsfonts/umsb.fd
 File: umsb.fd 2013/01/14 v3.01 AMS symbols B
-) [1
+)
+Underfull \hbox (badness 10000) in paragraph at lines 108--117
+
+ []
+
+[1
 
 
 {/var/lib/texmf/fonts/map/pdftex/updmap/pdftex.map}] [2
 
 ] [1
 
-] (./rossi_daniele_tesi.toc [1
+]
+(./rossi_daniele_tesi.toc [1
 
 
 
@@ -625,13 +631,13 @@ Underfull \vbox (badness 3907) has occurred while \output is active []
  been already used, duplicate ignored
 <to be read again> 
                    \relax 
-l.193 \clearpage
+l.200 \clearpage
                 {\pagestyle{empty}\cleardoublepage} [1]pdfTeX warning (ext4): d
 estination with the same identifier (name{page.2}) has been already used, dupli
 cate ignored
 <to be read again> 
                    \relax 
-l.193 \clearpage{\pagestyle{empty}\cleardoublepage
+l.200 \clearpage{\pagestyle{empty}\cleardoublepage
                                                   } [2
 
 
@@ -677,13 +683,13 @@ l.193 \clearpage{\pagestyle{empty}\cleardoublepage
 
 ]
 Capitolo 1.
-LaTeX Font Info:    Try loading font information for OMS+cmr on input line 220.
+LaTeX Font Info:    Try loading font information for OMS+cmr on input line 227.
 
 (/usr/share/texlive/texmf-dist/tex/latex/base/omscmr.fd
 File: omscmr.fd 2014/09/29 v2.5h Standard LaTeX font definitions
 )
 LaTeX Font Info:    Font shape `OMS/cmr/m/n' in size <12> not available
-(Font)              Font shape `OMS/cmsy/m/n' tried instead on input line 220.
+(Font)              Font shape `OMS/cmsy/m/n' tried instead on input line 227.
  [5
 
 ]
@@ -722,7 +728,7 @@ LaTeX Font Info:    Font shape `OMS/cmr/m/n' in size <12> not available
 <EIOT.png, id=338, 959.585pt x 580.1675pt>
 File: EIOT.png Graphic file (type png)
 <use EIOT.png>
-Package pdftex.def Info: EIOT.png  used on input line 242.
+Package pdftex.def Info: EIOT.png  used on input line 249.
 (pdftex.def)             Requested size: 398.3375pt x 199.1665pt.
 
 
@@ -737,7 +743,7 @@ Package Fancyhdr Warning: \headheight is too small (12.0pt):
 <TT.png, id=346, 1058.95625pt x 511.9125pt>
 File: TT.png Graphic file (type png)
 <use TT.png>
-Package pdftex.def Info: TT.png  used on input line 262.
+Package pdftex.def Info: TT.png  used on input line 269.
 (pdftex.def)             Requested size: 398.33565pt x 199.1686pt.
 
 
@@ -748,12 +754,7 @@ Package Fancyhdr Warning: \headheight is too small (12.0pt):
 
 [7
 
- <./TT.png>] [8]
-Underfull \hbox (badness 10000) in paragraph at lines 292--294
-
- []
-
-[9] [10]
+ <./TT.png>] [8] [9] [10]
 *geometry* verbose mode - [ newgeometry ] result:
 * driver: pdftex
 * paper: a4paper
@@ -802,10 +803,10 @@ Package Fancyhdr Warning: \headheight is too small (12.0pt):
 <TI.png, id=394, 1452.42625pt x 321.2pt>
 File: TI.png Graphic file (type png)
 <use TI.png>
-Package pdftex.def Info: TI.png  used on input line 327.
+Package pdftex.def Info: TI.png  used on input line 335.
 (pdftex.def)             Requested size: 455.23398pt x 128.04152pt.
 
-Overfull \hbox (28.44263pt too wide) in paragraph at lines 327--332
+Overfull \hbox (28.44263pt too wide) in paragraph at lines 335--340
  [] 
  []
 
@@ -828,22 +829,22 @@ Package Fancyhdr Warning: \headheight is too small (12.0pt):
 <TCI.png, id=442, 546.04pt x 96.36pt>
 File: TCI.png Graphic file (type png)
 <use TCI.png>
-Package pdftex.def Info: TCI.png  used on input line 455.
+Package pdftex.def Info: TCI.png  used on input line 463.
 (pdftex.def)             Requested size: 369.88582pt x 65.27396pt.
  [19 <./TCI.png>]
 <I.png, id=448, 516.93124pt x 156.585pt>
 File: I.png Graphic file (type png)
 <use I.png>
-Package pdftex.def Info: I.png  used on input line 480.
+Package pdftex.def Info: I.png  used on input line 488.
 (pdftex.def)             Requested size: 369.88582pt x 112.0482pt.
  [20 <./I.png>] [21] [22]
 <TD.png, id=470, 609.27625pt x 641.39626pt>
 File: TD.png Graphic file (type png)
 <use TD.png>
-Package pdftex.def Info: TD.png  used on input line 526.
+Package pdftex.def Info: TD.png  used on input line 536.
 (pdftex.def)             Requested size: 426.80655pt x 455.2575pt.
 
-Overfull \hbox (8.55287pt too wide) in paragraph at lines 526--531
+Overfull \hbox (8.55287pt too wide) in paragraph at lines 536--541
  [] 
  []
 
@@ -856,16 +857,16 @@ LaTeX Warning: `h' float specifier changed to `ht'.
 <BT.png, id=491, 617.30624pt x 312.16624pt>
 File: BT.png Graphic file (type png)
 <use BT.png>
-Package pdftex.def Info: BT.png  used on input line 557.
+Package pdftex.def Info: BT.png  used on input line 566.
 (pdftex.def)             Requested size: 412.56496pt x 208.63586pt.
  [25 <./BT.png>] [26] [27]
 <AA.png, id=510, 710.655pt x 467.7475pt>
 File: AA.png Graphic file (type png)
 <use AA.png>
-Package pdftex.def Info: AA.png  used on input line 649.
+Package pdftex.def Info: AA.png  used on input line 657.
 (pdftex.def)             Requested size: 426.79134pt x 280.91473pt.
 
-Overfull \hbox (8.53766pt too wide) in paragraph at lines 649--654
+Overfull \hbox (8.53766pt too wide) in paragraph at lines 657--662
  [] 
  []
 
@@ -873,10 +874,10 @@ Overfull \hbox (8.53766pt too wide) in paragraph at lines 649--654
 <S.png, id=520, 678.535pt x 326.21875pt>
 File: S.png Graphic file (type png)
 <use S.png>
-Package pdftex.def Info: S.png  used on input line 676.
+Package pdftex.def Info: S.png  used on input line 684.
 (pdftex.def)             Requested size: 426.79134pt x 205.18538pt.
 
-Overfull \hbox (8.53766pt too wide) in paragraph at lines 676--681
+Overfull \hbox (8.53766pt too wide) in paragraph at lines 684--689
  [] 
  []
 
@@ -884,32 +885,35 @@ Overfull \hbox (8.53766pt too wide) in paragraph at lines 676--681
 Underfull \vbox (badness 10000) has occurred while \output is active []
 
  [31]
-[32] [33]
-Overfull \hbox (5.06094pt too wide) in paragraph at lines 745--747
+Underfull \vbox (badness 10000) has occurred while \output is active []
+
+ [32]
+[33]
+Overfull \hbox (5.06094pt too wide) in paragraph at lines 750--752
 [][]\OT1/cmtt/m/n/12 void raise_event(Symbol event, ...)[]\OT1/cmr/m/n/12 , il 
 qua-le rein-di-riz-za la chia-ma-ta al-l'hand-
  []
 
 
-Overfull \hbox (14.58824pt too wide) in paragraph at lines 745--747
+Overfull \hbox (14.58824pt too wide) in paragraph at lines 750--752
 \OT1/cmr/m/n/12 ler de-fi-ni-to co-me se-gue: [][]\OT1/cmtt/m/n/12 void (*Event
 Func)(Symbol event, Thing *thing, ...)[]\OT1/cmr/m/n/12 . 
  []
 
 [34]
-Overfull \hbox (7.0361pt too wide) in paragraph at lines 750--751
+Overfull \hbox (7.0361pt too wide) in paragraph at lines 755--756
 \OT1/cmr/m/n/12 te-re il ser-ver al-la re-te e av-via-re il pro-to-col-lo di tr
 a-spor-to tra-mi-te [][]\OT1/cmtt/m/n/12 transport.start()
  []
 
 [35] [36]
-Overfull \hbox (4.31287pt too wide) in paragraph at lines 793--794
+Overfull \hbox (4.31287pt too wide) in paragraph at lines 798--799
 [][]\OT1/cmtt/m/n/12 coap.addOperationFunction(&FUNCTION_NAME, (char* )``SERVIC
 E_ID``); []\OT1/cmr/m/n/12 da
  []
 
 [37]
-Overfull \hbox (5.15675pt too wide) in paragraph at lines 802--803
+Overfull \hbox (5.15675pt too wide) in paragraph at lines 807--808
 \OT1/cmr/m/n/12 de-fi-ni-ti pre-ce-den-te-men-te e con-te-stual-men-te, si ag-g
 ior-na la co-stan-te [][]\OT1/cmtt/m/n/12 RESOURCE_COUNT
  []
@@ -918,7 +922,7 @@ ior-na la co-stan-te [][]\OT1/cmtt/m/n/12 RESOURCE_COUNT
  has been already used, duplicate ignored
 <to be read again> 
                    \relax 
-l.813 \newgeometry{right=2.5cm}
+l.818 \newgeometry{right=2.5cm}
                                 [38
 
 ]
@@ -971,30 +975,27 @@ Package Fancyhdr Warning: \headheight is too small (12.0pt):
  We now make it that large for the rest of the document.
  This may cause the page layout to be inconsistent, however.
 
-[42] [43]
-<A.png, id=602, 779.91376pt x 655.44875pt>
+[42] [43] [44]
+<A.png, id=607, 779.91376pt x 655.44875pt>
 File: A.png Graphic file (type png)
 <use A.png>
-Package pdftex.def Info: A.png  used on input line 893.
+Package pdftex.def Info: A.png  used on input line 902.
 (pdftex.def)             Requested size: 369.88582pt x 310.85132pt.
+ [45 <./A.png>] [46]
+Underfull \vbox (badness 5475) has occurred while \output is active []
 
-
-LaTeX Warning: `h' float specifier changed to `ht'.
-
-[44]
-Underfull \vbox (badness 10000) has occurred while \output is active []
-
- [45 <./A.png>] [46] [47]
+ [47]
 <NMCU.jpg, id=624, 1003.75pt x 1003.75pt>
 File: NMCU.jpg Graphic file (type jpg)
 <use NMCU.jpg>
-Package pdftex.def Info: NMCU.jpg  used on input line 943.
+Package pdftex.def Info: NMCU.jpg  used on input line 952.
 (pdftex.def)             Requested size: 142.26378pt x 142.25475pt.
- [48 <./NMCU.jpg>]pdfTeX warning (ext4): destination with the same identifier (
-name{page.48}) has been already used, duplicate ignored
+
+[48 <./NMCU.jpg>]pdfTeX warning (ext4): destination with the same identifier (n
+ame{page.48}) has been already used, duplicate ignored
 <to be read again> 
                    \relax 
-l.960 \chapter
+l.969 \chapter
               {Implementazione} [48
 
 ]
@@ -1007,7 +1008,7 @@ Underfull \vbox (badness 1755) has occurred while \output is active []
 <AC.png, id=678, 481.8pt x 390.45876pt>
 File: AC.png Graphic file (type png)
 <use AC.png>
-Package pdftex.def Info: AC.png  used on input line 1032.
+Package pdftex.def Info: AC.png  used on input line 1041.
 (pdftex.def)             Requested size: 312.9803pt x 253.65219pt.
  [54 <./AC.png>]
 Underfull \vbox (badness 4205) has occurred while \output is active []
@@ -1020,14 +1021,14 @@ Underfull \vbox (badness 6284) has occurred while \output is active []
 <TC.png, id=697, 635.37375pt x 218.8175pt>
 File: TC.png Graphic file (type png)
 <use TC.png>
-Package pdftex.def Info: TC.png  used on input line 1103.
+Package pdftex.def Info: TC.png  used on input line 1112.
 (pdftex.def)             Requested size: 369.88582pt x 127.38835pt.
 
 [58 <./TC.png>]
 <TP.png, id=704, 1059.96pt x 271.0125pt>
 File: TP.png Graphic file (type png)
 <use TP.png>
-Package pdftex.def Info: TP.png  used on input line 1124.
+Package pdftex.def Info: TP.png  used on input line 1133.
 (pdftex.def)             Requested size: 398.34123pt x 113.81206pt.
  [59 <./TP.png>]
 Underfull \vbox (badness 10000) has occurred while \output is active []
@@ -1037,7 +1038,7 @@ Underfull \vbox (badness 10000) has occurred while \output is active []
 .62}) has been already used, duplicate ignored
 <to be read again> 
                    \relax 
-l.1180 \chapter
+l.1189 \chapter
                {Validazione} [62
 
 ]
@@ -1046,31 +1047,31 @@ Capitolo 5.
 <SP.png, id=734, 806.01125pt x 528.97626pt>
 File: SP.png Graphic file (type png)
 <use SP.png>
-Package pdftex.def Info: SP.png  used on input line 1204.
+Package pdftex.def Info: SP.png  used on input line 1213.
 (pdftex.def)             Requested size: 369.88582pt x 242.75087pt.
  [64 <./SP.png>] [65]
 <SENSORS.png, id=744, 626.34pt x 139.52126pt>
 File: SENSORS.png Graphic file (type png)
 <use SENSORS.png>
-Package pdftex.def Info: SENSORS.png  used on input line 1259.
+Package pdftex.def Info: SENSORS.png  used on input line 1268.
 (pdftex.def)             Requested size: 398.33858pt x 88.7355pt.
  [66 <./SENSORS.png>]
 <TDSP.png, id=752, 214.8025pt x 250.9375pt>
 File: TDSP.png Graphic file (type png)
 <use TDSP.png>
-Package pdftex.def Info: TDSP.png  used on input line 1280.
+Package pdftex.def Info: TDSP.png  used on input line 1289.
 (pdftex.def)             Requested size: 142.26378pt x 166.19743pt.
  [67 <./TDSP.png>]
 <T1.png, id=758, 583.17876pt x 343.2825pt>
 File: T1.png Graphic file (type png)
 <use T1.png>
-Package pdftex.def Info: T1.png  used on input line 1310.
+Package pdftex.def Info: T1.png  used on input line 1319.
 (pdftex.def)             Requested size: 341.43306pt x 200.98444pt.
  [68 <./T1.png>]
 <T2.png, id=766, 592.2125pt x 341.275pt>
 File: T2.png Graphic file (type png)
 <use T2.png>
-Package pdftex.def Info: T2.png  used on input line 1325.
+Package pdftex.def Info: T2.png  used on input line 1334.
 (pdftex.def)             Requested size: 341.43306pt x 196.76274pt.
  [69 <./T2.png>] [70
 
@@ -1081,19 +1082,19 @@ Package pdftex.def Info: T2.png  used on input line 1325.
 
 
 ]
-Underfull \hbox (badness 10000) in paragraph at lines 1369--1370
+Underfull \hbox (badness 10000) in paragraph at lines 1381--1382
 []\OT1/cmr/m/n/12 Satista. \OT1/cmr/m/it/12 In-ter-net of Things (IoT) con-nec-
 ted de-vi-ces in-stal-
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 1369--1370
+Underfull \hbox (badness 10000) in paragraph at lines 1381--1382
 \OT1/cmr/m/it/12 led ba-se world-wi-de from 2015 to 2025 \OT1/cmr/m/n/12 (2016)
 . [ul-ti-ma vi-si-ta
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 1369--1370
+Underfull \hbox (badness 10000) in paragraph at lines 1381--1382
 \OT1/cmr/m/n/12 07.03.2020]. URL: []$\OT1/cmtt/m/n/12 https : / / www . statist
 a . com / statistics / 471264 /
  []
@@ -1101,34 +1102,38 @@ a . com / statistics / 471264 /
 [73
 
 ]
-Underfull \hbox (badness 3838) in paragraph at lines 1382--1383
+Underfull \hbox (badness 3838) in paragraph at lines 1394--1395
 []\OT1/cmr/m/n/12 Tim Berners-Lee. \OT1/cmr/m/it/12 Lin-ked Da-ta De-si-gn Is-s
 ues \OT1/cmr/m/n/12 (2006). [ul-ti-ma vi-si-ta
  []
 
 [74]
-Package atveryend Info: Empty hook `BeforeClearDocument' on input line 1397.
+Underfull \vbox (badness 7631) has occurred while \output is active []
+
  [75
 
 
 
 ]
-Package atveryend Info: Empty hook `AfterLastShipout' on input line 1397.
+Package atveryend Info: Empty hook `BeforeClearDocument' on input line 1423.
+
+[76]
+Package atveryend Info: Empty hook `AfterLastShipout' on input line 1423.
  (./rossi_daniele_tesi.aux)
-Package atveryend Info: Executing hook `AtVeryEndDocument' on input line 1397.
-Package atveryend Info: Executing hook `AtEndAfterFileList' on input line 1397.
+Package atveryend Info: Executing hook `AtVeryEndDocument' on input line 1423.
+Package atveryend Info: Executing hook `AtEndAfterFileList' on input line 1423.
 
 Package rerunfilecheck Info: File `rossi_daniele_tesi.out' has not changed.
 (rerunfilecheck)             Checksum: 262EE838B186C7591761EED930E4F37F;2768.
  ) 
 Here is how much of TeX's memory you used:
  9750 strings out of 492982
- 141980 string characters out of 6134896
+ 141970 string characters out of 6134896
  251290 words of memory out of 5000000
- 12934 multiletter control sequences out of 15000+600000
- 16944 words of font info for 69 fonts, out of 8000000 for 9000
+ 12933 multiletter control sequences out of 15000+600000
+ 16643 words of font info for 68 fonts, out of 8000000 for 9000
  1143 hyphenation exceptions out of 8191
- 36i,12n,43p,1279b,562s stack positions out of 5000i,500n,10000p,200000b,80000s
+ 36i,11n,43p,1277b,562s stack positions out of 5000i,500n,10000p,200000b,80000s
 </usr/share/texlive/texmf-dist/fonts/type1/public/amsfonts/cm/cmbx10.pfb></us
 r/share/texlive/texmf-dist/fonts/type1/public/amsfonts/cm/cmbx12.pfb></usr/shar
 e/texlive/texmf-dist/fonts/type1/public/amsfonts/cm/cmcsc10.pfb></usr/share/tex
@@ -1140,10 +1145,10 @@ ublic/amsfonts/cm/cmsy10.pfb></usr/share/texlive/texmf-dist/fonts/type1/public/
 amsfonts/cm/cmti12.pfb></usr/share/texlive/texmf-dist/fonts/type1/public/amsfon
 ts/cm/cmtt10.pfb></usr/share/texlive/texmf-dist/fonts/type1/public/amsfonts/cm/
 cmtt12.pfb>
-Output written on rossi_daniele_tesi.pdf (88 pages, 1819652 bytes).
+Output written on rossi_daniele_tesi.pdf (89 pages, 1823659 bytes).
 PDF statistics:
- 901 PDF objects out of 1000 (max. 8388607)
- 755 compressed objects within 8 object streams
- 203 named destinations out of 1000 (max. 500000)
+ 905 PDF objects out of 1000 (max. 8388607)
+ 758 compressed objects within 8 object streams
+ 204 named destinations out of 1000 (max. 500000)
  448 words of extra memory for PDF output out of 10000 (max. 10000000)
 

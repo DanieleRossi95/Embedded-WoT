@@ -16,7 +16,7 @@
 \contentsline {section}{\numberline {2.1}Architettura del WoT}{16}{section.2.1}
 \contentsline {subsection}{\numberline {2.1.1}Casi d'uso}{16}{subsection.2.1.1}
 \contentsline {subsection}{\numberline {2.1.2}Thing}{19}{subsection.2.1.2}
-\contentsline {subsection}{\numberline {2.1.3}Thing Description}{20}{subsection.2.1.3}
+\contentsline {subsection}{\numberline {2.1.3}Thing Description}{21}{subsection.2.1.3}
 \contentsline {subsection}{\numberline {2.1.4}Binding Templates}{24}{subsection.2.1.4}
 \contentsline {subsection}{\numberline {2.1.5}Scripting API}{26}{subsection.2.1.5}
 \contentsline {subsection}{\numberline {2.1.6}Security and Privacy Guidelines}{27}{subsection.2.1.6}
@@ -39,8 +39,8 @@
 \contentsline {subsection}{\numberline {3.2.1}Requisiti funzionali}{42}{subsection.3.2.1}
 \contentsline {subsection}{\numberline {3.2.2}Requisiti tecnici}{43}{subsection.3.2.2}
 \contentsline {section}{\numberline {3.3}Architettura}{44}{section.3.3}
-\contentsline {subsection}{\numberline {3.3.1}Componenti}{44}{subsection.3.3.1}
-\contentsline {section}{\numberline {3.4}Scelte progettuali}{47}{section.3.4}
+\contentsline {subsection}{\numberline {3.3.1}Componenti}{45}{subsection.3.3.1}
+\contentsline {section}{\numberline {3.4}Scelte progettuali}{48}{section.3.4}
 \contentsline {chapter}{\numberline {4}Implementazione}{49}{chapter.4}
 \contentsline {section}{\numberline {4.1}Tecnologie}{49}{section.4.1}
 \contentsline {subsection}{\numberline {4.1.1}Python}{50}{subsection.4.1.1}
