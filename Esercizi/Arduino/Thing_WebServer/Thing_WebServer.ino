@@ -8,6 +8,8 @@ const char* password = "0525646993722559";
 //const char* password = "gbuy4505";
 //const char* ssid = "TIM-31734817";
 //const char* password = "7dZ7sh43mfBiibn5";
+//const char* ssid = "WiLMA-Lab";
+//const char* password = "wilmalab-wifi!";
 String protocolServer = "http";
 String protocolSocket = "ws";
 String urlServer;
@@ -50,9 +52,13 @@ IPAddress ipS;
 
 ESP8266WebServer server(portServer);
 
+#define HTTP_MAX_SEND_WAIT 60000
+
 WebSocketsServer webSocket = WebSocketsServer(portSocket);
 
 int i, j;
+
+int count = 0;
 
 void setup() {
   
@@ -157,31 +163,13 @@ void setup() {
   
   Serial.println("Server started");
   Serial.println(urlServer);
-
-  /*doc.createNestedArray("a");
-  JsonObject obj1 = doc["a"].createNestedObject();
-  obj1["change"] = true;
-
-  doc.createNestedArray("b");
-  JsonObject obj2 = doc["b"].createNestedObject();
-  obj2["change"] = true;
-
-  serializeJson(doc, Serial);
-  Serial.println();
-
-  serializeJson(doc["a"][0]["change"], Serial);
-  Serial.println();*/
-
 }
 
 
 void loop() {
-
-  webSocket.loop();
-
   // gestione delle richieste dei client
   server.handleClient();
-  
+  webSocket.loop();
 }
 
 
@@ -197,6 +185,8 @@ void connection(const char* ssid, const char* password) {
     Serial.print("."); 
   }
 
+  delay(10000);
+  
   Serial.println("\nConnected");
   Serial.print("IP address: ");
   ipS = WiFi.localIP();
@@ -235,13 +225,31 @@ void handleReq2() {
 
 
 void handleReq3() {
-  
+
   Serial.print("\nGET ");
   Serial.print(property1_name);
-  Serial.println(" value");
+  Serial.print(" value -> ");
+  Serial.println(++count);
+
+  DynamicJsonDocument tmp(1024);
+  JsonObject obj = tmp.createNestedObject();
+  obj[property1_name] = property1_value;
+  obj["ip"] = server.client().remoteIP().toString();
+
+  WiFiClient c = server.client();
+  Serial.print("a");
+  c.setTimeout(HTTP_MAX_SEND_WAIT);
+  Serial.print("b");
   
-  json = "{\"" + property1_name + "\":" + property1_value + "}";
-  server.send(200, "application/ld+json", json);
+  json = "";
+  serializeJson(obj, json);
+  
+  //json = "{\"" + property1_name + "\":" + property1_value + "}";
+
+  if(count == 20) {
+    server.send(200, "application/ld+json", json);
+    count = 0;
+  }
  
 }
 
@@ -253,7 +261,7 @@ void handleReq4() {
   String body = server.arg("plain");
   Serial.printf("Body received: %s", body.c_str());
 
-  err = deserializeJson(doc, body);
+  /*err = deserializeJson(doc, body);
   
   if(err) {
     Serial.print("deserializeJson() failed with code ");
@@ -263,7 +271,7 @@ void handleReq4() {
     int i1 = doc["pippo"];
     String i2 = doc["pluto"];
     Serial.printf("\ni1:%d, i2: %s", i1, i2.c_str()); 
-  }
+  }*/
   
   // controllo se il body della richiesta è stato ricevuto
   // se si vuole controllare la presenza di un determinato argomento del body, lo si deve
@@ -347,6 +355,9 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t* payload, size_t length)
       Serial.print(" -> Connection request from ");
       Serial.println(ip);
       Serial.print("Payload: ");
+      // il payload di un messaggio di tipo CONNECTED corrisponde all'url al quale il client si vuole connettere,
+      // per cui se il client si vuole sottoscrivere all'evento change deve connettersi all'url count/events/change
+      // così è possibile sapere a quale evento, il client, si sta cercando di sottoscrivere parsando il payload  
       Serial.println((char *) payload);
     
       // invia la risposta al client
@@ -374,7 +385,7 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t* payload, size_t length)
 
       String message;
       int el_size = sizeof(events_list) / sizeof(String);
-
+      
       nums = (String) num;
       for(i=0; i<el_size; i++) {
         message = "Subscribe " + events_list[i];

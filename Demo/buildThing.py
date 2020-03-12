@@ -1347,6 +1347,7 @@ def start(ctx, **kwargs):
         js.validate(ctx.obj['td'], schema)
     except Exception as e:
         click.echo(str(e))
+        sys.exit()
     # click.echo('\n{}\n'.format(json.dumps(ctx.obj['td'], indent=4)))
     filePath = ctx.obj['td']['title'].lower() + '/' + ctx.obj['td']['title'].lower() + '.json'
     output = json.dumps(ctx.obj['td'], indent=4)
@@ -1447,20 +1448,20 @@ def build(ctx):
             js.validate(ctx.obj['td'], schema)
         except Exception as e:
             click.echo(str(e))
+            sys.exit()
         click.echo()        
     ctx.obj.setdefault('template', {})  
     # NETWORK SSID
-    #inp = click.prompt('Network SSID to which the Embedded-System will connect', type=str)
-    #ctx.obj['template']['ssid'] = inp
-    ctx.obj['template']['ssid'] = 'Infostrada-2.4GHz-9454A5'
+    inp = click.prompt('Network SSID to which the Embedded-System will connect', type=str)
+    ctx.obj['template']['ssid'] = inp
+    #ctx.obj['template']['ssid'] = 'Infostrada-2.4GHz-9454A5'
     # NETWORK PASSWORD
-    '''if(click.confirm('\nNetwork has password?', default=True)):
+    if(click.confirm('\nNetwork has password?', default=True)):
         inp = click.prompt('Network Password (hide_input)', type=str, hide_input=True)
         ctx.obj['template']['password'] = inp
     else:
-        ctx.obj['template']['password'] = ''   
-    '''    
-    ctx.obj['template']['password'] = '0525646993722559'
+        ctx.obj['template']['password'] = ''       
+    #ctx.obj['template']['password'] = '0525646993722559'
     # WEBSERVER PORT
     inp = click.prompt('\nWebServer Port', type=NN_INT, default=80, show_default=True)
     ctx.obj['template']['portserver'] = str(inp)
@@ -1683,12 +1684,10 @@ def compile(ctx):
     click.echo()     
     c = 'arduino-cli compile --fqbn esp8266:esp8266:nodemcuv2 %s' % sketchDir
     pr = sp.Popen(shlex.split(c), universal_newlines=True, stdout=sp.PIPE)
-    while True:
-        output = pr.stdout.readline()
-        if output == '' and pr.poll() is not None:
-            break
-        if output:
-            click.echo(output.strip())
+    output = pr.communicate()[0]   
+    click.echo(output)
+    if('error' in output):
+        sys.exit()
     click.echo('\n\nFLASHING')        
     if(click.confirm('Flash the Embedded-C File?', default=True)):
         click.echo()
@@ -1720,12 +1719,10 @@ def flash(ctx):
     click.echo()
     c = 'arduino-cli compile --fqbn esp8266:esp8266:nodemcuv2 %s' % sketchDir
     pr = sp.Popen(shlex.split(c), universal_newlines=True, stdout=sp.PIPE)
-    while True:
-        output = pr.stdout.readline()
-        if output == '' and pr.poll() is not None:
-            break
-        if output:
-            click.echo(output.strip())
+    output = pr.communicate()[0]   
+    click.echo(output)
+    if('error' in output):
+        sys.exit()
     click.echo()
     c = 'arduino-cli upload -p %s --fqbn esp8266:esp8266:nodemcuv2 %s' % (serialPort, sketchDir)
     pr = sp.Popen(shlex.split(c), universal_newlines=True, stdout=sp.PIPE)
