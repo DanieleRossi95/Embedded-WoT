@@ -1,0 +1,8 @@
+embeddedWotServient.py
+setup.py
+embeddedWotServient.egg-info/PKG-INFO
+embeddedWotServient.egg-info/SOURCES.txt
+embeddedWotServient.egg-info/dependency_links.txt
+embeddedWotServient.egg-info/entry_points.txt
+embeddedWotServient.egg-info/requires.txt
+embeddedWotServient.egg-info/top_level.txt
