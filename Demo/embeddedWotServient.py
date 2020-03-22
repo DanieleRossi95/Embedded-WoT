@@ -181,9 +181,10 @@ def addForm(ctx, opType, interactionTypeS, interactionTypeTD='', interactionName
             inp = click.prompt('%s %d Operation Type' % (interactionTypeS, index), type=click.Choice(opType))
             ot.append(inp)
             ctx.obj['td'][interactionTypeTD][interactionName]['forms'].append({'href': '', 'contentType': 'application/json', 'op': ot})
-            if(click.confirm('\nAdd WebSocket protocol for %s Operations?' % interactionTypeS, default=False)):
-                ctx.obj['td'][interactionTypeTD][interactionName]['forms'].append({'href': '', 'contentType': 'application/json', 'op': ot})
-                websocket = True
+            if(interactionTypeS != 'Event'):
+                if(click.confirm('\nAdd WebSocket protocol for %s Operations?' % interactionTypeS, default=False)):
+                    ctx.obj['td'][interactionTypeTD][interactionName]['forms'].append({'href': '', 'contentType': 'application/json', 'op': ot})
+                    websocket = True
     elif(numOperationType == 2):
         if(interactionTypeS == 'Thing'):
             ctx.obj['td']['forms'].append({'href': '', 'contentType': 'application/json', 'op': opType})  
@@ -193,9 +194,10 @@ def addForm(ctx, opType, interactionTypeS, interactionTypeTD='', interactionName
         else:      
             if(interactionTypeS != 'Action'):                 
                 ctx.obj['td'][interactionTypeTD][interactionName]['forms'].append({'href': '', 'contentType': 'application/json', 'op': opType})
-            if(click.confirm('\nAdd WebSocket protocol for %s Operations?' % interactionTypeS, default=False)):
-                ctx.obj['td'][interactionTypeTD][interactionName]['forms'].append({'href': '', 'contentType': 'application/json', 'op': opType})
-                websocket = True
+            if(interactionTypeS != 'Event'):
+                if(click.confirm('\nAdd WebSocket protocol for %s Operations?' % interactionTypeS, default=False)):
+                    ctx.obj['td'][interactionTypeTD][interactionName]['forms'].append({'href': '', 'contentType': 'application/json', 'op': opType})
+                    websocket = True
 
 
 def addTerm(ctx, form, interactionTypeS, interactionTypeTD='', interactionName=''):
@@ -1323,7 +1325,7 @@ def start(ctx, **kwargs):
             click.echo('Example: ''if(property1_name <= 0)''. IF-keyword and round brackets are not necessary')
             event = {}
             event['condition'] = click.prompt('Event %d Condition' % e, type=str)
-            an = click.prompt('Number of Actions in which the Event Condition will triggered', type=click.IntRange(1, len(thingActions)))
+            an = click.prompt('\nNumber of Actions in which the Event Condition will triggered', type=click.IntRange(1, len(thingActions)))
             event.setdefault('actions', [])
             for i in range(1, an+1):
                 inp = click.prompt('Event %d Action %d name' % (e, i), type=click.Choice(thingActions))
