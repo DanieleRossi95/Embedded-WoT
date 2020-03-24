@@ -6,14 +6,10 @@ import subprocess as sp
 import shlex
 import yaml
 from jinja2 import Template, FileSystemLoader, Environment
-import functools
 import json
 import jsonschema as js
 from datetime import datetime
 
-
-# le funzioni non sono legate alle proprietà anche se ci accedono, 
-# per cui possono essere inserite in qualunque parte del codice
 
 class StartWithoutNumberStringParamType(click.ParamType):
     name = 'string'
@@ -1011,6 +1007,7 @@ def prepareArduinoEnvironment(ctx):
             click.echo(pr.communicate()[0])
             input("Press Enter to continue...")    
     os.chdir(cwd)    
+    global environmentPrepared
     environmentPrepared = True
 
 
@@ -1023,10 +1020,12 @@ DATETIME_STRING = DateTimeParamType()
 ALIB_STRING = ArduinoLibraryParamType()
 
 # JSON SCHEMA per la TD
-schema = json.load(open('thing-schema.json'))
+__location__ = os.path.realpath(os.path.join(os.getcwd(), os.path.dirname(__file__)))
+schema = json.load(open(os.path.join(__location__, 'thing-schema.json')))
 
 # JINJA2 Template
-file_loader = FileSystemLoader('Templates')
+_location__ = os.path.realpath(os.path.join(os.getcwd(), os.path.dirname(__file__)))
+file_loader = FileSystemLoader(os.path.join(__location__, 'Templates'))
 env = Environment(loader=file_loader, extensions=['jinja2.ext.do'])
 env.trim_blocks = True
 env.lstrip_blocks = True
@@ -1045,27 +1044,8 @@ websocket = False
 # arduino-cli 
 environmentPrepared = False
 
-# option in comune ai diversi comandi
-def common_options(f):
-    options = [
-        click.option('--nproperties', type=int, default=0, help='Number of properties of the Thing.'),
-        click.option('--thingname', type=str, help='Name of the Thing.'),
-    ]
-    return functools.reduce(lambda x, opt: opt(x), options, f)
-    
-
-# i tre parametri passati alle callback sono obbligatori anche se non vengono utilizzati
-# value è il valore assegnato alla proprietà
-def compute_properties(ctx, param, value):
-    click.echo('Number of properties: %s' % value)
-    # se non si ritorna il valore della proprietà, 
-    # alla variabile in cli corrispondente alla proprietà non viene assegnato nulla
-    # e di conseguenza il valore viene perso
-    return value
-
 @click.group(invoke_without_command=True)
 @click.pass_context
-# cli è una callback del gruppo definito precedentemente
 def cli(ctx, **kwargs):
     """WoT module for build TDs and executable scripts for embedded systems"""
     click.echo('This module allow you to build custom Thing Descriptions and executable scripts for expose Things on Embedded Systems')
@@ -1075,12 +1055,12 @@ def cli(ctx, **kwargs):
         ctx.invoke(start)
     else:
         pass        
-    # appena termina il codice della cli viene eseguito il codice del comando start
+    # after the execution of cli() instructions, the start command is called
     
 
-# le funzioni che vengono eseguite dai comandi non possono essere chiamate al di fuori del comando stesso
+# the functions associated to click commands can't be called outside the commands themselves
 @cli.command()
-# se si passa il contesto ad una callback, allora come parametro le si deve passare ctx obbligatoriamente
+# if the context is passed to a command function, it has to pass it to the function as input parameter (ctx)
 @click.pass_context
 def start(ctx, **kwargs):
     """Start wizard"""
@@ -1103,9 +1083,6 @@ def start(ctx, **kwargs):
     else:
         contextElements = click.prompt('Thing Context number of elements', type=NZ_INT)
         click.echo('\nHint: Thing Context elements MUST be URIs or JSON OBJECTs\nFor JSON OBJECTs it MUST use double quotes instead of single ones')
-        # se all'interno di un dizionario (ctx.obj['td']) si vuole definire un array a cui aggiungere un
-        # elemento alla volta, si possono utilizzare i metodi setdeafult per creare l'array e 
-        # append per aggiungere gli elementi
         ctx.obj['td'].setdefault('@context', [])
         ctx.obj['td']['@context'].append(uri)
         for i in range(1, contextElements+1):
@@ -1350,7 +1327,6 @@ def start(ctx, **kwargs):
     except Exception as e:
         click.echo(str(e))
         sys.exit()
-    # click.echo('\n{}\n'.format(json.dumps(ctx.obj['td'], indent=4)))
     filePath = ctx.obj['td']['title'].lower() + '/' + ctx.obj['td']['title'].lower() + '.json'
     output = json.dumps(ctx.obj['td'], indent=4)
     writeFile(filePath, output)
@@ -1456,14 +1432,12 @@ def build(ctx):
     # NETWORK SSID
     inp = click.prompt('Network SSID to which the Embedded-System will connect', type=str)
     ctx.obj['template']['ssid'] = inp
-    #ctx.obj['template']['ssid'] = 'Infostrada-2.4GHz-9454A5'
     # NETWORK PASSWORD
     if(click.confirm('\nNetwork has password?', default=True)):
         inp = click.prompt('Network Password (hide_input)', type=str, hide_input=True)
         ctx.obj['template']['password'] = inp
     else:
         ctx.obj['template']['password'] = ''       
-    #ctx.obj['template']['password'] = '0525646993722559'
     # WEBSERVER PORT
     inp = click.prompt('\nWebServer Port', type=NN_INT, default=80, show_default=True)
     ctx.obj['template']['portserver'] = str(inp)
@@ -1701,6 +1675,7 @@ def compile(ctx):
 def flash(ctx):
     '''Flash Embedded-C File'''
     global environmentPrepared
+
     if(not(environmentPrepared)):
         prepareArduinoEnvironment(ctx)
     click.echo('\nStart flashing...\n') 
